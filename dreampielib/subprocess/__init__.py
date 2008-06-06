@@ -46,7 +46,7 @@ def main(port):
             try:
                 for c in split_code:
                     exec c in locs
-            except Exception, e:
+            except (Exception, KeyboardInterrupt), e:
                 send_object(sock, (False, str(e)))
             else:
                 send_object(sock, (True, None))
