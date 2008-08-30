@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Fri Jun  6 18:04:49 2008 -->
+<!--Generated with glade3 3.4.5 on Tue Jun 10 11:26:55 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="window_main">
     <property name="title" translatable="yes">DreamPie</property>
@@ -136,7 +136,7 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="menuitem_show_input_entry">
+                      <widget class="GtkMenuItem" id="menuitem_show_inputentry">
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="tooltip" translatable="yes">Show the input entry, which lets you to send input to the subprocess.</property>
@@ -147,12 +147,33 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="menuitem_hide_input_entry">
+                      <widget class="GtkMenuItem" id="menuitem_hide_inputentry">
+                        <property name="sensitive">False</property>
                         <property name="tooltip" translatable="yes">Show the command entry, which lets you edit commands to execute</property>
                         <property name="label" translatable="yes">Switch to command entry</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_hide_input_entry"/>
+                        <signal name="activate" handler="on_hide_inputentry"/>
                         <accelerator key="I" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem5">
+                        <property name="visible">True</property>
+                        <property name="tooltip" translatable="yes">Search the history upwards</property>
+                        <property name="label" translatable="yes">History up</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_history_up"/>
+                        <accelerator key="Up" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem7">
+                        <property name="visible">True</property>
+                        <property name="tooltip" translatable="yes">Search the history downwards</property>
+                        <property name="label" translatable="yes">History down</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_history_down"/>
+                        <accelerator key="Down" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                   </widget>
@@ -205,7 +226,7 @@
                 </child>
               </widget>
               <packing>
-                <property name="resize">False</property>
+                <property name="resize">True</property>
                 <property name="shrink">True</property>
               </packing>
             </child>
@@ -220,7 +241,7 @@
                 </child>
               </widget>
               <packing>
-                <property name="resize">True</property>
+                <property name="resize">False</property>
                 <property name="shrink">True</property>
               </packing>
             </child>
