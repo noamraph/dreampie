@@ -13,6 +13,8 @@ builtins = set(__builtins__)
 
 def write_command(write, command):
     lines = [x+'\n' for x in command.split('\n')]
+    # Remove last newline - we don't tag it with COMMAND to separate commands
+    lines[-1] = lines[-1][:-1]
     tok_iter = tokenize.generate_tokens(iter(lines).next)
     highs = []
     for typ, token, (sline, scol), (eline, ecol), line in tok_iter:
@@ -38,7 +40,7 @@ def write_command(write, command):
     in_high = False
     for lineno, line in enumerate(lines):
         if lineno != 0:
-            write('... ', PROMPT)
+            write('... ', COMMAND, PROMPT)
         col = 0
         while col < len(line):
             if not in_high:
@@ -61,3 +63,4 @@ def write_command(write, command):
                 else:
                     write(line[col:], COMMAND, cur_high[0])
                     col = len(line)
+    write('\n')

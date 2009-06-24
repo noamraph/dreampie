@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import os
+import time
 import signal
 import tempfile
 from subprocess import Popen, PIPE
@@ -23,20 +24,20 @@ from . import PyParse
 
 # Tags and colors
 
-STDOUT = 'stdout'; STDERR = 'stderr'; EXCEPTION = 'exception'
-PROMPT = 'prompt'; FIRST_PROMPT = 'first_prompt'; COMMAND = 'command'
-STDIN = 'stdin'
+STDIN = 'stdin'; STDOUT = 'stdout'; STDERR = 'stderr'; EXCEPTION = 'exception'
+PROMPT = 'prompt'; COMMAND = 'command'; MESSAGE = 'message'
 
 KEYWORD = 'keyword'; BUILTIN = 'builtin'; STRING = 'string'
 NUMBER = 'number'; COMMENT = 'comment'
 
 colors = {
+    STDIN: 'white',
     STDOUT: '#bcffff',
-    STDERR: 'red',
-    EXCEPTION: 'red',
+    STDERR: '#ff8080',
+    EXCEPTION: '#ff8080',
     PROMPT: '#e400b6',
     COMMAND: 'white',
-    STDIN: 'white',
+    MESSAGE: 'yellow',
 
     KEYWORD: '#ff7700',
     BUILTIN: '#efcfcf',
@@ -47,8 +48,10 @@ colors = {
 
 INDENT_WIDTH = 4
 
+IS_DEBUG = False
 def debug(s):
-    print >> sys.stderr, s
+    if IS_DEBUG:
+        print >> sys.stderr, s
 
 # Maybe someday we'll want translations...
 _ = lambda s: s
@@ -81,8 +84,6 @@ class DreamPie(SimpleGladeApp):
 
         self.init_status()
 
-        self.init_inputentry()
-
         self.init_vadj()
 
         self.init_history()
@@ -91,11 +92,13 @@ class DreamPie(SimpleGladeApp):
         self.sock = self.popen = None
         # Is the subprocess executing a command
         self.is_executing = False
-        self.start_subp()
+        # Was stdin sent during current command
+        self.stdin_was_sent = False
+        self.start_subp(is_msg_on_success=False)
 
+        self.set_window_default_size()
         self.window_main.show_all()
-        # For some reason this works only after showing the window
-        self.update_menuitem_switch_input()
+
 
     # Selection
 
@@ -155,63 +158,6 @@ class DreamPie(SimpleGladeApp):
         self.sourcebuffer.disconnect(self.sourcebuffer_changed_handler_id)
         self.sourcebuffer_changed_handler_id = None
 
-    # Input Entry
-
-    def init_inputentry(self):
-        self.inputentry = gtk.Entry()
-        self.inputentry.connect('key-press-event',
-                                self.on_inputentry_keypress)
-        self.inputentry.show()
-        self.is_inputentry_displayed = False
-        
-    def on_inputentry_keypress(self, widget, event):
-        keyval_name = gdk.keyval_name(event.keyval)
-        if keyval_name == 'Return':
-            s = self.inputentry.get_text()+'\n'
-            self.write(s, STDIN)
-            self.popen.stdin.write(s)
-            self.inputentry.set_text('')
-            return True
-        
-    def show_inputentry(self):
-        if not self.is_inputentry_displayed:
-            self.vpaned_main.remove(self.scrolledwindow_sourceview)
-            self.vpaned_main.add2(self.inputentry)
-            self.is_inputentry_displayed = True
-
-    def hide_inputentry(self):
-        if self.is_inputentry_displayed:
-            self.vpaned_main.remove(self.inputentry)
-            self.vpaned_main.add2(self.scrolledwindow_sourceview)
-            self.is_inputentry_displayed = False
-
-    def on_show_inputentry(self, widget):
-        assert self.is_executing
-        self.show_inputentry()
-        self.update_menuitem_switch_input()
-        self.inputentry.grab_focus()
-
-    def on_hide_inputentry(self, widget):
-        assert self.is_executing
-        self.hide_inputentry()
-        self.update_menuitem_switch_input()
-        self.sourceview.grab_focus()
-
-    def update_menuitem_switch_input(self):
-        if not self.is_inputentry_displayed:
-            self.menuitem_show_inputentry.props.visible = True
-            self.menuitem_hide_inputentry.props.visible = False
-        else:
-            self.menuitem_show_inputentry.props.visible = False
-            self.menuitem_hide_inputentry.props.visible = True
-            
-        if self.is_executing:
-            self.menuitem_show_inputentry.set_sensitive(True)
-            self.menuitem_hide_inputentry.set_sensitive(True)
-        else:
-            self.menuitem_show_inputentry.set_sensitive(False)
-            self.menuitem_hide_inputentry.set_sensitive(False)
-
     # Vertical adjustment
 
     def init_vadj(self):
@@ -240,22 +186,31 @@ class DreamPie(SimpleGladeApp):
     # Source buffer, Text buffer
 
     def init_textbufferview(self):
-        self.textbuffer = self.textview.get_buffer()
+        tv = self.textview
+        self.textbuffer = tb = tv.get_buffer()
 
-        self.textview.modify_base(0, gdk.color_parse('black'))
-        self.textview.modify_text(0, gdk.color_parse('white'))
-        self.textview.modify_font(
-            pango.FontDescription('courier new,monospace'))
+        tv.modify_base(0, gdk.color_parse('black'))
+        tv.modify_text(0, gdk.color_parse('white'))
+        tv.modify_font(pango.FontDescription('courier new,monospace'))
 
         # We have to add the tags in a specific order, so that the priority
         # of the syntax tags will be higher.
-        for tag in (STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND, STDIN,
+        for tag in (STDOUT, STDERR, EXCEPTION, COMMAND, PROMPT, STDIN, MESSAGE,
                     KEYWORD, BUILTIN, STRING, NUMBER, COMMENT):
-            self.textbuffer.create_tag(tag, foreground=colors[tag])
-        self.textbuffer.create_tag(FIRST_PROMPT, foreground=colors[PROMPT])
+            tb.create_tag(tag, foreground=colors[tag])
 
-        self.textview.connect('key-press-event', self.on_textview_keypress)
-        self.textview.connect('focus-in-event', self.on_textview_focus_in)
+        tv.connect('key-press-event', self.on_textview_keypress)
+        tv.connect('focus-in-event', self.on_textview_focus_in)
+
+    def set_window_default_size(self):
+        tv = self.textview
+        context = tv.get_pango_context()
+        metrics = context.get_metrics(tv.style.font_desc,
+                                      context.get_language())
+        width = pango.PIXELS(metrics.get_approximate_digit_width()*81)
+        height = pango.PIXELS(
+            (metrics.get_ascent() + metrics.get_descent())*30)
+        self.window_main.set_default_size(width, height)
 
     def init_sourcebufferview(self):
         self.sourcebuffer = gtksourceview2.Buffer()
@@ -266,12 +221,17 @@ class DreamPie(SimpleGladeApp):
         self.sourcebuffer.set_language(python)
         self.sourcebuffer.set_style_scheme(
             make_style_scheme(default_style_scheme_spec))
+        self.sourcebuffer_change_count = 0
+        self.sourcebuffer.connect('changed', self.on_sourcebuffer_changed)
         self.sourceview.modify_font(
             pango.FontDescription('courier new,monospace'))
         self.scrolledwindow_sourceview.add(self.sourceview)
         self.sourceview.connect('key-press-event', self.on_sourceview_keypress)
         self.sourceview.connect('focus-in-event', self.on_sourceview_focus_in)
         self.sourceview.grab_focus()
+
+    def on_sourcebuffer_changed(self, widget):
+        self.sourcebuffer_change_count += 1
 
     def on_textview_focus_in(self, widget, event):
         # Clear the selection of the sourcebuffer
@@ -318,24 +278,46 @@ class DreamPie(SimpleGladeApp):
             sb.delete(sb.get_start_iter(), sb.get_end_iter())
             self.vadj_scroll_to_bottom()
             self.is_executing = True
-            self.update_menuitem_switch_input()
+            self.menuitem_execute.props.visible = False
+            self.menuitem_stdin.props.visible = True
         return is_ok
+
+    def send_stdin(self):
+        """Send the contents of the sourcebuffer as stdin."""
+        sb = self.sourcebuffer
+        s = sb.get_text(sb.get_start_iter(), sb.get_end_iter())
+        if not s.endswith('\n'):
+            s += '\n'
+        self.write(s[:-1], COMMAND, STDIN)
+        self.write('\n')
+        self.vadj_scroll_to_bottom()
+        self.popen.stdin.write(s)
+        self.stdin_was_sent = True
+        sb.delete(sb.get_start_iter(), sb.get_end_iter())
 
     @sourceview_keyhandler('Return', 0)
     def on_sourceview_return(self):
         sb = self.sourcebuffer
 
-        # Possibly execute, if we are on the first line and everything
-        # works ok.
-        if not self.is_executing:
-            insert_iter = sb.get_iter_at_mark(sb.get_insert())
-            if (insert_iter.equal(sb.get_end_iter())
-                and insert_iter.get_line() == 0
-                and insert_iter.get_offset() != 0
-                and not sb.get_text(sb.get_start_iter(),
-                                    insert_iter).endswith(' ')):
-                is_ok = self.execute_source(False)
+        # If we are on the first line, and it doesn't end with a ' ':
+        #   * If we are not executing, try to execute (if failed, continue
+        #     with normal behaviour)
+        #   * If we are executing, and stdin was already sent to the subprocess,
+        #     send the line as stdin.
+        insert_iter = sb.get_iter_at_mark(sb.get_insert())
+        if (insert_iter.equal(sb.get_end_iter())
+            and insert_iter.get_line() == 0
+            and insert_iter.get_offset() != 0
+            and not sb.get_text(sb.get_start_iter(),
+                                insert_iter).endswith(' ')):
+            if not self.is_executing:
+                is_ok = self.execute_source(warn=False)
                 if is_ok:
+                    return True
+            else:
+                # is_executing
+                if self.stdin_was_sent:
+                    self.send_stdin()
                     return True
                 
         # We didn't execute, so newline-and-indent.
@@ -448,6 +430,11 @@ class DreamPie(SimpleGladeApp):
         self.sourceview.scroll_mark_onscreen(sb.get_insert())
         return True
 
+    @sourceview_keyhandler('ISO_Left_Tab', gdk.SHIFT_MASK)
+    def on_sourceview_shift_tab(self):
+        self.textview.grab_focus()
+        return True
+
     @sourceview_keyhandler('BackSpace', 0)
     def on_sourceview_backspace(self):
         sb = self.sourcebuffer
@@ -481,68 +468,55 @@ class DreamPie(SimpleGladeApp):
         tb = self.textbuffer
 
         self.hist_prefix = None
-        self.hist_sourcebuffer_changed_id = None
+        # The sourcebuffer_change_count to which the prefix applies
+        self.hist_sb_change_count = -1
         self.hist_mark = tb.create_mark('history', tb.get_end_iter(), False)
 
-        self.ihist_prefix = None
-        self.ihist_inputentry_changed_id = None
-        self.ihist_mark = tb.create_mark('ihistory', tb.get_end_iter(), False)
-
-    def iter_backward_to_tag(self, it, tag):
-        """Move the textiter backward to a beginning of a tag.
-        return True if there was one.
-        """
-        tb = self.textbuffer
-        r = it.backward_to_tag_toggle(tag)
-        if r and it.ends_tag(tag):
-            r = it.backward_to_tag_toggle(tag)
-        return r
-
-    def iter_forward_to_tag(self, it, tag):
-        """Move the textiter forward to a beginning of a tag.
-        return True if there was one.
-        """
-        tb = self.textbuffer
-        r = it.forward_to_tag_toggle(tag)
-        if r and it.ends_tag(tag):
-            r = it.forward_to_tag_toggle(tag)
-        if it.equal(tb.get_end_iter()):
-            r = False
-        return r
-
     def iter_get_command(self, it, only_first_line=False):
-        """Get a textiter placed at the beginning of a first_prompt.
-        Return the command at that prompt.
+        """Get a textiter placed inside (or at the end of) a COMMAND tag.
+        Return the text of the tag which doesn't have the PROMPT tag.
         """
         tb = self.textbuffer
-        first_prompt = tb.get_tag_table().lookup(FIRST_PROMPT)
+        prompt = tb.get_tag_table().lookup(PROMPT)
         command = tb.get_tag_table().lookup(COMMAND)
-        it_next_1st = it.copy()
-        self.iter_forward_to_tag(it_next_1st, first_prompt)
+
         it = it.copy()
-        s = ''
-        r = it.forward_to_tag_toggle(command)
-        if not r:
-            # We are at the last prompt
+        if not it.begins_tag(command):
+            it.backward_to_tag_toggle(command)
+            assert it.begins_tag(command)
+        it_end = it.copy(); it_end.forward_to_tag_toggle(command)
+        if it.has_tag(prompt):
+            it.forward_to_tag_toggle(prompt)
+        if it.compare(it_end) >= 0:
+            # nothing but prompt
             return ''
-        assert it.begins_tag(command)
-        while it.compare(it_next_1st) < 0:
+        r = []
+        while True:
             it2 = it.copy()
-            it2.forward_to_tag_toggle(command)
-            s += tb.get_text(it, it2)
+            it2.forward_to_tag_toggle(prompt)
+            if it2.compare(it_end) >= 0:
+                it2 = it.copy()
+                it2.forward_to_tag_toggle(command)
+                r.append(tb.get_text(it, it2))
+                break
+            r.append(tb.get_text(it, it2))
             if only_first_line:
                 break
             it = it2
-            it.forward_to_tag_toggle(command)
-        return s
+            it.forward_to_tag_toggle(prompt)
+            if it.compare(it_end) >= 0:
+                break
+        return ''.join(r)
 
     def on_textview_return(self):
         # Copy the current command to the sourceview
         tb = self.textbuffer
-        first_prompt = tb.get_tag_table().lookup(FIRST_PROMPT)
+        command = tb.get_tag_table().lookup(COMMAND)
+
         it = tb.get_iter_at_mark(tb.get_insert())
-        if not it.begins_tag(first_prompt):
-            self.iter_backward_to_tag(it, first_prompt)
+        if not it.has_tag(command) and not it.ends_tag(command):
+            gdk.beep()
+            return True
         s = self.iter_get_command(it)
         if not s:
             gdk.beep()
@@ -556,90 +530,53 @@ class DreamPie(SimpleGladeApp):
         if keyval_name == 'Return' and event.state == 0:
             return self.on_textview_return()
 
-    def on_history_sb_changed(self, widget):
-        self.hist_prefix = None
-        self.sourcebuffer.disconnect(self.hist_sourcebuffer_changed_id)
-        self.hist_sourcebuffer_changed_id = None
-
-    def on_ihistory_ie_changed(self, widget):
-        self.ihist_prefix = None
-        self.inputentry.disconnect(self.ihist_inputentry_changed_id)
-        self.ihist_inputentry_changed_id = None
-
     def on_history_up(self, widget):
         if self.textview.is_focus():
             tb = self.textbuffer
-            first_prompt = tb.get_tag_table().lookup(FIRST_PROMPT)
+            command = tb.get_tag_table().lookup(COMMAND)
             insert = tb.get_insert()
             it = tb.get_iter_at_mark(insert)
-            r = self.iter_backward_to_tag(it, first_prompt)
-            if r:
-                self.textbuffer.place_cursor(it)
-                self.textview.scroll_mark_onscreen(insert)
-            else:
-                gdk.beep()
+            it.backward_to_tag_toggle(command)
+            if it.ends_tag(command):
+                it.backward_to_tag_toggle(command)
+            self.textbuffer.place_cursor(it)
+            self.textview.scroll_mark_onscreen(insert)
 
         elif self.sourceview.is_focus():
             tb = self.textbuffer
             sb = self.sourcebuffer
-            first_prompt = tb.get_tag_table().lookup(FIRST_PROMPT)
-            if self.hist_prefix is None:
-                # Don't allow prefixes of more than one line
+            command = tb.get_tag_table().lookup(COMMAND)
+            if self.hist_sb_change_count != self.sourcebuffer_change_count:
                 if sb.get_end_iter().get_line() != 0:
+                    # Don't allow prefixes of more than one line
                     gdk.beep()
                     return
                 self.hist_prefix = sb.get_text(sb.get_start_iter(),
                                                sb.get_end_iter())
+                self.hist_sb_change_count = self.sourcebuffer_change_count
                 tb.move_mark(self.hist_mark, tb.get_end_iter())
             it = tb.get_iter_at_mark(self.hist_mark)
+            if it.is_start():
+                gdk.beep()
+                return
             while True:
-                r = self.iter_backward_to_tag(it, first_prompt)
-                if not r:
+                it.backward_to_tag_toggle(command)
+                if it.ends_tag(command):
+                    it.backward_to_tag_toggle(command)
+                if not it.begins_tag(command):
                     gdk.beep()
                     break
                 first_line = self.iter_get_command(it, only_first_line=True)
                 if first_line and first_line.startswith(self.hist_prefix):
                     command = self.iter_get_command(it)
-                    if self.hist_sourcebuffer_changed_id is not None:
-                        # There is no callback if we haven't changed the text
-                        # yet.
-                        sb.disconnect(self.hist_sourcebuffer_changed_id)
                     sb.set_text(command)
                     sb.place_cursor(sb.get_end_iter())
-                    self.hist_sourcebuffer_changed_id = (
-                        sb.connect('changed', self.on_history_sb_changed))
+                    self.hist_sb_change_count = self.sourcebuffer_change_count
                     tb.move_mark(self.hist_mark, it)
                     break
-
-        elif self.inputentry.is_focus():
-            tb = self.textbuffer
-            stdin = tb.get_tag_table().lookup(STDIN)
-            ie = self.inputentry
-            if self.ihist_prefix is None:
-                self.ihist_prefix = ie.get_text()
-                tb.move_mark(self.ihist_mark, tb.get_end_iter())
-            it = tb.get_iter_at_mark(self.ihist_mark)
-            while True:
-                r = self.iter_backward_to_tag(it, stdin)
-                if not r:
+                if it.is_start():
                     gdk.beep()
-                    break
-                command = self.iter_get_stdin(it)
-                # XXX
-                first_line = self.iter_get_command(it, only_first_line=True)
-                if first_line and first_line.startswith(self.hist_prefix):
-                    command = self.iter_get_command(it)
-                    if self.hist_sourcebuffer_changed_id is not None:
-                        # There is no callback if we haven't changed the text
-                        # yet.
-                        sb.disconnect(self.hist_sourcebuffer_changed_id)
-                    sb.set_text(command)
-                    sb.place_cursor(sb.get_end_iter())
-                    self.hist_sourcebuffer_changed_id = (
-                        sb.connect('changed', self.on_history_sb_changed))
-                    tb.move_mark(self.hist_mark, it)
-                    break
-            
+                    return
 
         else:
             gdk.beep()
@@ -647,54 +584,50 @@ class DreamPie(SimpleGladeApp):
     def on_history_down(self, widget):
         if self.textview.is_focus():
             tb = self.textbuffer
-            first_prompt = tb.get_tag_table().lookup(FIRST_PROMPT)
+            command = tb.get_tag_table().lookup(COMMAND)
             insert = tb.get_insert()
             it = tb.get_iter_at_mark(insert)
-            r = self.iter_forward_to_tag(it, first_prompt)
-            if r:
-                self.textbuffer.place_cursor(it)
-                self.textview.scroll_mark_onscreen(insert)
-            else:
-                gdk.beep()
+            it.forward_to_tag_toggle(command)
+            if it.ends_tag(command):
+                it.forward_to_tag_toggle(command)
+            self.textbuffer.place_cursor(it)
+            self.textview.scroll_mark_onscreen(insert)
 
         elif self.sourceview.is_focus():
             tb = self.textbuffer
-            first_prompt = tb.get_tag_table().lookup(FIRST_PROMPT)
             sb = self.sourcebuffer
-            if self.hist_prefix is None:
+            command = tb.get_tag_table().lookup(COMMAND)
+            if self.hist_sb_change_count != self.sourcebuffer_change_count:
                 gdk.beep()
                 return
             it = tb.get_iter_at_mark(self.hist_mark)
-            if it.equal(tb.get_end_iter()):
-                gdk.beep()
-                return
             while True:
-                r = self.iter_forward_to_tag(it, first_prompt)
-                if not r:
-                    # Write the prefix in the source buffer
-                    sb.disconnect(self.hist_sourcebuffer_changed_id)
+                it.forward_to_tag_toggle(command)
+                it.forward_to_tag_toggle(command)
+                if not it.begins_tag(command):
+                    # Return the source buffer to the prefix and everything
+                    # to initial state
                     sb.set_text(self.hist_prefix)
                     sb.place_cursor(sb.get_end_iter())
-                    self.hist_sourcebuffer_changed_id = (
-                        sb.connect('changed', self.on_history_sb_changed))
-                    tb.move_mark(self.hist_mark, tb.get_end_iter())
+                    # Since we change the text and not update the change count,
+                    # it's like the user did it and hist_prefix is not longer
+                    # meaningful.
                     break
                 first_line = self.iter_get_command(it, only_first_line=True)
                 if first_line and first_line.startswith(self.hist_prefix):
                     command = self.iter_get_command(it)
-                    sb.disconnect(self.hist_sourcebuffer_changed_id)
                     sb.set_text(command)
                     sb.place_cursor(sb.get_end_iter())
-                    self.hist_sourcebuffer_changed_id = (
-                        sb.connect('changed', self.on_history_sb_changed))
+                    self.hist_sb_change_count = self.sourcebuffer_change_count
                     tb.move_mark(self.hist_mark, it)
                     break
+
         else:
             gdk.beep()
 
     # Subprocess
 
-    def start_subp(self):
+    def start_subp(self, is_msg_on_success):
         # Find a socket to listen to
         ports = range(10000, 10100)
         random.shuffle(ports)
@@ -716,16 +649,22 @@ class DreamPie(SimpleGladeApp):
         debug("Spawning subprocess")
         env = os.environ.copy()
         env['PYTHONUNBUFFERED'] = '1'
-        self.popen = popen = Popen([self.executable, 'subprocess', str(port)],
-                                    stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                                    close_fds=True, env=env)
+        popen = Popen([self.executable, 'subprocess', str(port)],
+                       stdin=PIPE, stdout=PIPE, stderr=PIPE,
+                       close_fds=True, env=env)
         debug("Waiting for an answer")
         s.listen(1)
         self.sock, addr = s.accept()
         debug("Connected to addr %r." % (addr,))
         s.close()
+        self.popen = popen
 
-        self.write('>>> ', FIRST_PROMPT)
+        if is_msg_on_success:
+            self.write(
+                '\n==================== New Session ====================\n',
+                MESSAGE)
+
+        self.write('>>> ', COMMAND, PROMPT)
 
         # I know that polling isn't the best way, but on Windows you have
         # no choice, and it allows us to do it all by ourselves, not use
@@ -738,8 +677,10 @@ class DreamPie(SimpleGladeApp):
         # Check if exited
         rc = popen.poll()
         if rc is not None:
-            print 'Process terminated with rc %r' % rc
-            return False
+            debug("Process terminated with rc %r" % rc)
+            self.popen = None
+            self.start_subp(is_msg_on_success=True)
+            return True
 
         # Read from stdout, stderr, and socket
         ready, _, _ = select([popen.stdout, popen.stderr, self.sock], [], [], 0)
@@ -768,6 +709,20 @@ class DreamPie(SimpleGladeApp):
 
         return True
 
+    def on_restart_subprocess(self, widget):
+        # Send SIGABRT, and if the process didn't terminate within 1 second,
+        # send SIGKILL.
+        os.kill(self.popen.pid, signal.SIGABRT)
+        killtime = time.time()
+        while True:
+            rc = self.popen.poll()
+            if rc is not None:
+                break
+            if time.time() - killtime > 1:
+                os.kill(self.popen.pid, signal.SIGKILL)
+                break
+            time.sleep(0.1)
+
     def on_stdout_recv(self, data):
         self.write(data, STDOUT)
 
@@ -779,21 +734,17 @@ class DreamPie(SimpleGladeApp):
 
         is_ok, exc_info = object
         if not is_ok:
-            self.write('Exception: %s\n' % str(exc_info), EXCEPTION)
+            self.write(exc_info, EXCEPTION)
             
-        self.write('>>> ', FIRST_PROMPT)
+        self.write('>>> ', COMMAND, PROMPT)
         self.is_executing = False
-        had_focus = self.inputentry.is_focus()
-        self.hide_inputentry()
-        if had_focus:
-            self.sourceview.grab_focus()
-        self.update_menuitem_switch_input()
+        self.stdin_was_sent = False
+        self.menuitem_execute.props.visible = True
+        self.menuitem_stdin.props.visible = False
 
     def on_execute_command(self, widget):
         if self.is_executing:
-            self.set_sourcebuffer_status(
-                _('Another command is currently being executed.'))
-            gdk.beep()
+            self.send_stdin()
         elif self.sourcebuffer.get_char_count() == 0:
             gdk.beep()
         else:

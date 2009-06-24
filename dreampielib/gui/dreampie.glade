@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Tue Jun 10 11:26:55 2008 -->
+<!--Generated with glade3 3.4.5 on Sun Aug 31 17:07:12 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="window_main">
     <property name="title" translatable="yes">DreamPie</property>
@@ -117,10 +117,19 @@
                   <widget class="GtkMenu" id="menu4">
                     <property name="visible">True</property>
                     <child>
-                      <widget class="GtkMenuItem" id="menuitem6">
+                      <widget class="GtkMenuItem" id="menuitem_execute">
                         <property name="visible">True</property>
                         <property name="tooltip" translatable="yes">Execute the current command in the shell</property>
                         <property name="label" translatable="yes">Execute command</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_execute_command"/>
+                        <accelerator key="Return" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem_stdin">
+                        <property name="tooltip" translatable="yes">Write input to the process</property>
+                        <property name="label" translatable="yes">Write input</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_execute_command"/>
                         <accelerator key="Return" modifiers="GDK_CONTROL_MASK" signal="activate"/>
@@ -136,24 +145,13 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="menuitem_show_inputentry">
+                      <widget class="GtkMenuItem" id="menuitem6">
                         <property name="visible">True</property>
-                        <property name="sensitive">False</property>
-                        <property name="tooltip" translatable="yes">Show the input entry, which lets you to send input to the subprocess.</property>
-                        <property name="label" translatable="yes">Switch to input entry</property>
+                        <property name="tooltip" translatable="yes">Restart the subprocess, and start with a fresh one. Be warned that all your variables will be lost!</property>
+                        <property name="label" translatable="yes">Restart subprocess</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_show_input_entry"/>
-                        <accelerator key="I" modifiers="GDK_CONTROL_MASK" signal="activate"/>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkMenuItem" id="menuitem_hide_inputentry">
-                        <property name="sensitive">False</property>
-                        <property name="tooltip" translatable="yes">Show the command entry, which lets you edit commands to execute</property>
-                        <property name="label" translatable="yes">Switch to command entry</property>
-                        <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_hide_inputentry"/>
-                        <accelerator key="I" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                        <signal name="activate" handler="on_restart_subprocess"/>
+                        <accelerator key="F6" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>

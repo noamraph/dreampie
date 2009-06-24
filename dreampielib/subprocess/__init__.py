@@ -1,6 +1,9 @@
 import sys
 import socket
 import codeop
+from cStringIO import StringIO
+import linecache
+import traceback
 
 from ..common.objectstream import send_object, recv_object
 from .split_to_singles import split_to_singles
@@ -17,6 +20,7 @@ def main(port):
 
     compile = codeop.CommandCompiler()
     locs = {}
+    gid = 0
 
     while True:
         source = recv_object(sock)
@@ -25,8 +29,8 @@ def main(port):
         # more if there isn't a newline at the end
         split_source[-1] += '\n'
         debug(repr(split_source))
-        split_code = []
         line_count = 0
+        # Compile to check for syntax errors
         for src in split_source:
             try:
                 c = compile(src, '<pyshell>', 'single')
@@ -39,14 +43,41 @@ def main(port):
                     send_object(sock, (False, None))
                     break
                 else:
-                    split_code.append(c)
                     line_count += src.count('\n')
         else:
             send_object(sock, (True, None))
-            try:
-                for c in split_code:
+            for src in split_source:
+                # We compile again, so as not to put into linecache code
+                # which had no effect
+                filename = '<pyshell#%d>' % gid
+                gid += 1
+                lines = src.split("\n")
+                linecache.cache[filename] = len(src)+1, None, lines, filename
+                c = compile(src, filename, 'single')
+                try:
                     exec c in locs
-            except (Exception, KeyboardInterrupt), e:
-                send_object(sock, (False, str(e)))
+                except (Exception, KeyboardInterrupt), e:
+                    sys.stdout.flush()
+                    linecache.checkcache()
+                    efile = StringIO()
+                    typ, val, tb = excinfo = sys.exc_info()
+                    sys.last_type, sys.last_value, sys.last_traceback = excinfo
+                    tbe = traceback.extract_tb(tb)
+                    my_filename = sys._getframe().f_code.co_filename
+                    if tbe[-1][0] != my_filename:
+                        # If the last entry is from this file, don't remove
+                        # anything. Otherwise, remove lines before the current
+                        # frame.
+                        for i in xrange(len(tbe)-2, -1, -1):
+                            if tbe[i][0] == my_filename:
+                                tbe = tbe[i+1:]
+                                break
+                    print>>efile, 'Traceback (most recent call last):'
+                    traceback.print_list(tbe, file=efile)
+                    lines = traceback.format_exception_only(typ, val)
+                    for line in lines:
+                        print>>efile, line,
+                    send_object(sock, (False, efile.getvalue()))
+                    break
             else:
                 send_object(sock, (True, None))
