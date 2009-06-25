@@ -123,10 +123,13 @@ class Subprocess(object):
 
         return True
 
-    def call(self, funcname, *args):
-        send_object(self._sock, (funcname,)+args)
-        r = recv_object(self._sock)
-        return r
+    def send_object(self, obj):
+        """Send an object to the subprocess"""
+        send_object(self._sock, obj)
+
+    def recv_object(self):
+        """Wait for an object from the subprocess and return it"""
+        return recv_object(self._sock)
 
     def write(self, data):
         """Write data to stdin"""
