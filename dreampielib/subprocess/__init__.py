@@ -4,6 +4,7 @@ import codeop
 from cStringIO import StringIO
 import linecache
 import traceback
+import types
 
 from ..common.objectstream import send_object, recv_object
 from .split_to_singles import split_to_singles
@@ -18,8 +19,13 @@ def main(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(('localhost', port))
 
+    # Trick things like pdb into thinking that the namespace we create is
+    # the main module
+    mainmodule = types.ModuleType('__name__')
+    locs = mainmodule.__dict__
+    sys.modules['__main__'] = mainmodule
+
     compile = codeop.CommandCompiler()
-    locs = {}
     gid = 0
 
     while True:
