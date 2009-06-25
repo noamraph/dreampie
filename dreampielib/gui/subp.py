@@ -1,5 +1,6 @@
 __all__ = ['Subprocess']
 
+import sys
 import os
 import time
 import signal
@@ -68,7 +69,10 @@ class Subprocess(object):
         debug("Spawning subprocess")
         env = os.environ.copy()
         env['PYTHONUNBUFFERED'] = '1'
-        popen = Popen([self._executable, 'subprocess', str(port)],
+        if sys.stdout.encoding:
+            env['PYTHONIOENCODING'] = sys.stdout.encoding
+        popen = Popen([sys.executable,
+                       self._executable, 'subprocess', str(port)],
                        stdin=PIPE, stdout=PIPE, stderr=PIPE,
                        close_fds=True, env=env)
         debug("Waiting for an answer")

@@ -1,7 +1,7 @@
 import sys
 import socket
 import codeop
-from cStringIO import StringIO
+from StringIO import StringIO
 import linecache
 import traceback
 import types

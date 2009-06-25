@@ -160,6 +160,10 @@ class DreamPie(SimpleGladeApp):
         self.sourceview.connect('focus-in-event', self.on_sourceview_focus_in)
         self.sourceview.grab_focus()
 
+    def sb_get_text(self, *args):
+        # Unfortunately, PyGTK returns utf-8 encoded byte strings...
+        return self.sourcebuffer.get_text(*args).decode('utf8')
+
     def on_textview_focus_in(self, widget, event):
         # Clear the selection of the sourcebuffer
         self.sourcebuffer.move_mark(self.sourcebuffer.get_selection_bound(),
@@ -183,7 +187,7 @@ class DreamPie(SimpleGladeApp):
         """
         sb = self.sourcebuffer
         tb = self.textbuffer
-        source = sb.get_text(sb.get_start_iter(), sb.get_end_iter())
+        source = self.sb_get_text(sb.get_start_iter(), sb.get_end_iter())
         self.subp.send_object(('exec', source))
         is_ok, syntax_error_info = self.subp.recv_object()
         if not is_ok:
@@ -212,7 +216,7 @@ class DreamPie(SimpleGladeApp):
     def send_stdin(self):
         """Send the contents of the sourcebuffer as stdin."""
         sb = self.sourcebuffer
-        s = sb.get_text(sb.get_start_iter(), sb.get_end_iter())
+        s = self.sb_get_text(sb.get_start_iter(), sb.get_end_iter())
         if not s.endswith('\n'):
             s += '\n'
         self.write(s[:-1], COMMAND, STDIN)
@@ -235,8 +239,8 @@ class DreamPie(SimpleGladeApp):
         if (insert_iter.equal(sb.get_end_iter())
             and insert_iter.get_line() == 0
             and insert_iter.get_offset() != 0
-            and not sb.get_text(sb.get_start_iter(),
-                                insert_iter).endswith(' ')):
+            and not self.sb_get_text(sb.get_start_iter(),
+                                     insert_iter).endswith(' ')):
             if not self.is_executing:
                 is_ok = self.execute_source(warn=False)
                 if is_ok:
@@ -255,7 +259,7 @@ class DreamPie(SimpleGladeApp):
         sb = self.sourcebuffer
         insert = sb.get_iter_at_mark(sb.get_insert())
         insert_linestart = sb.get_iter_at_line(insert.get_line())
-        line = sb.get_text(insert_linestart, insert)
+        line = self.sb_get_text(insert_linestart, insert)
 
         if not line.strip():
             # We are at the beginning of a line, so indent - forward to next
@@ -279,7 +283,7 @@ class DreamPie(SimpleGladeApp):
         sb = self.sourcebuffer
         insert = sb.get_iter_at_mark(sb.get_insert())
         insert_linestart = sb.get_iter_at_line(insert.get_line())
-        line = sb.get_text(insert_linestart, insert)
+        line = self.sb_get_text(insert_linestart, insert)
 
         if line and not line.strip():
             # There are only space before us, so remove spaces up to last
