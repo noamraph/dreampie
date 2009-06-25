@@ -129,7 +129,10 @@ class History(object):
                     gdk.beep()
                     break
                 first_line = self._iter_get_command(it, only_first_line=True)
-                if first_line and first_line.startswith(self.hist_prefix):
+                if (first_line
+                    and first_line.startswith(self.hist_prefix)
+                    and len(first_line) > 2):
+                    
                     command = self._iter_get_command(it)
                     sb.set_text(command)
                     sb.place_cursor(sb.get_end_iter())
@@ -177,7 +180,10 @@ class History(object):
                     # meaningful.
                     break
                 first_line = self._iter_get_command(it, only_first_line=True)
-                if first_line and first_line.startswith(self.hist_prefix):
+                if (first_line
+                    and first_line.startswith(self.hist_prefix)
+                    and len(first_line) > 2):
+                    
                     command = self._iter_get_command(it)
                     sb.set_text(command)
                     sb.place_cursor(sb.get_end_iter())

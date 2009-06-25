@@ -272,7 +272,7 @@ class DreamPie(SimpleGladeApp):
 
         if show_execution_tip:
             self.status_bar.set_status(_(
-                "Tip: To execute your command, use Ctrl+Enter."))
+                "Tip: To execute your code, use Ctrl+Enter."))
         return r
 
     @sourceview_keyhandler('Tab', 0)
