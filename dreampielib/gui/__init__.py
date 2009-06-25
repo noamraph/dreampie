@@ -2,12 +2,11 @@
 import sys
 import os
 import time
-import signal
 import tempfile
-from subprocess import Popen, PIPE
-from select import select
-import socket
-import random
+
+import logging
+from logging import debug
+logging.basicConfig(format="dreampie: %(message)s", level=logging.DEBUG)
 
 import pygtk
 pygtk.require('2.0')
@@ -18,7 +17,6 @@ import pango
 import gtksourceview2
 
 from .SimpleGladeApp import SimpleGladeApp
-from ..common.objectstream import send_object, recv_object
 from .write_command import write_command
 from .newline_and_indent import newline_and_indent
 
@@ -26,6 +24,7 @@ from .selection import Selection
 from .status_bar import StatusBar
 from .vadj_to_bottom import VAdjToBottom
 from .history import History
+from .subp import Subprocess
 
 # Tags and colors
 
@@ -51,11 +50,6 @@ colors = {
 
 INDENT_WIDTH = 4
 
-IS_DEBUG = False
-def debug(s):
-    if IS_DEBUG:
-        print >> sys.stderr, s
-
 # Maybe someday we'll want translations...
 _ = lambda s: s
 
@@ -70,8 +64,6 @@ def sourceview_keyhandler(keyval, state):
 
 class DreamPie(SimpleGladeApp):
     def __init__(self, executable):
-        self.executable = executable
-        
         gladefile = os.path.join(os.path.dirname(__file__),
                                  'dreampie.glade')
         SimpleGladeApp.__init__(self, gladefile)
@@ -93,13 +85,16 @@ class DreamPie(SimpleGladeApp):
 
         self.history = History(self.textview, self.sourceview)
 
-        self.is_connected = False
-        self.sock = self.popen = None
+        self.subp = Subprocess(
+            executable,
+            self.on_stdout_recv, self.on_stderr_recv, self.on_object_recv,
+            self.on_subp_restarted)
         # Is the subprocess executing a command
         self.is_executing = False
         # Was stdin sent during current command
         self.stdin_was_sent = False
-        self.start_subp(is_msg_on_success=False)
+
+        self.show_welcome()
 
         self.set_window_default_size()
         self.window_main.show_all()
@@ -189,8 +184,7 @@ class DreamPie(SimpleGladeApp):
         sb = self.sourcebuffer
         tb = self.textbuffer
         source = sb.get_text(sb.get_start_iter(), sb.get_end_iter())
-        send_object(self.sock, source)
-        is_ok, syntax_error_info = recv_object(self.sock)
+        is_ok, syntax_error_info = self.subp.call('exec', source)
         if not is_ok:
             if warn:
                 if syntax_error_info:
@@ -223,7 +217,7 @@ class DreamPie(SimpleGladeApp):
         self.write(s[:-1], COMMAND, STDIN)
         self.write('\n')
         self.vadj_to_bottom.scroll_to_bottom()
-        self.popen.stdin.write(s)
+        self.subp.write(s)
         self.stdin_was_sent = True
         sb.delete(sb.get_start_iter(), sb.get_end_iter())
 
@@ -321,101 +315,19 @@ class DreamPie(SimpleGladeApp):
 
     # Subprocess
 
-    def start_subp(self, is_msg_on_success):
-        # Find a socket to listen to
-        ports = range(10000, 10100)
-        random.shuffle(ports)
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        for port in ports:
-            debug("Trying to listen on port %d..." % port)
-            try:
-                s.bind(('localhost', port))
-            except socket.error:
-                debug("Failed.")
-                pass
-            else:
-                debug("Ok.")
-                break
-        else:
-            raise IOError("Couldn't find a port to bind to")
-        # Now the socket is bound to port.
-
-        debug("Spawning subprocess")
-        env = os.environ.copy()
-        env['PYTHONUNBUFFERED'] = '1'
-        popen = Popen([self.executable, 'subprocess', str(port)],
-                       stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                       close_fds=True, env=env)
-        debug("Waiting for an answer")
-        s.listen(1)
-        self.sock, addr = s.accept()
-        debug("Connected to addr %r." % (addr,))
-        s.close()
-        self.popen = popen
-
-        if is_msg_on_success:
-            self.write(
-                '\n==================== New Session ====================\n',
-                MESSAGE)
-
+    def show_welcome(self):
+        self.write("Python %s on %s\n" % (sys.version, sys.platform),
+                   MESSAGE)
         self.write('>>> ', COMMAND, PROMPT)
 
-        # I know that polling isn't the best way, but on Windows you have
-        # no choice, and it allows us to do it all by ourselves, not use
-        # gobject's functionality.
-        gobject.timeout_add(10, self.manage_subp)
-
-    def manage_subp(self):
-        popen = self.popen
-
-        # Check if exited
-        rc = popen.poll()
-        if rc is not None:
-            debug("Process terminated with rc %r" % rc)
-            self.popen = None
-            self.start_subp(is_msg_on_success=True)
-            return True
-
-        # Read from stdout, stderr, and socket
-        ready, _, _ = select([popen.stdout, popen.stderr, self.sock], [], [], 0)
-
-        if popen.stdout in ready:
-            r = []
-            while True:
-                r.append(os.read(popen.stdout.fileno(), 8192))
-                if not select([popen.stdout], [], [], 0)[0]:
-                    break
-            r = ''.join(r)
-            self.on_stdout_recv(r)
-                
-        if popen.stderr in ready:
-            r = []
-            while True:
-                r.append(os.read(popen.stderr.fileno(), 8192))
-                if not select([popen.stderr], [], [], 0)[0]:
-                    break
-            r = ''.join(r)
-            self.on_stderr_recv(r)
-        
-        if self.sock in ready:
-            obj = recv_object(self.sock)
-            self.on_object_recv(obj)
-
-        return True
+    def on_subp_restarted(self):
+        self.write(
+            '\n==================== New Session ====================\n',
+            MESSAGE)
+        self.write('>>> ', COMMAND, PROMPT)
 
     def on_restart_subprocess(self, widget):
-        # Send SIGABRT, and if the process didn't terminate within 1 second,
-        # send SIGKILL.
-        os.kill(self.popen.pid, signal.SIGABRT)
-        killtime = time.time()
-        while True:
-            rc = self.popen.poll()
-            if rc is not None:
-                break
-            if time.time() - killtime > 1:
-                os.kill(self.popen.pid, signal.SIGKILL)
-                break
-            time.sleep(0.1)
+        self.subp.kill()
 
     def on_stdout_recv(self, data):
         self.write(data, STDOUT)
@@ -447,7 +359,7 @@ class DreamPie(SimpleGladeApp):
 
     def on_interrupt(self, widget):
         if self.is_executing:
-            os.kill(self.popen.pid, signal.SIGINT)
+            self.subp.interrupt()
         else:
             self.status_bar.set_status(
                 _("A command isn't being executed currently"))

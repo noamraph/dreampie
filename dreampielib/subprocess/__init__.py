@@ -10,9 +10,9 @@ from .split_to_singles import split_to_singles
 
 # import rpdb2; rpdb2.start_embedded_debugger('a')
 
-debug_f = open('/tmp/dreampie_subp_debug', 'a', 0)
-def debug(s):
-    print >> debug_f, s
+import logging
+from logging import debug
+logging.basicConfig(filename='/tmp/dreampie_subp_log', level=logging.DEBUG)
 
 def main(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -23,12 +23,12 @@ def main(port):
     gid = 0
 
     while True:
-        source = recv_object(sock)
+        (funcname, source) = recv_object(sock)
+        assert funcname == 'exec'
         split_source = split_to_singles(source)
         # This added newline is because sometimes the CommandCompiler wants
         # more if there isn't a newline at the end
         split_source[-1] += '\n'
-        debug(repr(split_source))
         line_count = 0
         # Compile to check for syntax errors
         for src in split_source:
