@@ -72,9 +72,10 @@
                   <widget class="GtkMenu" id="menu2">
                     <property name="visible">True</property>
                     <child>
-                      <widget class="GtkImageMenuItem" id="imagemenuitem6">
+                      <widget class="GtkImageMenuItem" id="menuitem_cut">
                         <property name="label">gtk-cut</property>
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_cut"/>
@@ -91,8 +92,9 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="menuitem9">
+                      <widget class="GtkMenuItem" id="menuitem_copy_only_commands">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="tooltip" translatable="yes">Copy only the commands, without output or leading dots.</property>
                         <property name="label" translatable="yes">Copy only commands</property>
                         <property name="use_underline">True</property>
@@ -101,7 +103,7 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="imagemenuitem8">
+                      <widget class="GtkImageMenuItem" id="menuitem_paste">
                         <property name="label">gtk-paste</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>

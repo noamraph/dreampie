@@ -113,7 +113,9 @@ class DreamPie(SimpleGladeApp):
         return self.selection.paste()
 
     def on_is_something_selected_changed(self, is_something_selected):
+        self.menuitem_cut.props.sensitive = is_something_selected
         self.menuitem_copy.props.sensitive = is_something_selected
+        self.menuitem_copy_only_commands.props.sensitive = is_something_selected
         self.menuitem_interrupt.props.sensitive = not is_something_selected
 
     # Source buffer, Text buffer

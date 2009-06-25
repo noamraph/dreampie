@@ -76,7 +76,10 @@ class Selection(object):
                     r.append('\n')
             it = it2
         r = ''.join(r)
-        self.clipboard.set_text(r)
+        if not r:
+            gdk.beep()
+        else:
+            self.clipboard.set_text(r)
 
     def paste(self):
         if self.sourceview.is_focus():
