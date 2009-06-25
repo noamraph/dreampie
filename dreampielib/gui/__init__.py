@@ -101,13 +101,16 @@ class DreamPie(SimpleGladeApp):
     # Selection
 
     def on_cut(self, widget):
-        return self.selection.on_cut(widget)
+        return self.selection.cut()
 
     def on_copy(self, widget):
-        return self.selection.on_copy(widget)
+        return self.selection.copy()
+
+    def on_copy_only_commands(self, widget):
+        return self.selection.copy_only_commands()
 
     def on_paste(self, widget):
-        return self.selection.on_paste(widget)
+        return self.selection.paste()
 
     def on_is_something_selected_changed(self, is_something_selected):
         self.menuitem_copy.props.sensitive = is_something_selected

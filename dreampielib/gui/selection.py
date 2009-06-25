@@ -3,6 +3,8 @@ __all__ = ['Selection']
 import gtk
 from gtk import gdk
 
+from .tags import COMMAND, PROMPT
+
 class Selection(object):
     """
     Handle clipboard events.
@@ -28,13 +30,13 @@ class Selection(object):
                                  or self.sourcebuffer.get_has_selection())
         self.on_is_something_selected_changed(is_something_selected)
 
-    def on_cut(self, widget):
+    def cut(self):
         if self.sourcebuffer.get_has_selection():
             self.sourcebuffer.cut_clipboard(self.clipboard, True)
         else:
             gdk.beep()
 
-    def on_copy(self, widget):
+    def copy(self):
         if self.textbuffer.get_has_selection():
             self.textbuffer.copy_clipboard(self.clipboard)
         elif self.sourcebuffer.get_has_selection():
@@ -42,7 +44,41 @@ class Selection(object):
         else:
             gdk.beep()
 
-    def on_paste(self, widget):
+    def copy_only_commands(self):
+        if self.sourcebuffer.get_has_selection():
+            self.sourcebuffer.copy_clipboard(self.clipboard)
+            return
+        if not self.textbuffer.get_has_selection():
+            gdk.beep()
+            return
+        # We need to copy the text which has the COMMAND tag, doesn't have
+        # the PROMPT tag, and is selected.
+        # We need to remember that the trailing newline of commands isn't
+        # marked, but we need to copy it.
+        tb = self.textbuffer
+        command = tb.get_tag_table().lookup(COMMAND)
+        prompt = tb.get_tag_table().lookup(PROMPT)
+        r = []
+        it, sel_end = tb.get_selection_bounds()
+        reached_end = False
+        while not reached_end:
+            it2 = it.copy()
+            it2.forward_to_tag_toggle(None)
+            if it2.compare(sel_end) >= 0:
+                it2 = sel_end.copy()
+                reached_end = True
+            if it.has_tag(command) and not it.has_tag(prompt):
+                r.append(tb.get_text(it, it2).decode('utf8'))
+                if (not reached_end
+                    and not it2.has_tag(command)
+                    and it2.get_char() == '\n'):
+                    
+                    r.append('\n')
+            it = it2
+        r = ''.join(r)
+        self.clipboard.set_text(r)
+
+    def paste(self):
         if self.sourceview.is_focus():
             self.sourcebuffer.paste_clipboard(self.clipboard, None, True)
         else:
