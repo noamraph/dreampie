@@ -22,6 +22,10 @@ from ..common.objectstream import send_object, recv_object
 from .write_command import write_command
 from . import PyParse
 
+from .selection import Selection
+from .status_bar import StatusBar
+from .vadj_to_bottom import VAdjToBottom
+
 # Tags and colors
 
 STDIN = 'stdin'; STDOUT = 'stdout'; STDERR = 'stderr'; EXCEPTION = 'exception'
@@ -80,11 +84,13 @@ class DreamPie(SimpleGladeApp):
 
         self.init_sourcebufferview()
 
-        self.init_selection()
+        self.selection = Selection(self,
+                                   self.on_is_something_selected_changed)
 
-        self.init_status()
+        self.status_bar = StatusBar(self, self.statusbar)
 
-        self.init_vadj()
+        self.vadj_to_bottom = VAdjToBottom(self.scrolledwindow_textview
+                                           .get_vadjustment())
 
         self.init_history()
 
@@ -102,86 +108,18 @@ class DreamPie(SimpleGladeApp):
 
     # Selection
 
-    def init_selection(self):
-        self.primary_selection = gtk.Clipboard(selection=gdk.SELECTION_PRIMARY)
-        self.primary_selection.connect('owner-change',
-                                       self.on_selection_changed)
-        self.clipboard = gtk.Clipboard()
-
-    def on_selection_changed(self, clipboard, event):
-        is_something_selected = (self.textbuffer.get_has_selection()
-                                 or self.sourcebuffer.get_has_selection())
-        self.menuitem_copy.props.sensitive = is_something_selected
-        self.menuitem_interrupt.props.sensitive = not is_something_selected
-
     def on_cut(self, widget):
-        if self.sourcebuffer.get_has_selection():
-            self.sourcebuffer.cut_clipboard(self.clipboard, True)
-        else:
-            gdk.beep()
+        return self.selection.on_cut(widget)
 
     def on_copy(self, widget):
-        if self.textbuffer.get_has_selection():
-            self.textbuffer.copy_clipboard(self.clipboard)
-        elif self.sourcebuffer.get_has_selection():
-            self.sourcebuffer.copy_clipboard(self.clipboard)
-        else:
-            gdk.beep()
+        return self.selection.on_copy(widget)
 
     def on_paste(self, widget):
-        if self.sourceview.is_focus():
-            self.sourcebuffer.paste_clipboard(self.clipboard, None, True)
-        else:
-            gdk.beep()
+        return self.selection.on_paste(widget)
 
-    # Status Bar
-
-    def init_status(self):
-        # id of a message displayed in the status bar to be removed when
-        # the contents of the source buffer is changed
-        self.sourcebuffer_status_id = None
-        self.sourcebuffer_changed_handler_id = None
-
-    def set_sourcebuffer_status(self, message):
-        """Set a message in the status bar to be removed when the contents
-        of the source buffer is changed"""
-        if self.sourcebuffer_status_id is not None:
-            self.statusbar.remove(0, self.sourcebuffer_status_id)
-            self.sourcebuffer.disconnect(self.sourcebuffer_changed_handler_id)
-        self.sourcebuffer_status_id = self.statusbar.push(0, message)
-        self.sourcebuffer_changed_handler_id = \
-            self.sourcebuffer.connect('changed', self.clear_sourcebuffer_status)
-
-    def clear_sourcebuffer_status(self, widget):
-        self.statusbar.remove(0, self.sourcebuffer_status_id)
-        self.sourcebuffer_status_id = None
-        self.sourcebuffer.disconnect(self.sourcebuffer_changed_handler_id)
-        self.sourcebuffer_changed_handler_id = None
-
-    # Vertical adjustment
-
-    def init_vadj(self):
-        self.vadj = self.scrolledwindow_textview.get_vadjustment()
-        # These make sure that the textview vadjustment automatically
-        # scrolls if it shows the bottom
-        self.vadj.connect('changed', self.on_vadj_changed)
-        self.vadj.connect('value-changed', self.on_vadj_value_changed)
-        self.vadj_was_at_bottom = self.vadj_is_at_bottom()
-        self.vadj_scroll_to_bottom()
-
-    def vadj_is_at_bottom(self):
-        return self.vadj.value == self.vadj.upper - self.vadj.page_size
-
-    def vadj_scroll_to_bottom(self):
-        self.vadj.set_value(self.vadj.upper - self.vadj.page_size)
-
-    def on_vadj_changed(self, widget):
-        if self.vadj_was_at_bottom and not self.vadj_is_at_bottom():
-            self.vadj_scroll_to_bottom()
-        self.vadj_was_at_bottom = self.vadj_is_at_bottom()
-
-    def on_vadj_value_changed(self, widget):
-        self.vadj_was_at_bottom = self.vadj_is_at_bottom()
+    def on_is_something_selected_changed(self, is_something_selected):
+        self.menuitem_copy.props.sensitive = is_something_selected
+        self.menuitem_interrupt.props.sensitive = not is_something_selected
 
     # Source buffer, Text buffer
 
@@ -271,12 +209,12 @@ class DreamPie(SimpleGladeApp):
                     # Incomplete
                     status_msg = _("Command is incomplete")
                     sb.place_cursor(sb.get_end_iter())
-                self.set_sourcebuffer_status(status_msg)
+                self.status_bar.set_status(status_msg)
                 gdk.beep()
         else:
             write_command(self.write, source.strip())
             sb.delete(sb.get_start_iter(), sb.get_end_iter())
-            self.vadj_scroll_to_bottom()
+            self.vadj_to_bottom.scroll_to_bottom()
             self.is_executing = True
             self.menuitem_execute.props.visible = False
             self.menuitem_stdin.props.visible = True
@@ -290,7 +228,7 @@ class DreamPie(SimpleGladeApp):
             s += '\n'
         self.write(s[:-1], COMMAND, STDIN)
         self.write('\n')
-        self.vadj_scroll_to_bottom()
+        self.vadj_to_bottom.scroll_to_bottom()
         self.popen.stdin.write(s)
         self.stdin_was_sent = True
         sb.delete(sb.get_start_iter(), sb.get_end_iter())
@@ -755,7 +693,7 @@ class DreamPie(SimpleGladeApp):
         if self.is_executing:
             os.kill(self.popen.pid, signal.SIGINT)
         else:
-            self.set_sourcebuffer_status(
+            self.status_bar.set_status(
                 _("A command isn't being executed currently"))
             gdk.beep()
 
