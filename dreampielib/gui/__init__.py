@@ -162,6 +162,9 @@ class DreamPie(SimpleGladeApp):
         # Unfortunately, PyGTK returns utf-8 encoded byte strings...
         return self.sourcebuffer.get_text(*args).decode('utf8')
 
+    def sv_scroll_cursor_onscreen(self):
+        self.sourceview.scroll_mark_onscreen(self.sourcebuffer.get_insert())
+
     def on_textview_focus_in(self, widget, event):
         # Clear the selection of the sourcebuffer
         self.sourcebuffer.move_mark(self.sourcebuffer.get_selection_bound(),
@@ -251,8 +254,26 @@ class DreamPie(SimpleGladeApp):
                 self.send_stdin()
                 return True
                 
+        # If we are after too many newlines, the user probably just wanted to
+        # execute - notify him.
+        # We check if this line is empty and the previous one is.
+        show_execution_tip = False
+        if insert_iter.equal(sb.get_end_iter()):
+            it = sb.get_end_iter()
+            # This goes to the beginning of the line, and another line
+            # backwards, so we get two lines
+            it.backward_lines(1)
+            text = self.sb_get_text(it, sb.get_end_iter())
+            if not text.strip():
+                show_execution_tip = True
+
         # We didn't execute, so newline-and-indent.
-        return newline_and_indent(self.sourceview, INDENT_WIDTH)
+        r = newline_and_indent(self.sourceview, INDENT_WIDTH)
+
+        if show_execution_tip:
+            self.status_bar.set_status(_(
+                "Tip: To execute your command, use Ctrl+Enter."))
+        return r
 
     @sourceview_keyhandler('Tab', 0)
     def on_sourceview_tab(self):
@@ -270,7 +291,7 @@ class DreamPie(SimpleGladeApp):
             # Completion should come here
             gdk.beep()
 
-        self.sourceview.scroll_mark_onscreen(sb.get_insert())
+        self.sv_scroll_cursor_onscreen()
         return True
 
     @sourceview_keyhandler('ISO_Left_Tab', gdk.SHIFT_MASK)
@@ -291,7 +312,7 @@ class DreamPie(SimpleGladeApp):
             delete_from = ((len(line) - 1) // INDENT_WIDTH) * INDENT_WIDTH
             it = sb.get_iter_at_line_offset(insert.get_line(), delete_from)
             sb.delete(it, insert)
-            self.sourceview.scroll_mark_onscreen(sb.get_insert())
+            self.sv_scroll_cursor_onscreen()
             return True
 
         return False
@@ -366,6 +387,7 @@ class DreamPie(SimpleGladeApp):
             return
 
         self.sourcebuffer.insert(self.sourcebuffer.get_start_iter(), rem_stdin)
+        self.sv_scroll_cursor_onscreen()
 
         tb = self.textbuffer
         stdin = tb.get_tag_table().lookup(STDIN)
