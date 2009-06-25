@@ -317,8 +317,11 @@ class DreamPie(SimpleGladeApp):
     # Subprocess
 
     def show_welcome(self):
-        self.write("Python %s on %s\n" % (sys.version, sys.platform),
-                   MESSAGE)
+        s = 'Python %s on %s\n' % (sys.version, sys.platform)
+        s +='Type "copyright", "credits" or "license()" for more information.\n'
+        s += 'DreamPie 0.1\n'
+        self.write(s, MESSAGE)
+
         self.write('>>> ', COMMAND, PROMPT)
 
     def on_subp_restarted(self):
