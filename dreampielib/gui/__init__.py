@@ -91,8 +91,6 @@ class DreamPie(SimpleGladeApp):
             self.on_subp_restarted)
         # Is the subprocess executing a command
         self.is_executing = False
-        # Was stdin sent during current command
-        self.stdin_was_sent = False
 
         self.show_welcome()
 
@@ -220,10 +218,13 @@ class DreamPie(SimpleGladeApp):
         if not s.endswith('\n'):
             s += '\n'
         self.write(s[:-1], COMMAND, STDIN)
-        self.write('\n')
+        # We don't tag the last newline with COMMAND, so that history search
+        # will separate different STDIN commands. We do tag it with STDIN
+        # so that it will be deleted if the stdin isn't processed - see
+        # handle_rem_stdin().
+        self.write('\n', STDIN)
         self.vadj_to_bottom.scroll_to_bottom()
         self.subp.write(s)
-        self.stdin_was_sent = True
         sb.delete(sb.get_start_iter(), sb.get_end_iter())
 
     @sourceview_keyhandler('Return', 0)
@@ -233,23 +234,22 @@ class DreamPie(SimpleGladeApp):
         # If we are on the first line, and it doesn't end with a ' ':
         #   * If we are not executing, try to execute (if failed, continue
         #     with normal behaviour)
-        #   * If we are executing, and stdin was already sent to the subprocess,
-        #     send the line as stdin.
+        #   * If we are executing, send the line as stdin.
         insert_iter = sb.get_iter_at_mark(sb.get_insert())
         if (insert_iter.equal(sb.get_end_iter())
             and insert_iter.get_line() == 0
             and insert_iter.get_offset() != 0
             and not self.sb_get_text(sb.get_start_iter(),
                                      insert_iter).endswith(' ')):
+
             if not self.is_executing:
                 is_ok = self.execute_source(warn=False)
                 if is_ok:
                     return True
             else:
                 # is_executing
-                if self.stdin_was_sent:
-                    self.send_stdin()
-                    return True
+                self.send_stdin()
+                return True
                 
         # We didn't execute, so newline-and-indent.
         return newline_and_indent(self.sourceview, INDENT_WIDTH)
@@ -346,15 +346,52 @@ class DreamPie(SimpleGladeApp):
     def on_object_recv(self, object):
         assert self.is_executing
 
-        is_ok, exc_info = object
+        is_ok, exc_info, rem_stdin = object
+
         if not is_ok:
             self.write(exc_info, EXCEPTION)
-            
         self.write('>>> ', COMMAND, PROMPT)
         self.is_executing = False
-        self.stdin_was_sent = False
         self.menuitem_execute.props.visible = True
         self.menuitem_stdin.props.visible = False
+        self.handle_rem_stdin(rem_stdin)
+
+    def handle_rem_stdin(self, rem_stdin):
+        """
+        Add the stdin text that was not processed to the source buffer.
+        Remove it from the text buffer (we check that the STDIN text is
+        consistent with rem_stdin - otherwise we give up)
+        """
+        if not rem_stdin:
+            return
+
+        self.sourcebuffer.insert(self.sourcebuffer.get_start_iter(), rem_stdin)
+
+        tb = self.textbuffer
+        stdin = tb.get_tag_table().lookup(STDIN)
+        it = tb.get_end_iter()
+        if not it.ends_tag(stdin):
+            it.backward_to_tag_toggle(stdin)
+        while True:
+            it2 = it.copy()
+            it2.backward_to_tag_toggle(stdin)
+            cur_stdin = tb.get_slice(it2, it, True)
+            min_len = min(len(cur_stdin), len(rem_stdin))
+            assert min_len > 0
+            if cur_stdin[-min_len:] != rem_stdin[-min_len:]:
+                debug("rem_stdin doesn't match what's in textview")
+                break
+            it2.forward_chars(len(cur_stdin)-min_len)
+            tb.delete(it2, it)
+            rem_stdin = rem_stdin[:-min_len]
+            if not rem_stdin:
+                break
+            else:
+                it = it2
+                # if rem_stdin is left, it2 must be at the beginning of the
+                # stdin region.
+                it2.backward_to_tag_toggle(stdin)
+                assert it2.ends_tag(stdin)
 
     def on_execute_command(self, widget):
         if self.is_executing:

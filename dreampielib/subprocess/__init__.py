@@ -1,5 +1,7 @@
 import sys
+import os
 import socket
+from select import select
 import codeop
 from StringIO import StringIO
 import linecache
@@ -52,6 +54,8 @@ def main(port):
                     line_count += src.count('\n')
         else:
             send_object(sock, (True, None))
+            is_success = True
+            exception_string = None
             for src in split_source:
                 # We compile again, so as not to put into linecache code
                 # which had no effect
@@ -83,7 +87,14 @@ def main(port):
                     lines = traceback.format_exception_only(typ, val)
                     for line in lines:
                         print>>efile, line,
-                    send_object(sock, (False, efile.getvalue()))
+                    is_success = False
+                    exception_string = efile.getvalue()
                     break
-            else:
-                send_object(sock, (True, None))
+                
+            # Send back any data left on stdin.
+            rem_stdin = []
+            while select([sys.stdin], [], [], 0)[0]:
+                rem_stdin.append(os.read(sys.stdin.fileno(), 8192))
+            rem_stdin = ''.join(rem_stdin)
+
+            send_object(sock, (is_success, exception_string, rem_stdin))
