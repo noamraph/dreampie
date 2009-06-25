@@ -1,3 +1,5 @@
+__all__ = ['newline_and_indent']
+
 from . import PyParse
 
 def newline_and_indent(sourceview, INDENT_WIDTH):

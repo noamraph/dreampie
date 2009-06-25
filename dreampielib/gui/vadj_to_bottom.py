@@ -1,3 +1,5 @@
+__all__ = ['VAdjToBottom']
+
 class VAdjToBottom(object):
     """
     Scroll automatically to the bottom of the VAdj if the height changes

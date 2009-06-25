@@ -1,3 +1,5 @@
+__all__ = ['StatusBar']
+
 class StatusBar(object):
     """
     Add messages to the status bar which disappear when the contents is changed.

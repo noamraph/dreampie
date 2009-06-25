@@ -1,3 +1,5 @@
+__all__ = ['History']
+
 import gtk
 from gtk import gdk
 

@@ -1,3 +1,5 @@
+__all__ = ['Selection']
+
 import gtk
 from gtk import gdk
 

@@ -1,17 +1,17 @@
 __all__ = ['write_command']
-
 import tokenize
 import keyword
 
-PROMPT = 'prompt'; COMMAND = 'command'
+from .tags import PROMPT, COMMAND
 
-KEYWORD = 'keyword'; BUILTIN = 'builtin'; STRING = 'string'
-NUMBER = 'number'; COMMENT = 'comment'
+from .tags import KEYWORD, BUILTIN, STRING, NUMBER, COMMENT
 
 keywords = set(keyword.kwlist)
 builtins = set(__builtins__)
 
 def write_command(write, command):
+    """Write a command to the textview, with syntax highlighting and "...".
+    """
     lines = [x+'\n' for x in command.split('\n')]
     # Remove last newline - we don't tag it with COMMAND to separate commands
     lines[-1] = lines[-1][:-1]
