@@ -8,11 +8,12 @@ class Selection(object):
     selected, "Interrupt" should be enabled.
     Also, "copy only commands" command.
     """
-    def __init__(self, dreampie, on_is_something_selected_changed):
-        dp = dreampie
-        self.textbuffer = dp.textbuffer
-        self.sourcebuffer = dp.sourcebuffer
-        self.sourceview = dp.sourceview
+    def __init__(self, textview, sourceview,
+                 on_is_something_selected_changed):
+        self.textview = textview
+        self.textbuffer = textview.get_buffer()
+        self.sourceview = sourceview
+        self.sourcebuffer = sourceview.get_buffer()
         self.on_is_something_selected_changed = on_is_something_selected_changed
         
         self.primary_selection = gtk.Clipboard(selection=gdk.SELECTION_PRIMARY)

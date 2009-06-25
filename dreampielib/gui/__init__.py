@@ -25,14 +25,13 @@ from . import PyParse
 from .selection import Selection
 from .status_bar import StatusBar
 from .vadj_to_bottom import VAdjToBottom
+from .history import History
 
 # Tags and colors
 
-STDIN = 'stdin'; STDOUT = 'stdout'; STDERR = 'stderr'; EXCEPTION = 'exception'
-PROMPT = 'prompt'; COMMAND = 'command'; MESSAGE = 'message'
+from .tags import STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND, MESSAGE
 
-KEYWORD = 'keyword'; BUILTIN = 'builtin'; STRING = 'string'
-NUMBER = 'number'; COMMENT = 'comment'
+from .tags import KEYWORD, BUILTIN, STRING, NUMBER, COMMENT
 
 colors = {
     STDIN: 'white',
@@ -84,15 +83,15 @@ class DreamPie(SimpleGladeApp):
 
         self.init_sourcebufferview()
 
-        self.selection = Selection(self,
+        self.selection = Selection(self.textview, self.sourceview,
                                    self.on_is_something_selected_changed)
 
-        self.status_bar = StatusBar(self, self.statusbar)
+        self.status_bar = StatusBar(self.sourcebuffer, self.statusbar)
 
         self.vadj_to_bottom = VAdjToBottom(self.scrolledwindow_textview
                                            .get_vadjustment())
 
-        self.init_history()
+        self.history = History(self.textview, self.sourceview)
 
         self.is_connected = False
         self.sock = self.popen = None
@@ -159,17 +158,12 @@ class DreamPie(SimpleGladeApp):
         self.sourcebuffer.set_language(python)
         self.sourcebuffer.set_style_scheme(
             make_style_scheme(default_style_scheme_spec))
-        self.sourcebuffer_change_count = 0
-        self.sourcebuffer.connect('changed', self.on_sourcebuffer_changed)
         self.sourceview.modify_font(
             pango.FontDescription('courier new,monospace'))
         self.scrolledwindow_sourceview.add(self.sourceview)
         self.sourceview.connect('key-press-event', self.on_sourceview_keypress)
         self.sourceview.connect('focus-in-event', self.on_sourceview_focus_in)
         self.sourceview.grab_focus()
-
-    def on_sourcebuffer_changed(self, widget):
-        self.sourcebuffer_change_count += 1
 
     def on_textview_focus_in(self, widget, event):
         # Clear the selection of the sourcebuffer
@@ -402,166 +396,16 @@ class DreamPie(SimpleGladeApp):
 
     # History
 
-    def init_history(self):
-        tb = self.textbuffer
-
-        self.hist_prefix = None
-        # The sourcebuffer_change_count to which the prefix applies
-        self.hist_sb_change_count = -1
-        self.hist_mark = tb.create_mark('history', tb.get_end_iter(), False)
-
-    def iter_get_command(self, it, only_first_line=False):
-        """Get a textiter placed inside (or at the end of) a COMMAND tag.
-        Return the text of the tag which doesn't have the PROMPT tag.
-        """
-        tb = self.textbuffer
-        prompt = tb.get_tag_table().lookup(PROMPT)
-        command = tb.get_tag_table().lookup(COMMAND)
-
-        it = it.copy()
-        if not it.begins_tag(command):
-            it.backward_to_tag_toggle(command)
-            assert it.begins_tag(command)
-        it_end = it.copy(); it_end.forward_to_tag_toggle(command)
-        if it.has_tag(prompt):
-            it.forward_to_tag_toggle(prompt)
-        if it.compare(it_end) >= 0:
-            # nothing but prompt
-            return ''
-        r = []
-        while True:
-            it2 = it.copy()
-            it2.forward_to_tag_toggle(prompt)
-            if it2.compare(it_end) >= 0:
-                it2 = it.copy()
-                it2.forward_to_tag_toggle(command)
-                r.append(tb.get_text(it, it2))
-                break
-            r.append(tb.get_text(it, it2))
-            if only_first_line:
-                break
-            it = it2
-            it.forward_to_tag_toggle(prompt)
-            if it.compare(it_end) >= 0:
-                break
-        return ''.join(r)
-
-    def on_textview_return(self):
-        # Copy the current command to the sourceview
-        tb = self.textbuffer
-        command = tb.get_tag_table().lookup(COMMAND)
-
-        it = tb.get_iter_at_mark(tb.get_insert())
-        if not it.has_tag(command) and not it.ends_tag(command):
-            gdk.beep()
-            return True
-        s = self.iter_get_command(it)
-        if not s:
-            gdk.beep()
-            return True
-        self.sourcebuffer.set_text(s)
-        self.sourceview.grab_focus()
-        return True
-
     def on_textview_keypress(self, widget, event):
         keyval_name = gdk.keyval_name(event.keyval)
         if keyval_name == 'Return' and event.state == 0:
-            return self.on_textview_return()
+            return self.history.copy_to_sourceview()
 
     def on_history_up(self, widget):
-        if self.textview.is_focus():
-            tb = self.textbuffer
-            command = tb.get_tag_table().lookup(COMMAND)
-            insert = tb.get_insert()
-            it = tb.get_iter_at_mark(insert)
-            it.backward_to_tag_toggle(command)
-            if it.ends_tag(command):
-                it.backward_to_tag_toggle(command)
-            self.textbuffer.place_cursor(it)
-            self.textview.scroll_mark_onscreen(insert)
-
-        elif self.sourceview.is_focus():
-            tb = self.textbuffer
-            sb = self.sourcebuffer
-            command = tb.get_tag_table().lookup(COMMAND)
-            if self.hist_sb_change_count != self.sourcebuffer_change_count:
-                if sb.get_end_iter().get_line() != 0:
-                    # Don't allow prefixes of more than one line
-                    gdk.beep()
-                    return
-                self.hist_prefix = sb.get_text(sb.get_start_iter(),
-                                               sb.get_end_iter())
-                self.hist_sb_change_count = self.sourcebuffer_change_count
-                tb.move_mark(self.hist_mark, tb.get_end_iter())
-            it = tb.get_iter_at_mark(self.hist_mark)
-            if it.is_start():
-                gdk.beep()
-                return
-            while True:
-                it.backward_to_tag_toggle(command)
-                if it.ends_tag(command):
-                    it.backward_to_tag_toggle(command)
-                if not it.begins_tag(command):
-                    gdk.beep()
-                    break
-                first_line = self.iter_get_command(it, only_first_line=True)
-                if first_line and first_line.startswith(self.hist_prefix):
-                    command = self.iter_get_command(it)
-                    sb.set_text(command)
-                    sb.place_cursor(sb.get_end_iter())
-                    self.hist_sb_change_count = self.sourcebuffer_change_count
-                    tb.move_mark(self.hist_mark, it)
-                    break
-                if it.is_start():
-                    gdk.beep()
-                    return
-
-        else:
-            gdk.beep()
+        self.history.history_up()
 
     def on_history_down(self, widget):
-        if self.textview.is_focus():
-            tb = self.textbuffer
-            command = tb.get_tag_table().lookup(COMMAND)
-            insert = tb.get_insert()
-            it = tb.get_iter_at_mark(insert)
-            it.forward_to_tag_toggle(command)
-            if it.ends_tag(command):
-                it.forward_to_tag_toggle(command)
-            self.textbuffer.place_cursor(it)
-            self.textview.scroll_mark_onscreen(insert)
-
-        elif self.sourceview.is_focus():
-            tb = self.textbuffer
-            sb = self.sourcebuffer
-            command = tb.get_tag_table().lookup(COMMAND)
-            if self.hist_sb_change_count != self.sourcebuffer_change_count:
-                gdk.beep()
-                return
-            it = tb.get_iter_at_mark(self.hist_mark)
-            while True:
-                it.forward_to_tag_toggle(command)
-                it.forward_to_tag_toggle(command)
-                if not it.begins_tag(command):
-                    # Return the source buffer to the prefix and everything
-                    # to initial state
-                    sb.set_text(self.hist_prefix)
-                    sb.place_cursor(sb.get_end_iter())
-                    # Since we change the text and not update the change count,
-                    # it's like the user did it and hist_prefix is not longer
-                    # meaningful.
-                    break
-                first_line = self.iter_get_command(it, only_first_line=True)
-                if first_line and first_line.startswith(self.hist_prefix):
-                    command = self.iter_get_command(it)
-                    sb.set_text(command)
-                    sb.place_cursor(sb.get_end_iter())
-                    self.hist_sb_change_count = self.sourcebuffer_change_count
-                    tb.move_mark(self.hist_mark, it)
-                    break
-
-        else:
-            gdk.beep()
+        self.history.history_down()
 
     # Subprocess
 

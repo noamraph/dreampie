@@ -2,9 +2,8 @@ class StatusBar(object):
     """
     Add messages to the status bar which disappear when the contents is changed.
     """
-    def __init__(self, dreampie, statusbar):
-        dp = dreampie
-        self.sourcebuffer = dp.sourcebuffer
+    def __init__(self, sourcebuffer, statusbar):
+        self.sourcebuffer = sourcebuffer
         self.statusbar = statusbar
         
         # id of a message displayed in the status bar to be removed when
