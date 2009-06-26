@@ -111,6 +111,20 @@
                         <signal name="activate" handler="on_paste"/>
                       </widget>
                     </child>
+                    <child>
+                      <widget class="GtkSeparatorMenuItem" id="menuitem8">
+                        <property name="visible">True</property>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem9">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Show completions</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_show_completions"/>
+                        <accelerator key="space" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                      </widget>
+                    </child>
                   </widget>
                 </child>
               </widget>

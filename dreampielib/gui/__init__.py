@@ -439,6 +439,24 @@ class DreamPie(SimpleGladeApp):
 
     # Other events
 
+    def on_show_completions(self, widget):
+        from .HyperParser import HyperParser
+        sb = self.sourcebuffer
+        text = sb.get_slice(sb.get_start_iter(), sb.get_end_iter()).decode('utf8')
+        index = sb.get_iter_at_mark(sb.get_insert()).get_offset()
+        hp = HyperParser(text, index, INDENT_WIDTH)
+        s = ''
+        s += 'is_in_string: %r\n' % hp.is_in_string()
+        s += 'is_in_code: %r\n' % hp.is_in_code()
+        s += 'surrounding brackets: %r\n' % (hp.get_surrounding_brackets(),)
+        if hp.is_in_code():
+            s += 'expression: %r\n' % hp.get_expression()
+        m = gtk.MessageDialog(flags=gtk.DIALOG_MODAL,
+                              buttons=gtk.BUTTONS_OK,
+                              message_format=s)
+        m.run()
+        m.destroy()
+
     def on_close(self, widget, event):
         gtk.main_quit()
 

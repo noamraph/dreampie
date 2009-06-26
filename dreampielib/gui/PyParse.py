@@ -111,7 +111,7 @@ try:
 except NameError:
     UnicodeType = None
 
-class Parser:
+class Parser(object):
 
     def __init__(self, indentwidth, tabwidth):
         self.indentwidth = indentwidth
