@@ -194,8 +194,7 @@ class DreamPie(SimpleGladeApp):
         sb = self.sourcebuffer
         tb = self.textbuffer
         source = self.sb_get_text(sb.get_start_iter(), sb.get_end_iter())
-        self.subp.send_object(('exec', source))
-        is_ok, syntax_error_info = self.subp.recv_object()
+        is_ok, syntax_error_info = self.subp_call('execute', source)
         if not is_ok:
             if warn:
                 if syntax_error_info:
@@ -368,6 +367,10 @@ class DreamPie(SimpleGladeApp):
 
     def on_stderr_recv(self, data):
         self.write(data, STDERR)
+
+    def subp_call(self, funcname, *args):
+        self.subp.send_object((funcname, args))
+        return self.subp.recv_object()
 
     def on_object_recv(self, object):
         assert self.is_executing

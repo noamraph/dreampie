@@ -75,7 +75,7 @@ class Subprocess(object):
                        self._executable, 'subprocess', str(port)],
                        stdin=PIPE, stdout=PIPE, stderr=PIPE,
                        close_fds=True, env=env)
-        debug("Waiting for an answer")
+        debug("Waiting for the subprocess to connect")
         s.listen(1)
         self._sock, addr = s.accept()
         debug("Connected to addr %r." % (addr,))
