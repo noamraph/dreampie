@@ -3,14 +3,14 @@ __all__ = ['HyperParser']
 """
 This module defines the HyperParser class, which provides advanced parsing
 abilities.
-The HyperParser uses PyParser. PyParser is intended mostly to give information
+The HyperParser uses pyparse. pyparse is intended mostly to give information
 on the proper indentation of code. HyperParser gives some information on the
 structure of code.
 """
 
 import string
 import keyword
-from . import PyParse
+from . import pyparse
 
 class HyperParser(object):
 
@@ -21,8 +21,8 @@ class HyperParser(object):
         """
         self.text = text
 
-        parser = PyParse.Parser(INDENT_WIDTH, INDENT_WIDTH)
-        # We add the newline because PyParse requires a newline at end.
+        parser = pyparse.Parser(INDENT_WIDTH, INDENT_WIDTH)
+        # We add the newline because pyparse requires a newline at end.
         # We add a space so that index won't be at end of line, so that
         # its status will be the same as the char before it, if should.
         parser.set_str(text+' \n')

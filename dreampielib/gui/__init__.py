@@ -443,7 +443,7 @@ class DreamPie(SimpleGladeApp):
     # Other events
 
     def on_show_completions(self, widget):
-        from .HyperParser import HyperParser
+        from .hyper_parser import HyperParser
         sb = self.sourcebuffer
         text = sb.get_slice(sb.get_start_iter(), sb.get_end_iter()).decode('utf8')
         index = sb.get_iter_at_mark(sb.get_insert()).get_offset()

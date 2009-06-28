@@ -1,6 +1,6 @@
 __all__ = ['newline_and_indent']
 
-from . import PyParse
+from . import pyparse
 
 def newline_and_indent(sourceview, INDENT_WIDTH):
     """
@@ -53,25 +53,25 @@ def newline_and_indent(sourceview, INDENT_WIDTH):
 
         # adjust indentation for continuations and block
         # open/close first need to find the last stmt
-        y = PyParse.Parser(INDENT_WIDTH, INDENT_WIDTH)
+        y = pyparse.Parser(INDENT_WIDTH, INDENT_WIDTH)
         y.set_str(sb.get_text(sb.get_start_iter(), insert()))
         c = y.get_continuation_type()
-        if c != PyParse.C_NONE:
+        if c != pyparse.C_NONE:
             # The current stmt hasn't ended yet.
-            if c == PyParse.C_STRING_FIRST_LINE:
+            if c == pyparse.C_STRING_FIRST_LINE:
                 # after the first line of a string; do not indent at all
                 pass
-            elif c == PyParse.C_STRING_NEXT_LINES:
+            elif c == pyparse.C_STRING_NEXT_LINES:
                 # inside a string which started before this line;
                 # just mimic the current indent
                 sb.insert_at_cursor(indent)
-            elif c == PyParse.C_BRACKET:
+            elif c == pyparse.C_BRACKET:
                 # line up with the first (if any) element of the
                 # last open bracket structure; else indent one
                 # level beyond the indent of the line with the
                 # last open bracket
                 sb.insert_at_cursor(' ' * y.compute_bracket_indent())
-            elif c == PyParse.C_BACKSLASH:
+            elif c == pyparse.C_BACKSLASH:
                 # if more than one line in this stmt already, just
                 # mimic the current indent; else if initial line
                 # has a start on an assignment stmt, indent to
