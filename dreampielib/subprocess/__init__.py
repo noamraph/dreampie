@@ -118,5 +118,42 @@ class Subprocess(object):
 
         yield is_success, exception_string, rem_stdin
 
+
+    @rpc_func
+    def complete_attributes(self, expr):
+        """
+        Evaluate expr in the namespace, and return its attributes in two lists -
+        the first is a subset of the second, both sorted.
+        The first list contains the attributes which are thought to be relevant.
+        The second contains all attributes.
+        If expr == '', return first-level completions.
+        """
+        if expr == '':
+            namespace = self.locs.copy()
+            namespace.update(self.locs['__builtins__'].__dict__)
+            bigl = eval("dir()", namespace) + keyword.kwlist
+            bigl.sort()
+            if "__all__" in bigl:
+                smalll = eval("__all__", namespace)
+                smalll.sort()
+            else:
+                smalll = filter(lambda s: s[:1] != '_', bigl)
+        else:
+            try:
+                entity = eval(expr, self.locs)
+                bigl = dir(entity)
+                bigl.sort()
+                if "__all__" in bigl:
+                    smalll = entity.__all__
+                    smalll.sort()
+                else:
+                    smalll = filter(lambda s: s[:1] != '_', bigl)
+            except:
+                bigl = []
+                smalll = []
+
+        return bigl, smalll
+
+
 def main(port):
     subp = Subprocess(port)
