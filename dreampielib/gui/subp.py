@@ -53,20 +53,20 @@ class Subprocess(object):
         random.shuffle(ports)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         for port in ports:
-            debug("Trying to listen on port %d..." % port)
+            #debug("Trying to listen on port %d..." % port)
             try:
                 s.bind(('localhost', port))
             except socket.error:
-                debug("Failed.")
+                #debug("Failed.")
                 pass
             else:
-                debug("Ok.")
+                #debug("Ok.")
                 break
         else:
             raise IOError("Couldn't find a port to bind to")
         # Now the socket is bound to port.
 
-        debug("Spawning subprocess")
+        #debug("Spawning subprocess")
         env = os.environ.copy()
         env['PYTHONUNBUFFERED'] = '1'
         if sys.stdout.encoding:
@@ -75,10 +75,10 @@ class Subprocess(object):
                        self._executable, 'subprocess', str(port)],
                        stdin=PIPE, stdout=PIPE, stderr=PIPE,
                        close_fds=True, env=env)
-        debug("Waiting for the subprocess to connect")
+        #debug("Waiting for the subprocess to connect")
         s.listen(1)
         self._sock, addr = s.accept()
-        debug("Connected to addr %r." % (addr,))
+        #debug("Connected to addr %r." % (addr,))
         s.close()
         self._popen = popen
 
