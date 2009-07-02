@@ -40,6 +40,14 @@ class Subprocess(object):
         self.gid = 0
 
         while True:
+            if 'gtk' in sys.modules:
+                # Process events while waiting for something to do
+                while not select([sock], [], [], 0)[0]:
+                    # There is not yet something to read
+                    gtk = __import__('gtk')
+                    glib = __import__('glib')
+                    glib.timeout_add(100, self.gtk_main_quit, gtk)
+                    gtk.main()
             funcname, args = recv_object(sock)
             if funcname in rpc_funcs:
                 func = getattr(self, funcname)
@@ -51,6 +59,10 @@ class Subprocess(object):
                     send_object(sock, r)
             else:
                 raise ValueError("Unknown command: %s" % funcname)
+
+    def gtk_main_quit(self, gtk):
+        gtk.main_quit()
+        return False
 
     @rpc_func
     def execute(self, source):
