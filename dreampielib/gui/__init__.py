@@ -202,6 +202,7 @@ class DreamPie(SimpleGladeApp):
         sb = self.sourcebuffer
         tb = self.textbuffer
         source = self.sb_get_text(sb.get_start_iter(), sb.get_end_iter())
+        source = source.rstrip()
         is_ok, syntax_error_info = self.call_subp('execute', source)
         if not is_ok:
             if warn:
