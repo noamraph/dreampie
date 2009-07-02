@@ -7,6 +7,8 @@ from StringIO import StringIO
 import linecache
 import traceback
 import types
+import keyword
+import __builtin__
 
 from ..common.objectstream import send_object, recv_object
 from .split_to_singles import split_to_singles
@@ -119,40 +121,67 @@ class Subprocess(object):
         yield is_success, exception_string, rem_stdin
 
 
+    @staticmethod
+    def split_list(L, public_set):
+        """
+        split L into two lists: public and private, according to public_set,
+        which should be a set of names or None. If it's None, split according
+        to whether the first char is '_'.
+        """
+        public = []
+        private = []
+        if public_set is not None:
+            for x in L:
+                if x in public_set:
+                    public.append(x)
+                else:
+                    private.append(x)
+        else:
+            for x in L:
+                if not x.startswith('_'):
+                    public.append(x)
+                else:
+                    private.append(x)
+        return public, private
+
     @rpc_func
     def complete_attributes(self, expr):
         """
-        Evaluate expr in the namespace, and return its attributes in two lists -
-        the first is a subset of the second, both sorted.
-        The first list contains the attributes which are thought to be relevant.
-        The second contains all attributes.
+        Evaluate expr in the namespace, and return its attributes as two
+        sorted lists - public and private.
+        public - completions that are thought to be relevant.
+        private - completions that are not so.
         If expr == '', return first-level completions.
         """
         if expr == '':
-            namespace = self.locs.copy()
-            namespace.update(self.locs['__builtins__'].__dict__)
-            bigl = eval("dir()", namespace) + keyword.kwlist
-            bigl.sort()
-            if "__all__" in bigl:
-                smalll = eval("__all__", namespace)
-                smalll.sort()
-            else:
-                smalll = filter(lambda s: s[:1] != '_', bigl)
+            try:
+                namespace = self.locs.copy()
+                namespace.update(__builtin__.__dict__)
+                ids = eval("dir()", namespace) + keyword.kwlist
+                ids.sort()
+                if '__all__' in namespace:
+                    all_set = set(namespace['__all__'])
+                else:
+                    all_set = None
+                public, private = self.split_list(ids, all_set)
+            except Exception, e:
+                public = private = []
+                import traceback
+                traceback.print_exc()
         else:
             try:
                 entity = eval(expr, self.locs)
-                bigl = dir(entity)
-                bigl.sort()
-                if "__all__" in bigl:
-                    smalll = entity.__all__
-                    smalll.sort()
+                ids = dir(entity)
+                ids.sort()
+                if hasattr(entity, '__all__'):
+                    all_set = set(entity.__all__)
                 else:
-                    smalll = filter(lambda s: s[:1] != '_', bigl)
-            except:
-                bigl = []
-                smalll = []
+                    all_set = None
+                public, private = self.split_list(ids, all_set)
+            except Exception, e:
+                public = private = []
 
-        return bigl, smalll
+        return public, private
 
 
 def main(port):

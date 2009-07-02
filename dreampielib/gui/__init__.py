@@ -11,6 +11,7 @@ logging.basicConfig(format="dreampie: %(message)s", level=logging.DEBUG)
 import pygtk
 pygtk.require('2.0')
 import gobject
+import glib
 import gtk
 from gtk import gdk
 import pango
@@ -24,6 +25,7 @@ from .selection import Selection
 from .status_bar import StatusBar
 from .vadj_to_bottom import VAdjToBottom
 from .history import History
+from .autocomplete import Autocomplete
 from .subp import Subprocess
 
 # Tags and colors
@@ -84,6 +86,13 @@ class DreamPie(SimpleGladeApp):
                                            .get_vadjustment())
 
         self.history = History(self.textview, self.sourceview)
+
+        self.autocomplete = Autocomplete(self.sourceview, self.call_subp,
+                                         INDENT_WIDTH)
+
+        # Hack: we connect this signal here, so that it will have lower
+        # priority than the key-press event of autocomplete, when active.
+        self.sourceview.connect('key-press-event', self.on_sourceview_keypress)
 
         self.subp = Subprocess(
             executable,
@@ -159,7 +168,6 @@ class DreamPie(SimpleGladeApp):
         self.sourceview.modify_font(
             pango.FontDescription('courier new,monospace'))
         self.scrolledwindow_sourceview.add(self.sourceview)
-        self.sourceview.connect('key-press-event', self.on_sourceview_keypress)
         self.sourceview.connect('focus-in-event', self.on_sourceview_focus_in)
         self.sourceview.grab_focus()
 
@@ -194,7 +202,7 @@ class DreamPie(SimpleGladeApp):
         sb = self.sourcebuffer
         tb = self.textbuffer
         source = self.sb_get_text(sb.get_start_iter(), sb.get_end_iter())
-        is_ok, syntax_error_info = self.subp_call('execute', source)
+        is_ok, syntax_error_info = self.call_subp('execute', source)
         if not is_ok:
             if warn:
                 if syntax_error_info:
@@ -293,7 +301,7 @@ class DreamPie(SimpleGladeApp):
 
         else:
             # Completion should come here
-            gdk.beep()
+            self.autocomplete.show_completions(auto=False, complete=True)
 
         self.sv_scroll_cursor_onscreen()
         return True
@@ -319,6 +327,23 @@ class DreamPie(SimpleGladeApp):
             self.sv_scroll_cursor_onscreen()
             return True
 
+        return False
+
+    @sourceview_keyhandler('period', 0)
+    def on_sourceview_period(self):
+        # If after a small time we are after a dot, assume that the user wanted
+        # to see the completions and open the list.
+        glib.timeout_add(400, self.check_autocomplete)
+
+    def check_autocomplete(self):
+        sb = self.sourcebuffer
+        if self.sourceview.is_focus():
+            it = sb.get_iter_at_mark(sb.get_insert())
+            it2 = it.copy()
+            it2.backward_chars(1)
+            char = sb.get_text(it2, it)
+            if char == '.':
+                self.autocomplete.show_completions(auto=True, complete=False)
         return False
 
     def on_sourceview_keypress(self, widget, event):
@@ -368,7 +393,7 @@ class DreamPie(SimpleGladeApp):
     def on_stderr_recv(self, data):
         self.write(data, STDERR)
 
-    def subp_call(self, funcname, *args):
+    def call_subp(self, funcname, *args):
         self.subp.send_object((funcname, args))
         return self.subp.recv_object()
 
@@ -443,22 +468,7 @@ class DreamPie(SimpleGladeApp):
     # Other events
 
     def on_show_completions(self, widget):
-        from .hyper_parser import HyperParser
-        sb = self.sourcebuffer
-        text = sb.get_slice(sb.get_start_iter(), sb.get_end_iter()).decode('utf8')
-        index = sb.get_iter_at_mark(sb.get_insert()).get_offset()
-        hp = HyperParser(text, index, INDENT_WIDTH)
-        s = ''
-        s += 'is_in_string: %r\n' % hp.is_in_string()
-        s += 'is_in_code: %r\n' % hp.is_in_code()
-        s += 'surrounding brackets: %r\n' % (hp.get_surrounding_brackets(),)
-        if hp.is_in_code():
-            s += 'expression: %r\n' % hp.get_expression()
-        m = gtk.MessageDialog(flags=gtk.DIALOG_MODAL,
-                              buttons=gtk.BUTTONS_OK,
-                              message_format=s)
-        m.run()
-        m.destroy()
+        self.autocomplete.show_completions(auto=False, complete=False)
 
     def on_close(self, widget, event):
         gtk.main_quit()
