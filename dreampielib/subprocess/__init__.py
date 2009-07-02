@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 import socket
 from select import select
 import codeop
@@ -18,6 +19,10 @@ from .split_to_singles import split_to_singles
 import logging
 from logging import debug
 logging.basicConfig(filename='/tmp/dreampie_subp_log', level=logging.DEBUG)
+
+# time interval to process GUI events
+GUI_SLEEP_SEC = 0.1
+GUI_SLEEP_MS = 100
 
 rpc_funcs = set()
 # A decorator which adds the function name to rpc_funcs
@@ -40,14 +45,7 @@ class Subprocess(object):
         self.gid = 0
 
         while True:
-            if 'gtk' in sys.modules:
-                # Process events while waiting for something to do
-                while not select([sock], [], [], 0)[0]:
-                    # There is not yet something to read
-                    gtk = __import__('gtk')
-                    glib = __import__('glib')
-                    glib.timeout_add(100, self.gtk_main_quit, gtk)
-                    gtk.main()
+            self.handle_gui_events(sock)
             funcname, args = recv_object(sock)
             if funcname in rpc_funcs:
                 func = getattr(self, funcname)
@@ -60,9 +58,25 @@ class Subprocess(object):
             else:
                 raise ValueError("Unknown command: %s" % funcname)
 
-    def gtk_main_quit(self, gtk):
-        gtk.main_quit()
-        return False
+    def handle_gui_events(self, sock):
+        """
+        Handle GUI events until there's something to read from sock.
+        If there's no graphic toolkit, just return.
+        """
+        has_gtk = 'gtk' in sys.modules
+        has_qt4 = 'PyQt4' in sys.modules
+        has_tk = 'Tkinter' in sys.modules
+
+        if not has_gtk and not has_qt4 and not has_tk:
+            return
+
+        while not select([sock], [], [], 0)[0]:
+            if has_gtk:
+                handle_gtk_events()
+            if has_qt4:
+                handle_qt4_events()
+            if has_tk:
+                handle_tk_events()
 
     @rpc_func
     def execute(self, source):
@@ -195,6 +209,55 @@ class Subprocess(object):
 
         return public, private
 
+# Handle GUI events
+
+def handle_gtk_events():
+    import gtk, glib
+    glib.timeout_add(GUI_SLEEP_MS, gtk_main_quit)
+    gtk.main()
+
+def gtk_main_quit():
+    import gtk
+    gtk.main_quit()
+    return False
+
+def handle_qt4_events():
+    from PyQt4 import QtCore
+    app = QtCore.QCoreApplication.instance()
+    if not app:
+        time.sleep(GUI_SLEEP_SEC)
+        return
+
+    timer = QtCore.QTimer()
+    QtCore.QObject.connect(timer, QtCore.SIGNAL('timeout()'),
+                           qt4_quit_if_no_modal)
+    timer.start(GUI_SLEEP_MS)
+    app.exec_()
+    timer.stop()
+    QtCore.QObject.disconnect(timer, QtCore.SIGNAL('timeout()'),
+                              qt4_quit_if_no_modal)
+
+def qt4_quit_if_no_modal():
+    from PyQt4 import QtCore
+    app = QtCore.QCoreApplication.instance()
+    if app.__class__.__name__ != 'QApplication' or \
+       app.activeModalWidget() is None:
+        app.quit()
+
+def handle_tk_events():
+    # TODO: It's pretty silly to handle all events and then just wait.
+    # But I haven't found a better way - if you find one, tell me!
+    import Tkinter
+    # Handling Tk events is done only if there is an active tkapp object.
+    # It is created by Tkinter.Tk.__init__, which sets
+    # Tkinter._default_root to itself, when Tkinter._support_default_root
+    # is True (the default). Here we check whether Tkinter._default_root
+    # is something before we handle Tk events.
+    if Tkinter._default_root:
+        _tkinter = Tkinter._tkinter
+        while _tkinter.dooneevent(_tkinter.DONT_WAIT):
+            pass
+    time.sleep(GUI_SLEEP_SEC)
 
 def main(port):
     subp = Subprocess(port)
