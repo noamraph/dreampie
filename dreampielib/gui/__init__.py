@@ -305,7 +305,7 @@ class DreamPie(SimpleGladeApp):
 
         else:
             # Completion should come here
-            self.autocomplete.show_completions(auto=False, complete=True)
+            self.autocomplete.show_completions(is_auto=False, complete=True)
 
         self.sv_scroll_cursor_onscreen()
         return True
@@ -360,7 +360,7 @@ class DreamPie(SimpleGladeApp):
             it2.backward_chars(1)
             char = sb.get_text(it2, it)
             if char == last_char:
-                self.autocomplete.show_completions(auto=True, complete=False)
+                self.autocomplete.show_completions(is_auto=True, complete=False)
         # return False so as not to be called repeatedly.
         return False
 
@@ -486,7 +486,7 @@ class DreamPie(SimpleGladeApp):
     # Other events
 
     def on_show_completions(self, widget):
-        self.autocomplete.show_completions(auto=False, complete=False)
+        self.autocomplete.show_completions(is_auto=False, complete=False)
 
     def on_close(self, widget, event):
         gtk.main_quit()

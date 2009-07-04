@@ -20,9 +20,10 @@ def keyhandler(keyval, state):
     return decorator
 
 class AutocompleteWindow(object):
-    def __init__(self, sourceview):
+    def __init__(self, sourceview, on_complete):
         self.sourceview = sourceview
         self.sourcebuffer = sb = sourceview.get_buffer()
+        self.on_complete = on_complete
         
         self.liststore = gtk.ListStore(gobject.TYPE_STRING)        
         self.cellrend = gtk.CellRendererText()
@@ -255,6 +256,7 @@ class AutocompleteWindow(object):
         insert = text[len(self.cur_prefix):]
         self.hide()
         self.sourcebuffer.insert_at_cursor(insert)
+        self.on_complete()
         return True
 
     def on_keypress(self, widget, event):

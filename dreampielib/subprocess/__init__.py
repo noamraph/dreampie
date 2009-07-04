@@ -223,7 +223,7 @@ class Subprocess(object):
 
     @rpc_func
     def abspath(self, path):
-        return os.path.abspath(path)
+        return os.path.abspath(os.path.expanduser(path))
 
 # Handle GUI events
 
