@@ -162,9 +162,16 @@ class Autocomplete(object):
         public = []
         private = []
         for name in dirlist:
-            if isinstance(comp_what, unicode) and isinstance(name, str):
+            if is_unicode and isinstance(name, str):
                 # A filename which can't be unicode
                 continue
+            if not is_unicode:
+                # We need a unicode string. From what I see, Python evaluates
+                # unicode characters in byte strings as utf-8.
+                try:
+                    name = name.decode('utf8')
+                except UnicodeDecodeError:
+                    continue
             # skip troublesome names
             try:
                 rename = eval(str_prefix + name + str_char)

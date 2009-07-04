@@ -310,7 +310,7 @@ class DreamPie(SimpleGladeApp):
         self.sv_scroll_cursor_onscreen()
         return True
 
-    @sourceview_keyhandler('ISO_Left_Tab', gdk.SHIFT_MASK)
+    @sourceview_keyhandler('ISO_Left_Tab', 0)
     def on_sourceview_shift_tab(self):
         self.textview.grab_focus()
         return True
@@ -365,9 +365,13 @@ class DreamPie(SimpleGladeApp):
         return False
 
     def on_sourceview_keypress(self, widget, event):
-        keyval_name = gdk.keyval_name(event.keyval)
+        keyval, group, level, consumed_mods = \
+            gdk.keymap_get_default().translate_keyboard_state(
+                event.hardware_keycode, event.state, event.group)
+        state = event.state & ~consumed_mods
+        keyval_name = gdk.keyval_name(keyval)
         try:
-            func = sourceview_keyhandlers[keyval_name, event.state]
+            func = sourceview_keyhandlers[keyval_name, state]
         except KeyError:
             pass
         else:

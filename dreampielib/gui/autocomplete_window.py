@@ -123,8 +123,9 @@ class AutocompleteWindow(object):
         # Otherwise, calls hide(), and returns False.
         # if return_false is True, always return False.
         sb = self.sourcebuffer
-        prefix = sb.get_text(sb.get_iter_at_mark(self.mark),
-                             sb.get_iter_at_mark(sb.get_insert()))
+        prefix = sb.get_text(
+            sb.get_iter_at_mark(self.mark),
+            sb.get_iter_at_mark(sb.get_insert())).decode('utf8')
         if prefix == self.cur_prefix:
             return True and not return_false
         self.cur_prefix = prefix
@@ -252,7 +253,7 @@ class AutocompleteWindow(object):
     @keyhandler('Tab', 0)
     def complete(self):
         sel_row = self.treeview.get_selection().get_selected_rows()[1][0][0]
-        text = self.liststore[sel_row][0]
+        text = self.liststore[sel_row][0].decode('utf8')
         insert = text[len(self.cur_prefix):]
         self.hide()
         self.sourcebuffer.insert_at_cursor(insert)
@@ -260,9 +261,13 @@ class AutocompleteWindow(object):
         return True
 
     def on_keypress(self, widget, event):
-        keyval_name = gdk.keyval_name(event.keyval)
+        keyval, group, level, consumed_mods = \
+            gdk.keymap_get_default().translate_keyboard_state(
+                event.hardware_keycode, event.state, event.group)
+        state = event.state & ~consumed_mods
+        keyval_name = gdk.keyval_name(keyval)
         try:
-            func = keyhandlers[keyval_name, event.state]
+            func = keyhandlers[keyval_name, state]
         except KeyError:
             pass
         else:
