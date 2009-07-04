@@ -52,6 +52,9 @@ colors = {
 
 INDENT_WIDTH = 4
 
+# Time to wait before autocompleting, to see if the user continues to type
+AUTOCOMPLETE_WAIT = 400
+
 # Maybe someday we'll want translations...
 _ = lambda s: s
 
@@ -330,21 +333,35 @@ class DreamPie(SimpleGladeApp):
 
         return False
 
+    # The following 3 handlers are for characters which may trigger automatic
+    # opening of the completion list. (slash and backslash depend on path.sep)
+    # We leave the final decision whether to open the list to the autocompleter.
+    # We just notify it that the char was inserted and the user waited a while.
+
     @sourceview_keyhandler('period', 0)
     def on_sourceview_period(self):
-        # If after a small time we are after a dot, assume that the user wanted
-        # to see the completions and open the list.
-        glib.timeout_add(400, self.check_autocomplete)
+        glib.timeout_add(AUTOCOMPLETE_WAIT, self.check_autocomplete, '.')
+    @sourceview_keyhandler('slash', 0)
+    def on_sourceview_slash(self):
+        glib.timeout_add(AUTOCOMPLETE_WAIT, self.check_autocomplete, '/')
+    @sourceview_keyhandler('backslash', 0)
+    def on_sourceview_backslash(self):
+        glib.timeout_add(AUTOCOMPLETE_WAIT, self.check_autocomplete, '\\')
 
-    def check_autocomplete(self):
+    def check_autocomplete(self, last_char):
+        """
+        If the last char in the sourcebuffer is last_char, call
+        show_completions.
+        """
         sb = self.sourcebuffer
         if self.sourceview.is_focus():
             it = sb.get_iter_at_mark(sb.get_insert())
             it2 = it.copy()
             it2.backward_chars(1)
             char = sb.get_text(it2, it)
-            if char == '.':
+            if char == last_char:
                 self.autocomplete.show_completions(auto=True, complete=False)
+        # return False so as not to be called repeatedly.
         return False
 
     def on_sourceview_keypress(self, widget, event):

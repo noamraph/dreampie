@@ -49,14 +49,21 @@ class Subprocess(object):
             funcname, args = recv_object(sock)
             if funcname in rpc_funcs:
                 func = getattr(self, funcname)
-                r = func(*args)
-                if isinstance(r, types.GeneratorType):
-                    for obj in r:
-                        send_object(sock, obj)
-                else:
-                    send_object(sock, r)
+                try:
+                    r = func(*args)
+                    if isinstance(r, types.GeneratorType):
+                        for obj in r:
+                            send_object(sock, obj)
+                    else:
+                        send_object(sock, r)
+                except Exception:
+                    # This may help in debugging exceptions.
+                    traceback.print_exc()
+                    send_object(sock, None)
             else:
-                raise ValueError("Unknown command: %s" % funcname)
+                # aid in debug
+                print >> sys.stderr, "Unknown command: %s" % funcname
+                send_object(sock, None)
 
     def handle_gui_events(self, sock):
         """
@@ -80,6 +87,16 @@ class Subprocess(object):
 
     @rpc_func
     def execute(self, source):
+        """
+        Get the source code to execute (a unicode string).
+        Compile it. If there was a syntax error, return
+        (False, (msg, line, col)).
+        If compilation was successful, return (True, None), then run the code
+        and then send (is_success, exception_string, rem_stdin).
+        is_success - True if there was no exception.
+        exception_string - description of the exception, or None if is_success.
+        rem_stdin - data that was sent into stdin and wasn't consumed.
+        """
         split_source = split_to_singles(source)
         # This added newline is because sometimes the CommandCompiler wants
         # more if there isn't a newline at the end
@@ -99,7 +116,7 @@ class Subprocess(object):
                 else:
                     line_count += src.count('\n')
 
-        # If compilation was successfull...
+        # If compilation was successful...
         yield True, None
         is_success = True
         exception_string = None
@@ -180,20 +197,15 @@ class Subprocess(object):
         If expr == '', return first-level completions.
         """
         if expr == '':
-            try:
-                namespace = self.locs.copy()
-                namespace.update(__builtin__.__dict__)
-                ids = eval("dir()", namespace) + keyword.kwlist
-                ids.sort()
-                if '__all__' in namespace:
-                    all_set = set(namespace['__all__'])
-                else:
-                    all_set = None
-                public, private = self.split_list(ids, all_set)
-            except Exception, e:
-                public = private = []
-                import traceback
-                traceback.print_exc()
+            namespace = self.locs.copy()
+            namespace.update(__builtin__.__dict__)
+            ids = eval("dir()", namespace) + keyword.kwlist
+            ids.sort()
+            if '__all__' in namespace:
+                all_set = set(namespace['__all__'])
+            else:
+                all_set = None
+            public, private = self.split_list(ids, all_set)
         else:
             try:
                 entity = eval(expr, self.locs)
@@ -208,6 +220,10 @@ class Subprocess(object):
                 public = private = []
 
         return public, private
+
+    @rpc_func
+    def abspath(self, path):
+        return os.path.abspath(path)
 
 # Handle GUI events
 

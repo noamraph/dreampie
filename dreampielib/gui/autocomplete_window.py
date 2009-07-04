@@ -85,6 +85,7 @@ class AutocompleteWindow(object):
 
         if self.is_shown:
             self.hide()
+        self.is_shown = True
 
         it = sb.get_iter_at_mark(sb.get_insert())
         it.backward_chars(start_len)
@@ -105,6 +106,10 @@ class AutocompleteWindow(object):
         self.connect(sb, 'mark-set', self.on_mark_set)
         self.connect(sb, 'insert-text', self.on_insert_text)
         self.connect(sb, 'delete-range', self.on_delete_range)
+
+        self.connect(self.treeview, 'button-press-event',
+                     self.on_tv_button_press)
+        self.connect(self.sourceview, 'focus-out-event', self.on_focus_out)
 
         self.sourceview.handler_unblock(self.keypress_handler)
         self.keypress_handler_blocked = False
@@ -137,6 +142,7 @@ class AutocompleteWindow(object):
         for i in xrange(end-start):
             self.liststore.insert(i, [self.cur_list[start+i]])
         self.treeview.get_selection().select_path(0)
+        self.treeview.scroll_to_cell((0,))
         return True and not return_false
 
     def place_window(self):
@@ -259,6 +265,14 @@ class AutocompleteWindow(object):
             pass
         else:
             return func(self)
+
+    def on_tv_button_press(self, widget, event):
+        if event.type == gdk._2BUTTON_PRESS:
+            self.complete()
+            return True
+
+    def on_focus_out(self, widget, event):
+        self.hide()
 
     def hide(self):
         self.disconnect_all()
