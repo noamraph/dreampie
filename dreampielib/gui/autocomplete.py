@@ -97,6 +97,9 @@ class Autocomplete(object):
             comp_what = hp.get_expression()
             if not comp_what:
                 return
+            if is_auto and '(' in comp_what:
+                # Don't evaluate expressions which may contain a function call.
+                return
         else:
             comp_what = ''
         public, private = self.call_subp('complete_attributes', comp_what)
