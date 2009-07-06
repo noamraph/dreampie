@@ -125,6 +125,15 @@
                         <accelerator key="space" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem10">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Show call tip</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_show_calltip"/>
+                        <accelerator key="backslash" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                      </widget>
+                    </child>
                   </widget>
                 </child>
               </widget>

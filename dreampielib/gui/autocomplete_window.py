@@ -3,10 +3,14 @@ __all__ = ['AutocompleteWindow', 'find_prefix_range']
 from logging import debug
 
 import gobject
-import glib
 import gtk
 from gtk import gdk
 import pango
+
+try:
+    from glib import idle_add
+except ImportError:
+    from gobject import idle_add
 
 N_ROWS = 10
 
@@ -163,24 +167,24 @@ class AutocompleteWindow(object):
             if it.compare(sb.get_iter_at_mark(self.mark)) < 0:
                 self.hide()
             else:
-                glib.idle_add(self.update_list, True)
+                idle_add(self.update_list, True)
 
     def on_insert_text(self, sb, it, text, length):
         if it.compare(sb.get_iter_at_mark(self.mark)) < 0:
             self.hide()
         else:
-            glib.idle_add(self.update_list, True)
+            idle_add(self.update_list, True)
 
     def on_delete_range(self, sb, start, end):
         if start.compare(sb.get_iter_at_mark(self.mark)) < 0:
             self.hide()
         else:
-            glib.idle_add(self.update_list, True)
+            idle_add(self.update_list, True)
 
     @keyhandler('Escape', 0)
     def on_esc(self):
         self.hide()
-        return True
+        # Don't return True - other things may be escaped too.
 
     def select_row(self, row):
         path = (row,)

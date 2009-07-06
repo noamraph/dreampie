@@ -11,11 +11,16 @@ logging.basicConfig(format="dreampie: %(message)s", level=logging.DEBUG)
 import pygtk
 pygtk.require('2.0')
 import gobject
-import glib
 import gtk
 from gtk import gdk
 import pango
 import gtksourceview2
+
+try:
+    from glib import timeout_add, idle_add
+except ImportError:
+    # In PyGObject 2.14, it's in gobject.
+    from gobject import timeout_add, idle_add
 
 from .SimpleGladeApp import SimpleGladeApp
 from .write_command import write_command
@@ -26,6 +31,7 @@ from .status_bar import StatusBar
 from .vadj_to_bottom import VAdjToBottom
 from .history import History
 from .autocomplete import Autocomplete
+from .call_tips import CallTips
 from .subp import Subprocess
 
 # Tags and colors
@@ -96,6 +102,8 @@ class DreamPie(SimpleGladeApp):
         # Hack: we connect this signal here, so that it will have lower
         # priority than the key-press event of autocomplete, when active.
         self.sourceview.connect('key-press-event', self.on_sourceview_keypress)
+
+        self.call_tips = CallTips(self.sourceview, self.call_subp, INDENT_WIDTH)
 
         self.subp = Subprocess(
             executable,
@@ -340,13 +348,13 @@ class DreamPie(SimpleGladeApp):
 
     @sourceview_keyhandler('period', 0)
     def on_sourceview_period(self):
-        glib.timeout_add(AUTOCOMPLETE_WAIT, self.check_autocomplete, '.')
+        timeout_add(AUTOCOMPLETE_WAIT, self.check_autocomplete, '.')
     @sourceview_keyhandler('slash', 0)
     def on_sourceview_slash(self):
-        glib.timeout_add(AUTOCOMPLETE_WAIT, self.check_autocomplete, '/')
+        timeout_add(AUTOCOMPLETE_WAIT, self.check_autocomplete, '/')
     @sourceview_keyhandler('backslash', 0)
     def on_sourceview_backslash(self):
-        glib.timeout_add(AUTOCOMPLETE_WAIT, self.check_autocomplete, '\\')
+        timeout_add(AUTOCOMPLETE_WAIT, self.check_autocomplete, '\\')
 
     def check_autocomplete(self, last_char):
         """
@@ -363,6 +371,10 @@ class DreamPie(SimpleGladeApp):
                 self.autocomplete.show_completions(is_auto=True, complete=False)
         # return False so as not to be called repeatedly.
         return False
+
+    @sourceview_keyhandler('parenleft', 0)
+    def on_sourceview_parenleft(self):
+        idle_add(self.call_tips.show, True)
 
     def on_sourceview_keypress(self, widget, event):
         keyval, group, level, consumed_mods = \
@@ -491,6 +503,9 @@ class DreamPie(SimpleGladeApp):
 
     def on_show_completions(self, widget):
         self.autocomplete.show_completions(is_auto=False, complete=False)
+
+    def on_show_calltip(self, widget):
+        self.call_tips.show(is_auto=False)
 
     def on_close(self, widget, event):
         gtk.main_quit()

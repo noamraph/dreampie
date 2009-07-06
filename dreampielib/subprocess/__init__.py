@@ -10,11 +10,13 @@ import traceback
 import types
 import keyword
 import __builtin__
+import inspect
+import repr
 
 from ..common.objectstream import send_object, recv_object
 from .split_to_singles import split_to_singles
 
-# import rpdb2; rpdb2.start_embedded_debugger('a')
+#import rpdb2; rpdb2.start_embedded_debugger('a')
 
 import logging
 from logging import debug
@@ -224,6 +226,67 @@ class Subprocess(object):
     @rpc_func
     def abspath(self, path):
         return os.path.abspath(os.path.expanduser(path))
+
+    @staticmethod
+    def _find_constructor(class_ob):
+        # Given a class object, return a function object used for the
+        # constructor (ie, __init__() ) or None if we can't find one.
+        try:
+            return class_ob.__init__.im_func
+        except AttributeError:
+            for base in class_ob.__bases__:
+                rc = _find_constructor(base)
+                if rc is not None: return rc
+        return None
+
+    @rpc_func
+    def get_arg_text(self, expr):
+        """Get a string describing the arguments for the given object"""
+        # This is based on Python's idlelib/CallTips.py, and the work of
+        # Beni Cherniavsky.
+        try:
+            entity = eval(expr, self.locs)
+        except Exception, e:
+            return None
+        arg_text = ""
+        arg_offset = 0
+        if type(entity) is types.ClassType:
+            # Look for the highest __init__ in the class chain.
+            fob = self._find_constructor(entity)
+            if fob is None:
+                fob = lambda: None
+            else:
+                arg_offset = 1
+        elif type(entity) is types.MethodType:
+            # bit of a hack for methods - turn it into a function
+            # but we drop the "self" param.
+            fob = entity.im_func
+            arg_offset = 1
+        else:
+            fob = entity
+        # Try and build one for Python defined functions
+        if type(fob) in [types.FunctionType, types.LambdaType]:
+            try:
+                args, varargs, varkw, defaults = inspect.getargspec(fob)
+                def formatvalue(obj):
+                    return "=" + repr.repr(obj)
+                arg_text = inspect.formatargspec(args[arg_offset:],
+                                                varargs, varkw, defaults,
+                                                formatvalue=formatvalue)
+            except Exception:
+                pass
+        # See if we can use the docstring
+        doc = inspect.getdoc(entity)
+        if doc:
+            doc = doc.lstrip()
+            pos = doc.find("\n")
+            if pos < 0 or pos > 70:
+                pos = 70
+            if arg_text:
+                arg_text += "\n"
+            arg_text += doc[:pos]
+        return arg_text
+
 
 # Handle GUI events
 
