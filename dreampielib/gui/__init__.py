@@ -126,8 +126,8 @@ class DreamPie(SimpleGladeApp):
     def on_copy(self, widget):
         return self.selection.copy()
 
-    def on_copy_only_commands(self, widget):
-        return self.selection.copy_only_commands()
+    def on_copy_commands_only(self, widget):
+        return self.selection.copy_commands_only()
 
     def on_paste(self, widget):
         return self.selection.paste()
@@ -135,7 +135,7 @@ class DreamPie(SimpleGladeApp):
     def on_is_something_selected_changed(self, is_something_selected):
         self.menuitem_cut.props.sensitive = is_something_selected
         self.menuitem_copy.props.sensitive = is_something_selected
-        self.menuitem_copy_only_commands.props.sensitive = is_something_selected
+        self.menuitem_copy_commands_only.props.sensitive = is_something_selected
         self.menuitem_interrupt.props.sensitive = not is_something_selected
 
     # Source buffer, Text buffer
@@ -508,7 +508,21 @@ class DreamPie(SimpleGladeApp):
         self.call_tips.show(is_auto=False)
 
     def on_close(self, widget, event):
-        gtk.main_quit()
+        self.quit()
+        return True
+
+    def on_quit(self, widget):
+        self.quit()
+
+    def quit(self):
+        msg = gtk.MessageDialog(self.window_main, gtk.DIALOG_MODAL,
+                                gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO,
+                                _("Are you sure you want to quit?"))
+        response = msg.run()
+        msg.destroy()
+        if response == gtk.RESPONSE_YES:
+            self.window_main.destroy()
+            gtk.main_quit()
 
     def on_about(self, widget):
         w = gtk.AboutDialog()

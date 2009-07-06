@@ -44,7 +44,7 @@ class Selection(object):
         else:
             gdk.beep()
 
-    def copy_only_commands(self):
+    def copy_commands_only(self):
         if self.sourcebuffer.get_has_selection():
             self.sourcebuffer.copy_clipboard(self.clipboard)
             return
