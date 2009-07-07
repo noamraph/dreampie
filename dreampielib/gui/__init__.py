@@ -26,6 +26,7 @@ from .SimpleGladeApp import SimpleGladeApp
 from .write_command import write_command
 from .newline_and_indent import newline_and_indent
 
+from .output import Output
 from .selection import Selection
 from .status_bar import StatusBar
 from .vadj_to_bottom import VAdjToBottom
@@ -58,6 +59,8 @@ colors = {
 
 INDENT_WIDTH = 4
 
+LINE_LEN = 80
+
 # Time to wait before autocompleting, to see if the user continues to type
 AUTOCOMPLETE_WAIT = 400
 
@@ -85,6 +88,8 @@ class DreamPie(SimpleGladeApp):
         self.init_textbufferview()
 
         self.init_sourcebufferview()
+
+        self.output = Output(self.textview, LINE_LEN)
 
         self.selection = Selection(self.textview, self.sourceview,
                                    self.on_is_something_selected_changed)
@@ -162,7 +167,9 @@ class DreamPie(SimpleGladeApp):
         context = tv.get_pango_context()
         metrics = context.get_metrics(tv.style.font_desc,
                                       context.get_language())
-        width = pango.PIXELS(metrics.get_approximate_digit_width()*81)
+        # I don't know why I have to add 2, but it works.
+        width = pango.PIXELS(metrics.get_approximate_digit_width()*(LINE_LEN+2))
+        tv.set_size_request(width, -1)
         height = pango.PIXELS(
             (metrics.get_ascent() + metrics.get_descent())*30)
         self.window_main.set_default_size(width, height)
@@ -231,6 +238,7 @@ class DreamPie(SimpleGladeApp):
                 gdk.beep()
         else:
             write_command(self.write, source.strip())
+            self.output.set_mark(tb.get_end_iter())
             sb.delete(sb.get_start_iter(), sb.get_end_iter())
             self.vadj_to_bottom.scroll_to_bottom()
             self.is_executing = True
@@ -422,10 +430,10 @@ class DreamPie(SimpleGladeApp):
         self.subp.kill()
 
     def on_stdout_recv(self, data):
-        self.write(data, STDOUT)
+        self.output.write(data, STDOUT)
 
     def on_stderr_recv(self, data):
-        self.write(data, STDERR)
+        self.output.write(data, STDERR)
 
     def call_subp(self, funcname, *args):
         self.subp.send_object((funcname, args))
@@ -438,6 +446,8 @@ class DreamPie(SimpleGladeApp):
 
         if not is_ok:
             self.write(exc_info, EXCEPTION)
+        if self.textbuffer.get_end_iter().get_line_offset() != 0:
+            self.write('\n')
         self.write('>>> ', COMMAND, PROMPT)
         self.is_executing = False
         self.menuitem_execute.props.visible = True

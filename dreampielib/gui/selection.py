@@ -38,7 +38,13 @@ class Selection(object):
 
     def copy(self):
         if self.textbuffer.get_has_selection():
-            self.textbuffer.copy_clipboard(self.clipboard)
+            # Don't copy '\r' chars, which are newlines only used for
+            # display
+            tb = self.textbuffer
+            sel_start, sel_end = tb.get_selection_bounds()
+            text = tb.get_text(sel_start, sel_end).decode('utf8')
+            text = text.replace('\r', '')
+            self.clipboard.set_text(text)
         elif self.sourcebuffer.get_has_selection():
             self.sourcebuffer.copy_clipboard(self.clipboard)
         else:
