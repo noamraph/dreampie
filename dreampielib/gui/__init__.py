@@ -22,10 +22,11 @@ except ImportError:
     # In PyGObject 2.14, it's in gobject.
     from gobject import timeout_add, idle_add
 
+from .. import __version__
+
 from .SimpleGladeApp import SimpleGladeApp
 from .write_command import write_command
 from .newline_and_indent import newline_and_indent
-
 from .output import Output
 from .selection import Selection
 from .status_bar import StatusBar
@@ -415,7 +416,7 @@ class DreamPie(SimpleGladeApp):
     def show_welcome(self):
         s = 'Python %s on %s\n' % (sys.version, sys.platform)
         s +='Type "copyright", "credits" or "license()" for more information.\n'
-        s += 'DreamPie 0.1\n'
+        s += 'DreamPie %s\n' % __version__
         self.write(s, MESSAGE)
 
         self.write('>>> ', COMMAND, PROMPT)
@@ -537,7 +538,7 @@ class DreamPie(SimpleGladeApp):
     def on_about(self, widget):
         w = gtk.AboutDialog()
         w.set_name('DreamPie')
-        w.set_version('0.1')
+        w.set_version(__version__)
         w.set_comments(_("The interactive Python shell you've always dreamed "
                          "about!"))
         w.set_copyright(_('Copyright © 2008 Noam Raphael'))
