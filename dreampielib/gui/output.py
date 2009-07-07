@@ -7,6 +7,8 @@ from StringIO import StringIO
 from .tags import STDOUT, STDERR
 
 remove_cr_re = re.compile(r'\n[^\n]*\r')
+# Match ANSI escapes. See http://en.wikipedia.org/wiki/ANSI_escape_code
+ansi_escape_re = re.compile(r'\x1b\[[^@-~]*?[@-~]')
 
 class Output(object):
     """
@@ -30,6 +32,8 @@ class Output(object):
         # sys.stdout.encoding is transferred to the subprocess as
         # PYTHONENCODING, so that's how we should interpret its output.
         data = data.decode(sys.stdout.encoding, 'replace')
+
+        data = ansi_escape_re.sub('', data)
         
         has_trailing_cr = data.endswith('\r')
         if has_trailing_cr:
