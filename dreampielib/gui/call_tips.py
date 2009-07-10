@@ -81,7 +81,7 @@ class CallTips(object):
         self.label.props.xpad = 2
         self.label.props.ypad = 2
         self.window = gtk.Window(gtk.WINDOW_POPUP)
-        self.window.modify_bg(0, gtk.gdk.Color('#ffffe0'))
+        self.window.modify_bg(0, gdk.color_parse('#ffffe0'))
         self.window.add(self.label)
         self.place_window()
 
