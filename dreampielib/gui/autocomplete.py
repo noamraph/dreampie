@@ -17,10 +17,12 @@ from os.path import sep
 #sep = '\\'
 
 class Autocomplete(object):
-    def __init__(self, sourceview, call_subp, INDENT_WIDTH):
+    def __init__(self, sourceview, complete_attributes, subp_abspath,
+                 INDENT_WIDTH):
         self.sourceview = sourceview
         self.sourcebuffer = sourceview.get_buffer()
-        self.call_subp = call_subp
+        self.complete_attributes = complete_attributes
+        self.subp_abspath = subp_abspath
         self.INDENT_WIDTH = INDENT_WIDTH
 
         self.window = AutocompleteWindow(sourceview, self._on_complete)
@@ -102,7 +104,10 @@ class Autocomplete(object):
                 return
         else:
             comp_what = ''
-        public, private = self.call_subp('complete_attributes', comp_what)
+        public_and_private = self.complete_attributes(comp_what)
+        if public_and_private is None:
+            return
+        public, private = public_and_private
         return comp_prefix, public, private
 
     def _complete_filenames(self, text, index, hp, is_auto):
@@ -156,7 +161,9 @@ class Autocomplete(object):
         except SyntaxError:
             return
 
-        abspath = self.call_subp('abspath', comp_what)
+        abspath = self.subp_abspath(comp_what)
+        if abspath is None:
+            return
         try:
             dirlist = os.listdir(abspath)
         except OSError:

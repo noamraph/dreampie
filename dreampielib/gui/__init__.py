@@ -102,14 +102,17 @@ class DreamPie(SimpleGladeApp):
 
         self.history = History(self.textview, self.sourceview)
 
-        self.autocomplete = Autocomplete(self.sourceview, self.call_subp,
+        self.autocomplete = Autocomplete(self.sourceview,
+                                         self.complete_attributes,
+                                         self.subp_abspath,
                                          INDENT_WIDTH)
 
         # Hack: we connect this signal here, so that it will have lower
         # priority than the key-press event of autocomplete, when active.
         self.sourceview.connect('key-press-event', self.on_sourceview_keypress)
 
-        self.call_tips = CallTips(self.sourceview, self.call_subp, INDENT_WIDTH)
+        self.call_tips = CallTips(self.sourceview, self.get_arg_text,
+                                  INDENT_WIDTH)
 
         self.subp = Subprocess(
             executable,
@@ -515,8 +518,23 @@ class DreamPie(SimpleGladeApp):
     def on_show_completions(self, widget):
         self.autocomplete.show_completions(is_auto=False, complete=False)
 
+    def complete_attributes(self, expr):
+        if self.is_executing:
+            return None
+        return self.call_subp('complete_attributes', expr)
+
+    def subp_abspath(self, path):
+        if self.is_executing:
+            return None
+        return self.call_subp('abspath', path)
+
     def on_show_calltip(self, widget):
         self.call_tips.show(is_auto=False)
+
+    def get_arg_text(self, expr):
+        if self.is_executing:
+            return None
+        return self.call_subp('get_arg_text', expr)
 
     def on_close(self, widget, event):
         self.quit()

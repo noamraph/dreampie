@@ -13,10 +13,10 @@ except ImportError:
 from .hyper_parser import HyperParser
 
 class CallTips(object):
-    def __init__(self, sourceview, call_subp, INDENT_WIDTH):
+    def __init__(self, sourceview, get_arg_text, INDENT_WIDTH):
         self.sourceview = sourceview
         self.sourcebuffer = sb = sourceview.get_buffer()
-        self.call_subp = call_subp
+        self.get_arg_text = get_arg_text
         self.INDENT_WIDTH = INDENT_WIDTH
 
         self.label = None
@@ -67,7 +67,7 @@ class CallTips(object):
         expr = hp.get_expression()
         if not expr or (is_auto and expr.find('(') != -1):
             return and_maybe_beep()
-        arg_text = self.call_subp('get_arg_text', expr)
+        arg_text = self.get_arg_text(expr)
 
         if not arg_text:
             return and_maybe_beep()
