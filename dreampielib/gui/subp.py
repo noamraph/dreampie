@@ -4,7 +4,7 @@ import sys
 import os
 import time
 import signal
-from subprocess import Popen, PIPE
+from .subprocess_interact import Popen, PIPE
 from select import select
 import socket
 import random
@@ -100,28 +100,22 @@ class Subprocess(object):
             self._on_subp_restarted()
             return True
 
-        # Read from stdout, stderr, and socket
-        ready, _, _ = select([popen.stdout, popen.stderr, self._sock], [], [], 0)
-
-        if popen.stdout in ready:
-            r = []
-            while True:
-                r.append(os.read(popen.stdout.fileno(), 8192))
-                if not select([popen.stdout], [], [], 0)[0]:
-                    break
-            r = ''.join(r)
+        # Read from stdout
+        r = popen.recv()
+        if r is None:
+            raise IOError("Error on receiving stdout from subprocess")
+        if r:
             self._on_stdout_recv(r)
-                
-        if popen.stderr in ready:
-            r = []
-            while True:
-                r.append(os.read(popen.stderr.fileno(), 8192))
-                if not select([popen.stderr], [], [], 0)[0]:
-                    break
-            r = ''.join(r)
+
+        # Read from stderr
+        r = popen.recv_err()
+        if r is None:
+            raise IOError("Error on receiving stderr from subprocess")
+        if r:
             self._on_stderr_recv(r)
         
-        if self._sock in ready:
+        # Read from socket
+        if select([self._sock], [], [], 0)[0]:
             obj = recv_object(self._sock)
             self._on_object_recv(obj)
 

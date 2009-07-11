@@ -264,6 +264,7 @@ class DreamPie(SimpleGladeApp):
         self.write('\n', STDIN)
         self.vadj_to_bottom.scroll_to_bottom()
         self.subp.write(s)
+        self.output.set_mark(self.textbuffer.get_end_iter())
         sb.delete(sb.get_start_iter(), sb.get_end_iter())
 
     @sourceview_keyhandler('Return', 0)
