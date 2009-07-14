@@ -25,6 +25,7 @@ except ImportError:
 from .. import __version__
 
 from .SimpleGladeApp import SimpleGladeApp
+from .config import Config
 from .write_command import write_command
 from .newline_and_indent import newline_and_indent
 from .output import Output
@@ -83,8 +84,10 @@ class DreamPie(SimpleGladeApp):
                                  'dreampie.glade')
         SimpleGladeApp.__init__(self, gladefile)
 
+        self.config = Config()
+
         self.window_main.set_icon_from_file(
-            os.path.join(os.path.dirname(__file__), 'dreampie.svg'))
+            os.path.join(os.path.dirname(__file__), 'dreampie.png'))
 
         self.init_textbufferview()
 
@@ -155,7 +158,7 @@ class DreamPie(SimpleGladeApp):
 
         tv.modify_base(0, gdk.color_parse('black'))
         tv.modify_text(0, gdk.color_parse('white'))
-        tv.modify_font(pango.FontDescription('courier new,monospace'))
+        tv.modify_font(pango.FontDescription(self.config.get('font')))
 
         # We have to add the tags in a specific order, so that the priority
         # of the syntax tags will be higher.
@@ -188,7 +191,7 @@ class DreamPie(SimpleGladeApp):
         self.sourcebuffer.set_style_scheme(
             make_style_scheme(default_style_scheme_spec))
         self.sourceview.modify_font(
-            pango.FontDescription('courier new,monospace'))
+            pango.FontDescription(self.config.get('font')))
         self.scrolledwindow_sourceview.add(self.sourceview)
         self.sourceview.connect('focus-in-event', self.on_sourceview_focus_in)
         self.sourceview.grab_focus()
@@ -390,9 +393,12 @@ class DreamPie(SimpleGladeApp):
         idle_add(self.call_tips.show, True)
 
     def on_sourceview_keypress(self, widget, event):
-        keyval, group, level, consumed_mods = \
-            gdk.keymap_get_default().translate_keyboard_state(
-                event.hardware_keycode, event.state, event.group)
+        r = gdk.keymap_get_default().translate_keyboard_state(
+            event.hardware_keycode, event.state, event.group)
+        if r is None:
+            # This seems to be the case when pressing CapsLock on win32
+            return
+        keyval, group, level, consumed_mods = r
         state = event.state & ~consumed_mods
         keyval_name = gdk.keyval_name(keyval)
         try:
@@ -537,6 +543,19 @@ class DreamPie(SimpleGladeApp):
             return None
         return self.call_subp('get_arg_text', expr)
 
+    def on_choose_font(self, widget):
+        fontsel = gtk.FontSelectionDialog(_("Choose DreamPie font"))
+        fontsel.set_font_name(self.config.get('font'))
+        response = fontsel.run()
+        font_name = fontsel.get_font_name()
+        fontsel.destroy()
+        if response == gtk.RESPONSE_OK:
+            self.config.set('font', font_name)
+            font = pango.FontDescription(font_name)
+            self.textview.modify_font(font)
+            self.sourceview.modify_font(font)
+            self.set_window_default_size()
+
     def on_close(self, widget, event):
         self.quit()
         return True
@@ -552,6 +571,7 @@ class DreamPie(SimpleGladeApp):
         msg.destroy()
         if response == gtk.RESPONSE_YES:
             self.window_main.destroy()
+            self.subp.kill()
             gtk.main_quit()
 
     def on_about(self, widget):
@@ -560,7 +580,7 @@ class DreamPie(SimpleGladeApp):
         w.set_version(__version__)
         w.set_comments(_("The interactive Python shell you've always dreamed "
                          "about!"))
-        w.set_copyright(_('Copyright © 2008 Noam Raphael'))
+        w.set_copyright(_('Copyright © 2008 Noam Yorav-Raphael'))
         w.set_license(
             "DreamPie is free software; you can redistribute it and/or modify "
             "it under the terms of the GNU General Public License as published "
@@ -576,9 +596,9 @@ class DreamPie(SimpleGladeApp):
             "02110-1301 USA"
             )
         w.set_wrap_license(True)
-        w.set_authors([_('Noam Raphael <noamraph@gmail.com>')])
+        w.set_authors([_('Noam Yorav-Raphael <noamraph@gmail.com>')])
         w.set_logo(gdk.pixbuf_new_from_file(
-            os.path.join(os.path.dirname(__file__), 'dreampie.svg')))
+            os.path.join(os.path.dirname(__file__), 'dreampie.png')))
         w.run()
         w.destroy()
 

@@ -20,7 +20,7 @@ from .split_to_singles import split_to_singles
 
 import logging
 from logging import debug
-logging.basicConfig(filename='/tmp/dreampie_subp_log', level=logging.DEBUG)
+#logging.basicConfig(filename='/tmp/dreampie_subp_log', level=logging.DEBUG)
 
 # time interval to process GUI events, in seconds
 GUI_SLEEP = 0.1
@@ -157,8 +157,11 @@ class Subprocess(object):
             
         # Send back any data left on stdin.
         rem_stdin = []
-        while select([sys.stdin], [], [], 0)[0]:
-            rem_stdin.append(os.read(sys.stdin.fileno(), 8192))
+        if sys.platform != 'win32':
+            while select([sys.stdin], [], [], 0)[0]:
+                rem_stdin.append(os.read(sys.stdin.fileno(), 8192))
+        else:
+            pass
         rem_stdin = ''.join(rem_stdin)
 
         yield is_success, exception_string, rem_stdin

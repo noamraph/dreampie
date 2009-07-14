@@ -74,7 +74,7 @@ class Subprocess(object):
         popen = Popen([sys.executable,
                        self._executable, 'subprocess', str(port)],
                        stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                       close_fds=True, env=env)
+                       env=env)
         #debug("Waiting for the subprocess to connect")
         s.listen(1)
         self._sock, addr = s.accept()
@@ -136,7 +136,8 @@ class Subprocess(object):
     def kill(self):
         # Send SIGABRT, and if the process didn't terminate within 1 second,
         # send SIGKILL.
-        # The subprocess will hopefully restart.
+        # The subprocess will hopefully restart, if you continue with the event
+        # loop.
         os.kill(self._popen.pid, signal.SIGABRT)
         killtime = time.time()
         while True:
