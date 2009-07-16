@@ -47,22 +47,6 @@ from .tags import STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND, MESSAGE
 
 from .tags import KEYWORD, BUILTIN, STRING, NUMBER, COMMENT
 
-colors = {
-    STDIN: 'white',
-    STDOUT: '#bcffff',
-    STDERR: '#ff8080',
-    EXCEPTION: '#ff8080',
-    PROMPT: '#e400b6',
-    COMMAND: 'white',
-    MESSAGE: 'yellow',
-
-    KEYWORD: '#ff7700',
-    BUILTIN: '#efcfcf',
-    STRING: '#00e400',
-    NUMBER: '#aeacff',
-    COMMENT: '#c9a3a0',
-    }
-
 INDENT_WIDTH = 4
 
 LINE_LEN = 80
@@ -134,6 +118,39 @@ class DreamPie(SimpleGladeApp):
         self.window_main.show_all()
 
 
+    # Colors
+
+    def get_fg_color(self, name):
+        return self.config.get('%s-fg' % name, section='Colors')
+
+    def get_bg_color(self, name):
+        return self.config.get('%s-bg' % name, section='Colors')
+
+    def get_style_scheme_spec(self):
+        mapping = {
+            'text': 'text',
+            
+            'def:keyword': KEYWORD,
+            'def:preprocessor': KEYWORD,
+
+            'def:builtin': BUILTIN,
+            'def:special-constant': BUILTIN,
+            'def:type': BUILTIN,
+
+            'def:string': STRING,
+            'def:number': NUMBER,
+            'def:comment': COMMENT,
+
+            'bracket-match': 'bracket-match',
+            }
+
+        res = {}
+        for key, value in mapping.iteritems():
+            res[key] = dict(foreground=self.get_fg_color(value),
+                            background=self.get_bg_color(value))
+        return res
+
+
     # Selection
 
     def on_cut(self, widget):
@@ -160,15 +177,16 @@ class DreamPie(SimpleGladeApp):
         tv = self.textview
         self.textbuffer = tb = tv.get_buffer()
 
-        tv.modify_base(0, gdk.color_parse('black'))
-        tv.modify_text(0, gdk.color_parse('white'))
+        tv.modify_base(0, gdk.color_parse(self.get_bg_color('text')))
+        tv.modify_text(0, gdk.color_parse(self.get_fg_color('text')))
         tv.modify_font(pango.FontDescription(self.config.get('font')))
 
         # We have to add the tags in a specific order, so that the priority
         # of the syntax tags will be higher.
         for tag in (STDOUT, STDERR, EXCEPTION, COMMAND, PROMPT, STDIN, MESSAGE,
                     KEYWORD, BUILTIN, STRING, NUMBER, COMMENT):
-            tb.create_tag(tag, foreground=colors[tag])
+            tb.create_tag(tag, foreground=self.get_fg_color(tag),
+                          background=self.get_bg_color(tag))
 
         tv.connect('key-press-event', self.on_textview_keypress)
         tv.connect('focus-in-event', self.on_textview_focus_in)
@@ -193,7 +211,7 @@ class DreamPie(SimpleGladeApp):
         python = lm.get_language('python')
         self.sourcebuffer.set_language(python)
         self.sourcebuffer.set_style_scheme(
-            make_style_scheme(default_style_scheme_spec))
+            make_style_scheme(self.get_style_scheme_spec()))
         self.sourceview.modify_font(
             pango.FontDescription(self.config.get('font')))
         self.scrolledwindow_sourceview.add(self.sourceview)
@@ -643,24 +661,6 @@ def make_style_scheme(spec):
 
     return scheme
 
-default_style_scheme_spec = {
-    'text': dict(background='black', foreground='white'),
-    
-    'def:keyword': dict(foreground=colors[KEYWORD]),
-    'def:preprocessor': dict(foreground=colors[KEYWORD]),
-
-    'def:builtin': dict(foreground=colors[BUILTIN]),
-    'def:special-constant': dict(foreground=colors[BUILTIN]),
-    'def:type': dict(foreground=colors[BUILTIN]),
-
-    'def:string': dict(foreground=colors[STRING]),
-    'def:number': dict(foreground=colors[NUMBER]),
-    'def:comment': dict(foreground=colors[COMMENT]),
-
-    'bracket-match': dict(foreground='white', background='darkblue'),
-    }
-
-        
 
 def main(executable):
     gtk.widget_set_default_direction(gtk.TEXT_DIR_LTR)
