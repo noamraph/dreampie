@@ -1,4 +1,20 @@
-# -*- coding: utf-8 -*-
+# Copyright 2009 Noam Yorav-Raphael
+#
+# This file is part of DreamPie.
+# 
+# DreamPie is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# DreamPie is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+
 import sys
 import os
 import time
@@ -602,7 +618,7 @@ class DreamPie(SimpleGladeApp):
         w.set_version(__version__)
         w.set_comments(_("The interactive Python shell you've always dreamed "
                          "about!"))
-        w.set_copyright(_('Copyright © 2008 Noam Yorav-Raphael'))
+        w.set_copyright(_('Copyright 2008,2009 Noam Yorav-Raphael'))
         w.set_license(
             "DreamPie is free software; you can redistribute it and/or modify "
             "it under the terms of the GNU General Public License as published "

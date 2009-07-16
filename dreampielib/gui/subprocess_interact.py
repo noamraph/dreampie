@@ -1,3 +1,6 @@
+# This module is based on a code by Josiah Carlson,
+# http://code.activestate.com/recipes/440554/
+
 import os
 import subprocess
 import errno
