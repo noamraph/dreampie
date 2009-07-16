@@ -13,6 +13,11 @@ import __builtin__
 import inspect
 import repr
 
+if sys.platform == 'win32':
+    from msvcrt import get_osfhandle
+    from ctypes import byref, c_ulong, windll
+    PeekNamedPipe = windll.kernel32.PeekNamedPipe
+
 from ..common.objectstream import send_object, recv_object
 from .split_to_singles import split_to_singles
 
@@ -162,6 +167,14 @@ class Subprocess(object):
                 rem_stdin.append(os.read(sys.stdin.fileno(), 8192))
         else:
             pass
+            fd = sys.stdin.fileno()
+            handle = get_osfhandle(fd)
+            avail = c_ulong(0)
+            PeekNamedPipe(handle, None, 0, None, byref(avail), None)
+            nAvail = avail.value
+            if nAvail > 0:
+                rem_stdin.append(os.read(fd, nAvail))
+
         rem_stdin = ''.join(rem_stdin)
 
         yield is_success, exception_string, rem_stdin

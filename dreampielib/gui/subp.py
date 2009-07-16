@@ -3,7 +3,10 @@ __all__ = ['Subprocess']
 import sys
 import os
 import time
-import signal
+if sys.platform != 'win32':
+    import signal
+else:
+    import ctypes
 from .subprocess_interact import Popen, PIPE
 from select import select
 import socket
@@ -40,6 +43,8 @@ class Subprocess(object):
         
         self._sock = None
         self._popen = None
+        self._last_kill_time = 0
+        
         self._start()
 
         # I know that polling isn't the best way, but on Windows you have
@@ -71,7 +76,14 @@ class Subprocess(object):
         env['PYTHONUNBUFFERED'] = '1'
         if sys.stdout.encoding:
             env['PYTHONIOENCODING'] = sys.stdout.encoding
-        popen = Popen([sys.executable,
+        executable = sys.executable
+        if executable.lower().endswith('pythonw.exe'):
+            # An annoying special case: If we are running from pythonw.exe,
+            # which has no stdout, we must change the executable so that the
+            # subprocess will have stdout. Hopefully, python.exe sits in the
+            # same directory as pythonw.exe
+            executable = executable[:-5] + '.exe'
+        popen = Popen([executable,
                        self._executable, 'subprocess', str(port)],
                        stdin=PIPE, stdout=PIPE, stderr=PIPE,
                        env=env)
@@ -91,7 +103,8 @@ class Subprocess(object):
         # Check if exited
         rc = popen.poll()
         if rc is not None:
-            debug("Process terminated with rc %r" % rc)
+            if time.time() - self._last_kill_time > 10:
+                debug("Process terminated unexpectedly with rc %r" % rc)
             self._sock.close()
             self._sock = None
             self._popen = None
@@ -102,15 +115,11 @@ class Subprocess(object):
 
         # Read from stdout
         r = popen.recv()
-        if r is None:
-            raise IOError("Error on receiving stdout from subprocess")
         if r:
             self._on_stdout_recv(r)
 
         # Read from stderr
         r = popen.recv_err()
-        if r is None:
-            raise IOError("Error on receiving stderr from subprocess")
         if r:
             self._on_stderr_recv(r)
         
@@ -134,20 +143,41 @@ class Subprocess(object):
         self._popen.stdin.write(data)
 
     def kill(self):
-        # Send SIGABRT, and if the process didn't terminate within 1 second,
-        # send SIGKILL.
-        # The subprocess will hopefully restart, if you continue with the event
-        # loop.
-        os.kill(self._popen.pid, signal.SIGABRT)
-        killtime = time.time()
-        while True:
-            rc = self._popen.poll()
-            if rc is not None:
-                break
-            if time.time() - killtime > 1:
-                os.kill(self._popen.pid, signal.SIGKILL)
-                break
-            time.sleep(0.1)
+        """Kill the subprocess.
+        If the event loop continues, will start another one."""
+        if sys.platform != 'win32':
+            # Send SIGABRT, and if the process didn't terminate within 1 second,
+            # send SIGKILL.
+            os.kill(self._popen.pid, signal.SIGABRT)
+            killtime = time.time()
+            while True:
+                rc = self._popen.poll()
+                if rc is not None:
+                    break
+                if time.time() - killtime > 1:
+                    os.kill(self._popen.pid, signal.SIGKILL)
+                    break
+                time.sleep(0.1)
+        else:
+            kernel32 = ctypes.windll.kernel32
+            PROCESS_TERMINATE = 1
+            handle = kernel32.OpenProcess(PROCESS_TERMINATE, False,
+                                          self._popen.pid)
+            kernel32.TerminateProcess(handle, -1)
+            kernel32.CloseHandle(handle)
+        self._last_kill_time = time.time()
 
     def interrupt(self):
-        os.kill(self._popen.pid, signal.SIGINT)
+        if sys.platform != 'win32':
+            os.kill(self._popen.pid, signal.SIGINT)
+        else:
+            kernel32 = ctypes.windll.kernel32
+            CTRL_C_EVENT = 0
+            try:
+                kernel32.GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0)
+                time.sleep(10)
+            except KeyboardInterrupt:
+                # This also sends us a KeyboardInterrupt. It should
+                # happen in time.sleep.
+                pass
+

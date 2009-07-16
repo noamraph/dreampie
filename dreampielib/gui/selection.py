@@ -20,15 +20,23 @@ class Selection(object):
         self.sourcebuffer = sourceview.get_buffer()
         self.on_is_something_selected_changed = on_is_something_selected_changed
         
-        self.primary_selection = gtk.Clipboard(selection=gdk.SELECTION_PRIMARY)
-        self.primary_selection.connect('owner-change',
-                                       self.on_selection_changed)
+        self.is_something_selected = None
+        self.textbuffer.connect('mark-set', self.on_mark_set)
+        self.sourcebuffer.connect('mark-set', self.on_mark_set)
         self.clipboard = gtk.Clipboard()
 
     def on_selection_changed(self, clipboard, event):
         is_something_selected = (self.textbuffer.get_has_selection()
                                  or self.sourcebuffer.get_has_selection())
         self.on_is_something_selected_changed(is_something_selected)
+
+    def on_mark_set(self, widget, it, mark):
+        is_something_selected = (self.textbuffer.get_has_selection()
+                                 or self.sourcebuffer.get_has_selection())
+        if self.is_something_selected is None \
+           or is_something_selected != self.is_something_selected:
+            self.is_something_selected = is_something_selected
+            self.on_is_something_selected_changed(is_something_selected)
 
     def cut(self):
         if self.sourcebuffer.get_has_selection():

@@ -8,6 +8,10 @@ import logging
 from logging import debug
 logging.basicConfig(format="dreampie: %(message)s", level=logging.DEBUG)
 
+if sys.platform == 'win32':
+    from .load_pygtk import load_pygtk
+    load_pygtk()
+
 import pygtk
 pygtk.require('2.0')
 import gobject

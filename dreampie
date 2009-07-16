@@ -8,5 +8,9 @@ if len(sys.argv) > 1 and sys.argv[1] == 'subprocess':
     main(port)
 
 else:
+    if len(sys.argv) > 1 and sys.argv[1] == 'hide-console-window':
+        from dreampielib.gui.hide_console_window import hide_console_window
+        hide_console_window()
+        
     from dreampielib.gui import main
     main(__file__)
