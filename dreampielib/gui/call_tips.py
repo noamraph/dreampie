@@ -28,6 +28,7 @@ except ImportError:
     from gobject import idle_add
 
 from .hyper_parser import HyperParser
+from .beep import beep
 
 class CallTips(object):
     def __init__(self, sourceview, get_arg_text, INDENT_WIDTH):
@@ -68,7 +69,7 @@ class CallTips(object):
         # This is used to write "return and_maybe_beep()".
         def and_maybe_beep():
             if not is_auto:
-                gdk.beep()
+                beep()
             return None
 
         if not hp.is_in_code():

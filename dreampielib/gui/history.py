@@ -4,6 +4,7 @@ import gtk
 from gtk import gdk
 
 from .tags import COMMAND, PROMPT
+from .beep import beep
 
 class History(object):
     """
@@ -81,11 +82,11 @@ class History(object):
 
         it = tb.get_iter_at_mark(tb.get_insert())
         if not it.has_tag(command) and not it.ends_tag(command):
-            gdk.beep()
+            beep()
             return True
         s = self._iter_get_command(it)
         if not s:
-            gdk.beep()
+            beep()
             return True
         self.sourcebuffer.set_text(s)
         self.sourceview.grab_focus()
@@ -111,7 +112,7 @@ class History(object):
             if self.sb_changed:
                 if sb.get_end_iter().get_line() != 0:
                     # Don't allow prefixes of more than one line
-                    gdk.beep()
+                    beep()
                     return
                 self.hist_prefix = sb.get_text(sb.get_start_iter(),
                                                sb.get_end_iter())
@@ -119,14 +120,14 @@ class History(object):
                 tb.move_mark(self.hist_mark, tb.get_end_iter())
             it = tb.get_iter_at_mark(self.hist_mark)
             if it.is_start():
-                gdk.beep()
+                beep()
                 return
             while True:
                 it.backward_to_tag_toggle(command)
                 if it.ends_tag(command):
                     it.backward_to_tag_toggle(command)
                 if not it.begins_tag(command):
-                    gdk.beep()
+                    beep()
                     break
                 first_line = self._iter_get_command(it, only_first_line=True)
                 if (first_line
@@ -140,11 +141,11 @@ class History(object):
                     tb.move_mark(self.hist_mark, it)
                     break
                 if it.is_start():
-                    gdk.beep()
+                    beep()
                     return
 
         else:
-            gdk.beep()
+            beep()
 
     def history_down(self):
         """Called when the history down command is required"""
@@ -164,7 +165,7 @@ class History(object):
             sb = self.sourcebuffer
             command = tb.get_tag_table().lookup(COMMAND)
             if self.sb_changed:
-                gdk.beep()
+                beep()
                 return
             it = tb.get_iter_at_mark(self.hist_mark)
             while True:
@@ -192,4 +193,4 @@ class History(object):
                     break
 
         else:
-            gdk.beep()
+            beep()

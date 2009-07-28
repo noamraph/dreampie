@@ -56,6 +56,7 @@ from .history import History
 from .autocomplete import Autocomplete
 from .call_tips import CallTips
 from .subprocess_handler import SubprocessHandler
+from .beep import beep
 
 # Tags and colors
 
@@ -282,7 +283,7 @@ class DreamPie(SimpleGladeApp):
                     status_msg = _("Command is incomplete")
                     sb.place_cursor(sb.get_end_iter())
                 self.status_bar.set_status(status_msg)
-                gdk.beep()
+                beep()
         else:
             write_command(self.write, source.strip())
             self.output.set_mark(tb.get_end_iter())
@@ -547,7 +548,7 @@ class DreamPie(SimpleGladeApp):
         if self.is_executing:
             self.send_stdin()
         elif self.sourcebuffer.get_char_count() == 0:
-            gdk.beep()
+            beep()
         else:
             self.execute_source(True)
         return True
@@ -558,7 +559,7 @@ class DreamPie(SimpleGladeApp):
         else:
             self.status_bar.set_status(
                 _("A command isn't being executed currently"))
-            gdk.beep()
+            beep()
 
     # Other events
 

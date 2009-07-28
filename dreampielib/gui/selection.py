@@ -21,6 +21,7 @@ import gtk
 from gtk import gdk
 
 from .tags import COMMAND, PROMPT
+from .beep import beep
 
 class Selection(object):
     """
@@ -59,7 +60,7 @@ class Selection(object):
         if self.sourcebuffer.get_has_selection():
             self.sourcebuffer.cut_clipboard(self.clipboard, True)
         else:
-            gdk.beep()
+            beep()
 
     def copy(self):
         if self.textbuffer.get_has_selection():
@@ -73,14 +74,14 @@ class Selection(object):
         elif self.sourcebuffer.get_has_selection():
             self.sourcebuffer.copy_clipboard(self.clipboard)
         else:
-            gdk.beep()
+            beep()
 
     def copy_commands_only(self):
         if self.sourcebuffer.get_has_selection():
             self.sourcebuffer.copy_clipboard(self.clipboard)
             return
         if not self.textbuffer.get_has_selection():
-            gdk.beep()
+            beep()
             return
         # We need to copy the text which has the COMMAND tag, doesn't have
         # the PROMPT tag, and is selected.
@@ -108,7 +109,7 @@ class Selection(object):
             it = it2
         r = ''.join(r)
         if not r:
-            gdk.beep()
+            beep()
         else:
             self.clipboard.set_text(r)
 
@@ -116,4 +117,4 @@ class Selection(object):
         if self.sourceview.is_focus():
             self.sourcebuffer.paste_clipboard(self.clipboard, None, True)
         else:
-            gdk.beep()
+            beep()

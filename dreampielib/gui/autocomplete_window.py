@@ -24,6 +24,8 @@ import gtk
 from gtk import gdk
 import pango
 
+from .beep import beep
+
 try:
     from glib import idle_add
 except ImportError:
@@ -214,7 +216,7 @@ class AutocompleteWindow(object):
         if index > 0:
             self.select_row(index - 1)
         else:
-            gdk.beep()
+            beep()
         return True
 
     @keyhandler('Down', 0)
@@ -223,7 +225,7 @@ class AutocompleteWindow(object):
         if index < len(self.liststore) - 1:
             self.select_row(index + 1)
         else:
-            gdk.beep()
+            beep()
         return True
 
     @keyhandler('Home', 0)
@@ -245,7 +247,7 @@ class AutocompleteWindow(object):
         row = tv.get_path_at_pos(0, 1)[0][0]
         if sel.path_is_selected((row,)):
             if row == 0:
-                gdk.beep()
+                beep()
             row = max(row - N_ROWS, 0)
         self.select_row(row)
         return True
@@ -265,7 +267,7 @@ class AutocompleteWindow(object):
             row = last_row
         if sel.path_is_selected((row,)):
             if row == last_row:
-                gdk.beep()
+                beep()
             row = min(row + N_ROWS, last_row)
         self.select_row(row)
         return True

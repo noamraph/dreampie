@@ -26,6 +26,7 @@ from gtk import gdk
 
 from .hyper_parser import HyperParser
 from .autocomplete_window import AutocompleteWindow, find_prefix_range
+from .beep import beep
 
 # This string includes all chars that may be in an identifier
 ID_CHARS = string.ascii_letters + string.digits + "_"
@@ -70,7 +71,7 @@ class Autocomplete(object):
             comp_prefix, public, private = res
         else:
             if not is_auto:
-                gdk.beep()
+                beep()
             return
 
         combined = public + private
@@ -79,7 +80,7 @@ class Autocomplete(object):
         if start == end:
             # No completions
             if not is_auto:
-                gdk.beep()
+                beep()
             return
 
         if complete:
