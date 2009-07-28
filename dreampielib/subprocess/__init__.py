@@ -60,7 +60,7 @@ class Subprocess(object):
 
         # Trick things like pdb into thinking that the namespace we create is
         # the main module
-        mainmodule = types.ModuleType('__name__')
+        mainmodule = types.ModuleType('__main__')
         sys.modules['__main__'] = mainmodule
         self.locs = mainmodule.__dict__
 
