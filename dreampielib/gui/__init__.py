@@ -65,6 +65,7 @@ from .tags import KEYWORD, BUILTIN, STRING, NUMBER, COMMENT
 
 INDENT_WIDTH = 4
 
+# Default line length, by which we set the default window size
 LINE_LEN = 80
 
 # Time to wait before autocompleting, to see if the user continues to type
@@ -97,7 +98,7 @@ class DreamPie(SimpleGladeApp):
 
         self.init_sourcebufferview()
 
-        self.output = Output(self.textview, LINE_LEN)
+        self.output = Output(self.textview)
 
         self.selection = Selection(self.textview, self.sourceview,
                                    self.on_is_something_selected_changed)
@@ -193,6 +194,8 @@ class DreamPie(SimpleGladeApp):
         tv = self.textview
         self.textbuffer = tb = tv.get_buffer()
 
+        tv.set_wrap_mode(gtk.WRAP_CHAR)
+
         tv.modify_base(0, gdk.color_parse(self.get_bg_color('text')))
         tv.modify_text(0, gdk.color_parse(self.get_fg_color('text')))
         tv.modify_font(pango.FontDescription(self.config.get('font')))
@@ -214,7 +217,6 @@ class DreamPie(SimpleGladeApp):
                                       context.get_language())
         # I don't know why I have to add 2, but it works.
         width = pango.PIXELS(metrics.get_approximate_digit_width()*(LINE_LEN+2))
-        tv.set_size_request(width, -1)
         height = pango.PIXELS(
             (metrics.get_ascent() + metrics.get_descent())*30)
         self.window_main.set_default_size(width, height)

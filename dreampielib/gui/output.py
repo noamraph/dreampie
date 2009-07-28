@@ -10,14 +10,17 @@ remove_cr_re = re.compile(r'\n[^\n]*\r')
 # Match ANSI escapes. See http://en.wikipedia.org/wiki/ANSI_escape_code
 ansi_escape_re = re.compile(r'\x1b\[[^@-~]*?[@-~]')
 
+# Length after which to break a line with a '\r' - a character which we
+# ignore when copying.
+BREAK_LEN = 1600
+
 class Output(object):
     """
     Manage writing output (stdout and stderr) to the text view.
     """
-    def __init__(self, textview, LINE_LEN):
+    def __init__(self, textview):
         self.textview = textview
         self.textbuffer = tb = textview.get_buffer()
-        self.LINE_LEN = LINE_LEN
 
         self.mark = tb.create_mark(None, tb.get_end_iter(), left_gravity=True)
         self.is_cr = False
@@ -53,7 +56,7 @@ class Output(object):
             if cr_pos != -1:
                 data = data[cr_pos+1:]
 
-        # We DO use \r characters as linebreaks after LINE_LEN chars, which
+        # We DO use \r characters as linebreaks after BREAK_LEN chars, which
         # are not copied.
         f = StringIO()
 
@@ -64,8 +67,8 @@ class Output(object):
         if next_newline == -1:
             next_newline = len(data)
         while pos < len(data):
-            if next_newline - pos + col > self.LINE_LEN:
-                pos = pos + self.LINE_LEN - col
+            if next_newline - pos + col > BREAK_LEN:
+                pos = pos + BREAK_LEN - col
                 f.write(data[copied_pos:pos])
                 f.write('\r')
                 copied_pos = pos
