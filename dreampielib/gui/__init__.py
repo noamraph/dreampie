@@ -55,7 +55,7 @@ from .vadj_to_bottom import VAdjToBottom
 from .history import History
 from .autocomplete import Autocomplete
 from .call_tips import CallTips
-from .subp import Subprocess
+from .subprocess_handler import SubprocessHandler
 
 # Tags and colors
 
@@ -122,7 +122,7 @@ class DreamPie(SimpleGladeApp):
         self.call_tips = CallTips(self.sourceview, self.get_arg_text,
                                   INDENT_WIDTH)
 
-        self.subp = Subprocess(
+        self.subp = SubprocessHandler(
             executable,
             self.on_stdout_recv, self.on_stderr_recv, self.on_object_recv,
             self.on_subp_restarted)

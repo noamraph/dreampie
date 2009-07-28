@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ['Subprocess']
+__all__ = ['SubprocessHandler']
 
 import sys
 import os
@@ -34,7 +34,7 @@ import gobject
 
 from ..common.objectstream import send_object, recv_object
 
-class Subprocess(object):
+class SubprocessHandler(object):
     """
     Manage interaction with the subprocess.
     The communication, besides stdout, stderr and stdin, goes like this:
