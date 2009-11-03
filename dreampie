@@ -21,6 +21,12 @@ import sys
 
 if len(sys.argv) > 1 and sys.argv[1] == 'subprocess':
     port = int(sys.argv[2])
+    if sys.version_info[0] == 3:
+        import os
+        import dreampielib
+        dreampielib.__path__[0] = os.path.join(dreampielib.__path__[0],
+                                               os.path.pardir,
+                                               'py3k', 'dreampielib')
     from dreampielib.subprocess import main
     main(port)
 

@@ -16,10 +16,10 @@ def debug(s):
     print >> sys.stderr, s
 
 def main():
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2 or sys.argv[1] in ('-h', '--help'):
         print >> sys.stderr, "Usage: %s executable" % sys.argv[0]
         sys.exit(1)
-    executable = sys.argv[1]
+    executable = sys.argv[1:]
     
     # Find a socket to listen to
     ports = range(10000, 10100)
@@ -42,9 +42,9 @@ def main():
     debug("Spawning subprocess")
     env = os.environ.copy()
     env['PYTHONUNBUFFERED'] = '1'
-    popen = Popen([executable, 'subprocess', str(port)],
-                   stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                   close_fds=True, env=env)
+    popen = Popen(executable + ['subprocess', str(port)],
+                  stdin=PIPE, stdout=PIPE, #stderr=PIPE,
+                  close_fds=True, env=env)
     debug("Waiting for an answer")
     s.listen(1)
     sock, addr = s.accept()
@@ -62,7 +62,8 @@ def main():
             break
 
         # Read from stdout, stderr, and socket
-        ready, _, _ = select([sys.stdin, popen.stdout, popen.stderr, sock], [], [], 0)
+        #ready, _, _ = select([sys.stdin, popen.stdout, popen.stderr, sock], [], [], 0)
+        ready, _, _ = select([sys.stdin, popen.stdout, sock], [], [], 0)
 
         if sys.stdin in ready:
             line = sys.stdin.readline()

@@ -134,6 +134,11 @@ class DreamPie(SimpleGladeApp):
 
         self.set_window_default_size()
         self.window_main.show_all()
+        
+        if self.config.get('show-getting-started') in ('True', 'true', '1'):
+            self.getting_started_dialog.run()
+            self.getting_started_dialog.hide()
+            self.config.set('show-getting-started', 'False')
 
 
     # Colors
@@ -269,14 +274,17 @@ class DreamPie(SimpleGladeApp):
         tb = self.textbuffer
         source = self.sb_get_text(sb.get_start_iter(), sb.get_end_iter())
         source = source.rstrip()
-        is_ok, syntax_error_info = self.call_subp('execute', source)
+        is_ok, syntax_error_info = self.call_subp(u'execute', source)
         if not is_ok:
             if warn:
                 if syntax_error_info:
                     msg, lineno, offset = syntax_error_info
                     status_msg = _("Syntax error: %s (at line %d col %d)") % (
                         msg, lineno+1, offset+1)
-                    iter = sb.get_iter_at_line_offset(lineno, offset)
+                    # Work around a bug: offset may be wrong, which will cause
+                    # gtk to crash if using sb.get_iter_at_line_offset.
+                    iter = sb.get_iter_at_line(lineno)
+                    iter.forward_chars(offset)
                     sb.place_cursor(iter)
                 else:
                     # Incomplete
@@ -465,8 +473,7 @@ class DreamPie(SimpleGladeApp):
     # Subprocess
 
     def show_welcome(self):
-        s = 'Python %s on %s\n' % (sys.version, sys.platform)
-        s +='Type "copyright", "credits" or "license()" for more information.\n'
+        s = self.call_subp(u'get_welcome')
         s += 'DreamPie %s\n' % __version__
         self.write(s, MESSAGE)
 
@@ -569,12 +576,12 @@ class DreamPie(SimpleGladeApp):
     def complete_attributes(self, expr):
         if self.is_executing:
             return None
-        return self.call_subp('complete_attributes', expr)
+        return self.call_subp(u'complete_attributes', expr)
 
     def subp_abspath(self, path):
         if self.is_executing:
             return None
-        return self.call_subp('abspath', path)
+        return self.call_subp(u'abspath', path)
 
     def on_show_calltip(self, widget):
         self.call_tips.show(is_auto=False)
@@ -582,7 +589,7 @@ class DreamPie(SimpleGladeApp):
     def get_arg_text(self, expr):
         if self.is_executing:
             return None
-        return self.call_subp('get_arg_text', expr)
+        return self.call_subp(u'get_arg_text', expr)
 
     def on_choose_font(self, widget):
         fontsel = gtk.FontSelectionDialog(_("Choose DreamPie font"))
@@ -642,6 +649,10 @@ class DreamPie(SimpleGladeApp):
             os.path.join(os.path.dirname(__file__), 'dreampie.png')))
         w.run()
         w.destroy()
+    
+    def on_getting_started(self, widget):
+        self.getting_started_dialog.run()
+        self.getting_started_dialog.hide()
 
 
             

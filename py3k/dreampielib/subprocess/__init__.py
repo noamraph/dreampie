@@ -21,14 +21,14 @@ import os
 import time
 import socket
 from select import select
-from StringIO import StringIO
+from io import StringIO
 import linecache
 import traceback
 import types
 import keyword
-import __builtin__
+import builtins
 import inspect
-from repr import repr as safe_repr
+from reprlib import repr as safe_repr
 if not py3k:
     import compiler
 else:
@@ -54,7 +54,7 @@ GUI_SLEEP = 0.1
 rpc_funcs = set()
 # A decorator which adds the function name to rpc_funcs
 def rpc_func(func):
-    rpc_funcs.add(func.func_name)
+    rpc_funcs.add(func.__name__)
     return func
 
 # Taken from codeop.py
@@ -100,7 +100,7 @@ class Subprocess(object):
                     send_object(self.sock, None)
             else:
                 # aid in debug
-                print >> sys.stderr, "Unknown command: %s" % funcname
+                print("Unknown command: %s" % funcname, file=sys.stderr)
                 send_object(self.sock, None)
 
     def handle_gui_events(self, sock):
@@ -146,7 +146,7 @@ class Subprocess(object):
                 a = compile(source, filename, 'exec', ast.PyCF_ONLY_AST)
                 b = ast.Interactive(a.body)
                 codeob = compile(b, filename, 'single')
-        except SyntaxError, e:
+        except SyntaxError as e:
             yield False, (e.msg, e.lineno-1, e.offset-1)
             return
         yield True, None
@@ -158,8 +158,8 @@ class Subprocess(object):
         is_success = True
         exception_string = None
         try:
-            exec codeob in self.locs
-        except (Exception, KeyboardInterrupt), e:
+            exec(codeob, self.locs)
+        except (Exception, KeyboardInterrupt) as e:
             sys.stdout.flush()
             linecache.checkcache()
             efile = StringIO()
@@ -171,15 +171,15 @@ class Subprocess(object):
                 # If the last entry is from this file, don't remove
                 # anything. Otherwise, remove lines before the current
                 # frame.
-                for i in xrange(len(tbe)-2, -1, -1):
+                for i in range(len(tbe)-2, -1, -1):
                     if tbe[i][0] == my_filename:
                         tbe = tbe[i+1:]
                         break
-            print>>efile, 'Traceback (most recent call last):'
+            print('Traceback (most recent call last):', file=efile)
             traceback.print_list(tbe, file=efile)
             lines = traceback.format_exception_only(typ, val)
             for line in lines:
-                print>>efile, line,
+                print(line, end=' ', file=efile)
             is_success = False
             exception_string = efile.getvalue()
             
@@ -200,7 +200,7 @@ class Subprocess(object):
             # I don't know how to do this in Jython.
             pass
 
-        rem_stdin = u''.join(rem_stdin)
+        rem_stdin = ''.join(rem_stdin)
 
         yield is_success, exception_string, rem_stdin
 
@@ -239,9 +239,9 @@ class Subprocess(object):
         """
         if expr == '':
             namespace = self.locs.copy()
-            namespace.update(__builtin__.__dict__)
+            namespace.update(builtins.__dict__)
             ids = eval("dir()", namespace) + keyword.kwlist
-            ids = map(unicode, ids)
+            ids = list(map(str, ids))
             ids.sort()
             if '__all__' in namespace:
                 all_set = set(namespace['__all__'])
@@ -252,34 +252,34 @@ class Subprocess(object):
             try:
                 entity = eval(expr, self.locs)
                 ids = dir(entity)
-                ids = map(unicode, ids)
+                ids = list(map(str, ids))
                 ids.sort()
                 if hasattr(entity, '__all__'):
                     all_set = set(entity.__all__)
                 else:
                     all_set = None
                 public, private = self.split_list(ids, all_set)
-            except Exception, e:
+            except Exception as e:
                 public = private = []
 
         return public, private
 
     @rpc_func
     def abspath(self, path):
-        return unicode(os.path.abspath(os.path.expanduser(path)))
+        return str(os.path.abspath(os.path.expanduser(path)))
 
     @rpc_func
     def get_welcome(self):
         name = 'Python' if not sys.platform.startswith('java') else 'Jython'
-        return (u'%s %s on %s\n' % (name, sys.version, sys.platform)
-                +u'Type "copyright", "credits" or "license()" for more information.\n')
+        return ('%s %s on %s\n' % (name, sys.version, sys.platform)
+                +'Type "copyright", "credits" or "license()" for more information.\n')
 
     @staticmethod
     def _find_constructor(class_ob):
         # Given a class object, return a function object used for the
         # constructor (ie, __init__() ) or None if we can't find one.
         try:
-            return class_ob.__init__.im_func
+            return class_ob.__init__.__func__
         except AttributeError:
             for base in class_ob.__bases__:
                 rc = _find_constructor(base)
@@ -293,11 +293,11 @@ class Subprocess(object):
         # Beni Cherniavsky.
         try:
             entity = eval(expr, self.locs)
-        except Exception, e:
+        except Exception as e:
             return None
-        arg_text = u""
+        arg_text = ""
         arg_offset = 0
-        if type(entity) is types.ClassType:
+        if type(entity) is type:
             # Look for the highest __init__ in the class chain.
             fob = self._find_constructor(entity)
             if fob is None:
@@ -307,7 +307,7 @@ class Subprocess(object):
         elif type(entity) is types.MethodType:
             # bit of a hack for methods - turn it into a function
             # but we drop the "self" param.
-            fob = entity.im_func
+            fob = entity.__func__
             arg_offset = 1
         else:
             fob = entity
@@ -316,13 +316,13 @@ class Subprocess(object):
             try:
                 args, varargs, varkw, defaults = inspect.getargspec(fob)
                 def formatvalue(obj):
-                    return u"=" + safe_repr(obj)
-                arg_text = unicode(inspect.formatargspec(
+                    return "=" + safe_repr(obj)
+                arg_text = str(inspect.formatargspec(
                     args[arg_offset:], varargs, varkw, defaults, formatvalue=formatvalue))
             except Exception:
                 pass
         # See if we can use the docstring
-        doc = unicode(inspect.getdoc(entity))
+        doc = str(inspect.getdoc(entity))
         if doc:
             doc = doc.lstrip()
             pos = doc.find("\n")

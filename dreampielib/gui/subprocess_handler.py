@@ -94,6 +94,8 @@ class SubprocessHandler(object):
         if sys.stdout.encoding:
             env['PYTHONIOENCODING'] = sys.stdout.encoding
         executable = sys.executable
+        executable = '/home/noam/sources/jython-2.5.1/jython'
+        executable = 'python3'
         if executable.lower().endswith('pythonw.exe'):
             # An annoying special case: If we are running from pythonw.exe,
             # which has no stdout, we must change the executable so that the

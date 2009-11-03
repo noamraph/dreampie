@@ -40,7 +40,7 @@ class StatusBar(object):
             self.sourcebuffer.connect('changed', self.clear_status)
 
     def clear_status(self, widget):
-        self.statusbar.remove(0, self.sourcebuffer_status_id)
+        self.statusbar.remove_message(0, self.sourcebuffer_status_id)
         self.sourcebuffer_status_id = None
         self.sourcebuffer.disconnect(self.sourcebuffer_changed_handler_id)
         self.sourcebuffer_changed_handler_id = None

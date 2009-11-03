@@ -26,6 +26,7 @@ from .odict import OrderedDict
 default_config = """
 [DreamPie]
 font=Courier New 10
+show-getting-started = True
 
 [Colors]
 text-fg = white

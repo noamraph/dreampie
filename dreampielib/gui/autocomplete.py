@@ -179,7 +179,7 @@ class Autocomplete(object):
         except SyntaxError:
             return
 
-        abspath = self.subp_abspath(comp_what)
+        abspath = self.subp_abspath(unicode(comp_what))
         if abspath is None:
             return
         try:
