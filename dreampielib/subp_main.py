@@ -32,7 +32,7 @@ def main():
     dp_dir = abspath(dirname(__file__))
     
     if sys.version_info[0] == 3:
-        dp_dir = join(dp_dir, 'py3k')
+        dp_dir = join(dp_dir, 'py3k.zip')
 
     dreampielib = ModuleType('dreampielib')
     dreampielib.__path__ = [dp_dir]

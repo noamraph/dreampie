@@ -1,21 +1,32 @@
 #!/usr/bin/env python
 
-# This is a simple script which creates the files in the dreampielib/py3k dir
-# from the files in the dreampielib dir.
+# This script creates the py3k.zip archive inside dreampielib.
 
+import os
 from os.path import join, abspath, dirname, pardir
-import shutil
+from zipfile import ZipFile
+from tempfile import mkstemp
 from lib2to3.main import main as lib2to3_main
 
-origdir = abspath(join(dirname(__file__), 'dreampielib'))
-py3kdir = join(origdir, 'py3k')
+dp_dir = abspath(join(dirname(__file__), 'dreampielib'))
 
-def fix_file(path):
+def fix_file(path, zipfile):
     print path
-    py3kpath = join(py3kdir, path)
-    origpath = join(origdir, path)
-    shutil.copy(origpath, py3kpath)
-    lib2to3_main('lib2to3.fixes', ['-w', '-n', py3kpath])
+    # The practically calls 2to3, which prints a lot of noise.
+    # Probably would have been better to understand the lib2to3 interface.
+    orig_path = join(dp_dir, path)
+    handle, temp_path = mkstemp()
+    os.close(handle)
+    orig_contents = open(orig_path).read()
+    f = open(temp_path,'w')
+    f.write(orig_contents)
+    f.close()
+    lib2to3_main('lib2to3.fixes', ['-w', '-n', temp_path])
+    f = open(temp_path)
+    new_contents = f.read()
+    f.close()
+    os.remove(temp_path)
+    zipfile.writestr(path, new_contents)
 
 files = ['subprocess/__init__.py',
          'common/__init__.py',
@@ -24,8 +35,10 @@ files = ['subprocess/__init__.py',
          ]
 
 def main():
+    zipfile = ZipFile(join(dp_dir, 'py3k.zip'), 'w')
     for fn in files:
-        fix_file(fn)
+        fix_file(fn, zipfile)
+    zipfile.close()
 
 if __name__ == '__main__':
     main()
