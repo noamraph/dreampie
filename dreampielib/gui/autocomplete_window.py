@@ -73,9 +73,7 @@ class AutocompleteWindow(object):
         self.window = gtk.Window(gtk.WINDOW_POPUP)
         self.window.props.resizable = False
         self.window.add(self.scrolledwindow)
-        self.window.show_all()
-        self.window_height = self.window.get_size()[1]
-        self.window.hide()
+        self.window_height = None
 
         self.mark = sb.create_mark(None, sb.get_start_iter(), True)
 
@@ -179,6 +177,13 @@ class AutocompleteWindow(object):
         x, y = sv.buffer_to_window_coords(gtk.TEXT_WINDOW_WIDGET, x, y)
         sv_x, sv_y = sv.get_window(gtk.TEXT_WINDOW_WIDGET).get_origin()
         x += sv_x; y += sv_y
+        if self.window_height is None:
+            # We have to draw the window in order to calculate window_height.
+            # We do it here, so as not to cause a flicker when the application starts.
+            self.window.move(-2000, -2000)
+            self.window.show_all()
+            self.window_height = self.window.get_size()[1]
+            self.window.hide()
         self.window.move(x, y-self.window_height)
 
     def on_mark_set(self, sb, it, mark):
