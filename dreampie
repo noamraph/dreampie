@@ -1,5 +1,5 @@
 #!/usr/bin/env python
 
-from dreampielib.main import main
-main(__file__)
+from dreampielib.gui import main
+main()
 

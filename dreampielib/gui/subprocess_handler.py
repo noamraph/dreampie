@@ -49,11 +49,10 @@ class SubprocessHandler(object):
     the subprocess can't be started on the first place, you get a fatal error.
     """
 
-    def __init__(self, pyexec, dp_script,
+    def __init__(self, pyexec,
                  on_stdout_recv, on_stderr_recv, on_object_recv,
                  on_subp_restarted):
         self._pyexec = pyexec
-        self._dp_script = dp_script
         self._on_stdout_recv = on_stdout_recv
         self._on_stderr_recv = on_stderr_recv
         self._on_object_recv = on_object_recv
@@ -94,8 +93,10 @@ class SubprocessHandler(object):
         env['PYTHONUNBUFFERED'] = '1'
         if sys.stdout.encoding:
             env['PYTHONIOENCODING'] = sys.stdout.encoding
-        popen = Popen([self._pyexec, self._dp_script,
-                       'subprocess', str(port)],
+        from .. import __path__ as dreampielib_path
+        dp_dir = dreampielib_path[0]
+        script = os.path.join(dp_dir, 'subp_main.py')
+        popen = Popen([self._pyexec, script, str(port)],
                        stdin=PIPE, stdout=PIPE, stderr=PIPE,
                        env=env)
         #debug("Waiting for the subprocess to connect")

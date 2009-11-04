@@ -86,7 +86,7 @@ def sourceview_keyhandler(keyval, state):
     return decorator
 
 class DreamPie(SimpleGladeApp):
-    def __init__(self, pyexec, dp_script):
+    def __init__(self, pyexec):
         gladefile = os.path.join(os.path.dirname(__file__),
                                  'dreampie.glade')
         SimpleGladeApp.__init__(self, gladefile)
@@ -125,7 +125,7 @@ class DreamPie(SimpleGladeApp):
                                   INDENT_WIDTH)
 
         self.subp = SubprocessHandler(
-            pyexec, dp_script,
+            pyexec,
             self.on_stdout_recv, self.on_stderr_recv, self.on_object_recv,
             self.on_subp_restarted)
         # Is the subprocess executing a command
@@ -693,7 +693,7 @@ def make_style_scheme(spec):
     return scheme
 
 
-def main(dp_script):
+def main():
     usage = "%prog [options] [python-executable]"
     parser = OptionParser(usage=usage)
     if sys.platform == 'win32':
@@ -715,5 +715,5 @@ def main(dp_script):
         hide_console_window()
 
     gtk.widget_set_default_direction(gtk.TEXT_DIR_LTR)
-    dp = DreamPie(pyexec, dp_script)
+    dp = DreamPie(pyexec)
     gtk.main()
