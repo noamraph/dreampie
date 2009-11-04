@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=DreamPie
+Comment=An interactive Python shell
+Exec=dreampie
+Icon=dreampie
+Terminal=false
+Type=Application
+Categories=GTK;Development;
+StartupNotify=true
+

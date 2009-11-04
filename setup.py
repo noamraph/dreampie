@@ -21,6 +21,8 @@ setup(
     data_files=[
                 ('share/applications', ['dreampie.desktop']),
                 ('share/man/man1', ['dreampie.1']),
+                ('share/pixmaps', ['dreampielib/gui/dreampie.svg',
+                                   'dreampielib/gui/dreampie.png']),
                ],
     )
 
