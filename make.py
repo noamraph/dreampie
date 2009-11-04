@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 
+# This is a simple script which creates the files in the dreampielib/py3k dir
+# from the files in the dreampielib dir.
+
 from os.path import join, abspath, dirname, pardir
 import shutil
 from lib2to3.main import main as lib2to3_main
 
-py3kdir = abspath(dirname(__file__))
-origdir = abspath(join(py3kdir, pardir))
+origdir = abspath(join(dirname(__file__), 'dreampielib'))
+py3kdir = join(origdir, 'py3k')
 
 def fix_file(path):
     print path
-    py3kpath = join(py3kdir, 'dreampielib', path)
-    origpath = join(origdir, 'dreampielib', path)
+    py3kpath = join(py3kdir, path)
+    origpath = join(origdir, path)
     shutil.copy(origpath, py3kpath)
     lib2to3_main('lib2to3.fixes', ['-w', '-n', py3kpath])
 
