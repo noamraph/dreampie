@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
-# along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+# along with DreamPie.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
 py3k = (sys.version_info[0] == 3)

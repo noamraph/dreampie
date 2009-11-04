@@ -13,12 +13,13 @@
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
-# along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+# along with DreamPie.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
 import os
 import time
 import tempfile
+from optparse import OptionParser
 
 import logging
 from logging import debug
@@ -85,7 +86,7 @@ def sourceview_keyhandler(keyval, state):
     return decorator
 
 class DreamPie(SimpleGladeApp):
-    def __init__(self, executable):
+    def __init__(self, pyexec, dp_script):
         gladefile = os.path.join(os.path.dirname(__file__),
                                  'dreampie.glade')
         SimpleGladeApp.__init__(self, gladefile)
@@ -124,7 +125,7 @@ class DreamPie(SimpleGladeApp):
                                   INDENT_WIDTH)
 
         self.subp = SubprocessHandler(
-            executable,
+            pyexec, dp_script,
             self.on_stdout_recv, self.on_stderr_recv, self.on_object_recv,
             self.on_subp_restarted)
         # Is the subprocess executing a command
@@ -692,7 +693,27 @@ def make_style_scheme(spec):
     return scheme
 
 
-def main(executable):
+def main(dp_script):
+    usage = "%prog [options] [python-executable]"
+    parser = OptionParser(usage=usage)
+    if sys.platform == 'win32':
+        parser.add_option("--dont-hide-console-window", action="store_true",
+                          dest="dont_hide_console",
+                          help="Don't hide the console window")
+
+    opts, args = parser.parse_args()
+    
+    if len(args) > 1:
+        parser.error("Can accept at most one argument")
+    if len(args) == 1:
+        pyexec = args[0]
+    else:
+        pyexec = sys.executable
+    
+    if sys.platform == 'win32' and not opts.dont_hide_console:
+        from .hide_console_window import hide_console_window
+        hide_console_window()
+
     gtk.widget_set_default_direction(gtk.TEXT_DIR_LTR)
-    dp = DreamPie(executable)
+    dp = DreamPie(pyexec, dp_script)
     gtk.main()

@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
-# along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+# along with DreamPie.  If not, see <http://www.gnu.org/licenses/>.
 
 __all__ = ['SubprocessHandler']
 
@@ -49,10 +49,11 @@ class SubprocessHandler(object):
     the subprocess can't be started on the first place, you get a fatal error.
     """
 
-    def __init__(self, executable,
+    def __init__(self, pyexec, dp_script,
                  on_stdout_recv, on_stderr_recv, on_object_recv,
                  on_subp_restarted):
-        self._executable = executable
+        self._pyexec = pyexec
+        self._dp_script = dp_script
         self._on_stdout_recv = on_stdout_recv
         self._on_stderr_recv = on_stderr_recv
         self._on_object_recv = on_object_recv
@@ -93,17 +94,8 @@ class SubprocessHandler(object):
         env['PYTHONUNBUFFERED'] = '1'
         if sys.stdout.encoding:
             env['PYTHONIOENCODING'] = sys.stdout.encoding
-        executable = sys.executable
-        executable = '/home/noam/sources/jython-2.5.1/jython'
-        executable = 'python3'
-        if executable.lower().endswith('pythonw.exe'):
-            # An annoying special case: If we are running from pythonw.exe,
-            # which has no stdout, we must change the executable so that the
-            # subprocess will have stdout. Hopefully, python.exe sits in the
-            # same directory as pythonw.exe
-            executable = executable[:-5] + '.exe'
-        popen = Popen([executable,
-                       self._executable, 'subprocess', str(port)],
+        popen = Popen([self._pyexec, self._dp_script,
+                       'subprocess', str(port)],
                        stdin=PIPE, stdout=PIPE, stderr=PIPE,
                        env=env)
         #debug("Waiting for the subprocess to connect")

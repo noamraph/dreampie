@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
-# along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+# along with DreamPie.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
 py3k = (sys.version_info[0] == 3)
@@ -29,10 +29,15 @@ import keyword
 import __builtin__
 import inspect
 from repr import repr as safe_repr
-if not py3k:
-    import compiler
-else:
+try:
+    # Executing multiple statements in 'single' mode (print results) is done
+    # with the ast module. Python 2.5 doesn't have it, so we use the compiler
+    # module, which also seems to work. Jython 2.5 does have the ast module,
+    # which is fortunate, because the 'compiler module trick' doesn't work there.
     import ast
+except ImportError:
+    ast = None
+    import compiler
 import __future__
 
 if sys.platform == 'win32':
@@ -137,17 +142,17 @@ class Subprocess(object):
         lines = source.split("\n")
         linecache.cache[filename] = len(source)+1, None, lines, filename
         try:
-            if not py3k:
+            if ast:
+                a = compile(source, filename, 'exec', ast.PyCF_ONLY_AST)
+                b = ast.Interactive(a.body)
+                codeob = compile(b, filename, 'single')
+            else:
                 # We use compiler.compile instead of plain compile, because
                 # compiler.compile does what you'd want when it gets multiple
                 # statements, while plain compile complains about a syntax error.
                 codeob = compiler.compile(source, filename, 'single')
-            else:
-                a = compile(source, filename, 'exec', ast.PyCF_ONLY_AST)
-                b = ast.Interactive(a.body)
-                codeob = compile(b, filename, 'single')
         except SyntaxError, e:
-            yield False, (e.msg, e.lineno-1, e.offset-1)
+            yield False, (unicode(e.msg), e.lineno-1, e.offset-1)
             return
         yield True, None
             
