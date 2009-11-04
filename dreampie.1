@@ -1,0 +1,41 @@
+.TH "DREAMPIE" "1" "Nov 4, 2009" "" ""
+.SH "NAME"
+DreamPie \- An interactive Python shell
+.SH "SYNOPSIS"
+.B dreampie
+.RI [ options ] [ PYINTERP ]
+.br 
+.SH "DESCRIPTION"
+This manual page documents briefly the
+.B DreamPie
+command.
+.PP 
+\fBDreamPie\fP is a graphical interactive Python shell. It allows you to
+instantly run Python code and see the results.
+.PP
+PYINTERP can be a Python interpreter executable. Currently, Python 
+versions 2.5, 2.6, 3.0, 3.1 are supported, as well as Jython 2.5.
+If PYINTERP isn't given, the default Python interpreter will be used.
+.SH "OPTIONS"
+.TP 
+.B \-h, \-\-help
+Show summary of options.
+.SH "EXAMPLES"
+.TP \w'dreampie\ 'u
+.BI dreampie \ 
+Run DreamPie with the default Python interpreter
+.TP
+.BI dreampie \ python3
+Use the default Python 3 version installed
+.TP
+.BI dreampie \ jython
+Use Jython
+.TP
+.BI dreampie \ ~/Python-2.6/python
+Use a locally-build version of Python
+.SH "SEE ALSO"
+.BR python(1),
+.BR idle(1)
+.SH "AUTHOR"
+DreamPie was written by Noam Yorav-Raphael <noamraph@gmail.com>
+
