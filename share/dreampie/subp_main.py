@@ -19,8 +19,9 @@
 
 # This file is a script (not a module) run by the DreamPie GUI.
 # It expects one argument: the port to connect to.
-# It creates a package called dreampielib in the directory of __file__
-# or in __file__/py3k, and runs dreampielib.subprocess.main(port).
+# It creates a package called dreampielib from subp-py2.zip or subp-py3.zip
+# (which are expected to be in the directory of __file__),
+# and runs dreampielib.subprocess.main(port).
 
 import sys
 from os.path import abspath, join, dirname
@@ -29,10 +30,8 @@ from types import ModuleType
 def main():
     port = int(sys.argv[1])
 
-    dp_dir = abspath(dirname(__file__))
-    
-    if sys.version_info[0] == 3:
-        dp_dir = join(dp_dir, 'py3k.zip')
+    py_ver = sys.version_info[0]
+    dp_dir = abspath(join(dirname(__file__), 'subp-py%d.zip' % py_ver))
 
     dreampielib = ModuleType('dreampielib')
     dreampielib.__path__ = [dp_dir]

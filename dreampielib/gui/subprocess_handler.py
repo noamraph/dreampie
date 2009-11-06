@@ -49,10 +49,12 @@ class SubprocessHandler(object):
     the subprocess can't be started on the first place, you get a fatal error.
     """
 
-    def __init__(self, pyexec,
+    def __init__(self, pyexec, data_dir, output_encoding,
                  on_stdout_recv, on_stderr_recv, on_object_recv,
                  on_subp_restarted):
         self._pyexec = pyexec
+        self._data_dir = data_dir
+        self._output_encoding = output_encoding
         self._on_stdout_recv = on_stdout_recv
         self._on_stderr_recv = on_stderr_recv
         self._on_object_recv = on_object_recv
@@ -91,11 +93,8 @@ class SubprocessHandler(object):
         #debug("Spawning subprocess")
         env = os.environ.copy()
         env['PYTHONUNBUFFERED'] = '1'
-        if sys.stdout.encoding:
-            env['PYTHONIOENCODING'] = sys.stdout.encoding
-        from .. import __path__ as dreampielib_path
-        dp_dir = dreampielib_path[0]
-        script = os.path.join(dp_dir, 'subp_main.py')
+        env['PYTHONIOENCODING'] = self._output_encoding
+        script = os.path.join(self._data_dir, 'dreampie', 'subp_main.py')
         popen = Popen([self._pyexec, script, str(port)],
                        stdin=PIPE, stdout=PIPE, stderr=PIPE,
                        env=env)

@@ -18,8 +18,9 @@ class Output(object):
     """
     Manage writing output (stdout and stderr) to the text view.
     """
-    def __init__(self, textview):
+    def __init__(self, textview, output_encoding):
         self.textview = textview
+        self.output_encoding = output_encoding
         self.textbuffer = tb = textview.get_buffer()
 
         self.mark = tb.create_mark(None, tb.get_end_iter(), left_gravity=True)
@@ -32,9 +33,7 @@ class Output(object):
     def write(self, data, tag_name):
         tb = self.textbuffer
 
-        # sys.stdout.encoding is transferred to the subprocess as
-        # PYTHONENCODING, so that's how we should interpret its output.
-        data = data.decode(sys.stdout.encoding, 'replace')
+        data = data.decode(self.output_encoding, 'replace')
 
         data = ansi_escape_re.sub('', data)
         

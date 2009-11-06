@@ -42,7 +42,7 @@ def main():
     debug("Spawning subprocess")
     env = os.environ.copy()
     env['PYTHONUNBUFFERED'] = '1'
-    popen = Popen(executable + ['subprocess', str(port)],
+    popen = Popen(executable + [str(port)],
                   stdin=PIPE, stdout=PIPE, #stderr=PIPE,
                   close_fds=True, env=env)
     debug("Waiting for an answer")

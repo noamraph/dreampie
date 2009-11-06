@@ -36,6 +36,7 @@ import gtk
 from gtk import gdk
 import pango
 import gtksourceview2
+from . import gtkexcepthook
 
 try:
     from glib import timeout_add, idle_add
@@ -87,20 +88,23 @@ def sourceview_keyhandler(keyval, state):
 
 class DreamPie(SimpleGladeApp):
     def __init__(self, pyexec):
-        gladefile = os.path.join(os.path.dirname(__file__),
-                                 'dreampie.glade')
+        self.data_dir = find_data_dir()
+        
+        gladefile = os.path.join(self.data_dir, 'dreampie', 'dreampie.glade')
         SimpleGladeApp.__init__(self, gladefile)
 
         self.config = Config()
 
         self.window_main.set_icon_from_file(
-            os.path.join(os.path.dirname(__file__), 'dreampie.png'))
+            os.path.join(self.data_dir, 'pixmaps', 'dreampie.png'))
 
         self.init_textbufferview()
 
         self.init_sourcebufferview()
 
-        self.output = Output(self.textview)
+        self.output_encoding = sys.stdout.encoding if sys.stdout.encoding else 'UTF-8'
+
+        self.output = Output(self.textview, self.output_encoding)
 
         self.selection = Selection(self.textview, self.sourceview,
                                    self.on_is_something_selected_changed)
@@ -125,7 +129,7 @@ class DreamPie(SimpleGladeApp):
                                   INDENT_WIDTH)
 
         self.subp = SubprocessHandler(
-            pyexec,
+            pyexec, self.data_dir, self.output_encoding,
             self.on_stdout_recv, self.on_stderr_recv, self.on_object_recv,
             self.on_subp_restarted)
         # Is the subprocess executing a command
@@ -647,7 +651,7 @@ class DreamPie(SimpleGladeApp):
         w.set_wrap_license(True)
         w.set_authors([_('Noam Yorav-Raphael <noamraph@gmail.com>')])
         w.set_logo(gdk.pixbuf_new_from_file(
-            os.path.join(os.path.dirname(__file__), 'dreampie.png')))
+            os.path.join(self.data_dir, 'pixmaps', 'dreampie.png')))
         w.run()
         w.destroy()
     
@@ -656,7 +660,16 @@ class DreamPie(SimpleGladeApp):
         self.getting_started_dialog.hide()
 
 
-            
+def find_data_dir():
+    # If there's a "share" directory near the "dreampielib" directory, use it.
+    # Otherwise, use sys.prefix
+    from os.path import join, dirname, isdir, pardir, abspath
+    
+    local_data_dir = join(dirname(__file__), pardir, pardir, 'share')
+    if isdir(local_data_dir):
+        return abspath(local_data_dir)
+    else:
+        return abspath(join(sys.prefix, 'share'))
 
 def make_style_scheme(spec):
     # Quite stupidly, there's no way to create a SourceStyleScheme without
