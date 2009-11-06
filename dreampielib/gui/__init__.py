@@ -708,7 +708,8 @@ def make_style_scheme(spec):
 
 def main():
     usage = "%prog [options] [python-executable]"
-    parser = OptionParser(usage=usage)
+    version = 'DreamPie %s' % __version__
+    parser = OptionParser(usage=usage, version=version)
     if sys.platform == 'win32':
         parser.add_option("--dont-hide-console-window", action="store_true",
                           dest="dont_hide_console",
