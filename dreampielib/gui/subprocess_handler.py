@@ -49,12 +49,11 @@ class SubprocessHandler(object):
     the subprocess can't be started on the first place, you get a fatal error.
     """
 
-    def __init__(self, pyexec, data_dir, output_encoding,
+    def __init__(self, pyexec, data_dir,
                  on_stdout_recv, on_stderr_recv, on_object_recv,
                  on_subp_restarted):
         self._pyexec = pyexec
         self._data_dir = data_dir
-        self._output_encoding = output_encoding
         self._on_stdout_recv = on_stdout_recv
         self._on_stderr_recv = on_stderr_recv
         self._on_object_recv = on_object_recv
@@ -93,7 +92,7 @@ class SubprocessHandler(object):
         #debug("Spawning subprocess")
         env = os.environ.copy()
         env['PYTHONUNBUFFERED'] = '1'
-        env['PYTHONIOENCODING'] = self._output_encoding
+        env['PYTHONIOENCODING'] = 'UTF-8'
         script = os.path.join(self._data_dir, 'dreampie', 'subp_main.py')
         popen = Popen([self._pyexec, script, str(port)],
                        stdin=PIPE, stdout=PIPE, stderr=PIPE,
@@ -127,12 +126,12 @@ class SubprocessHandler(object):
         # Read from stdout
         r = popen.recv()
         if r:
-            self._on_stdout_recv(r)
+            self._on_stdout_recv(r.decode('utf8', 'replace'))
 
         # Read from stderr
         r = popen.recv_err()
         if r:
-            self._on_stderr_recv(r)
+            self._on_stderr_recv(r.decode('utf8', 'replace'))
         
         # Read from socket
         if select([self._sock], [], [], 0)[0]:
@@ -151,7 +150,7 @@ class SubprocessHandler(object):
 
     def write(self, data):
         """Write data to stdin"""
-        self._popen.stdin.write(data)
+        self._popen.stdin.write(data.encode('utf8'))
 
     def kill(self):
         """Kill the subprocess.

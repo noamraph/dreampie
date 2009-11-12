@@ -10,6 +10,11 @@ from distutils.command.build import build
 from distutils.core import Command
 
 try:
+    import py2exe
+except ImportError:
+    pass
+
+try:
     from lib2to3 import refactor
 except ImportError:
     refactor = None
@@ -86,6 +91,10 @@ setup(
     url='https://launchpad.net/dreampie',
     license='GPL v3',
     scripts=['dreampie'],
+    console=[{'script': 'dreampie.py',
+              'icon_resources': [(1, 'dreampie.ico')]}],
+    windows=[{'script': 'create-shortcuts.py',
+              'icon_resources': [(1, 'dreampie.ico')]}],
     packages=['dreampielib',
               'dreampielib.common', 'dreampielib.gui', 'dreampielib.subprocess',
               ],
@@ -104,5 +113,13 @@ setup(
                                  + ['share/dreampie/subp-py3.zip'] if refactor else []),
                ],
     cmdclass={'build_subp_zips': build_subp_zips},
+    options={'py2exe':
+             {'ignores':['_scproxy', 'glib', 'gobject', 'gtk',
+                         'gtk.gdk', 'gtk.glade', 'gtksourceview2',
+                         'pango', 'pygtk'],
+              'excludes':['_ssl', 'doctest', 'pdb', 'unittest', 'difflib' ],
+              'includes':['fnmatch', 'glob'],
+             }},
+     
     )
 

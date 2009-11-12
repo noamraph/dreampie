@@ -23,11 +23,24 @@ from optparse import OptionParser
 
 import logging
 from logging import debug
-logging.basicConfig(format="dreampie: %(message)s", level=logging.DEBUG)
+#logging.basicConfig(format="dreampie: %(message)s", level=logging.DEBUG)
+
+def find_data_dir():
+    # If there's a "share" directory near the "dreampielib" directory, use it.
+    # Otherwise, use sys.prefix
+    from os.path import join, dirname, isdir, pardir, abspath
+    
+    local_data_dir = join(dirname(__file__), pardir, pardir, 'share')
+    if isdir(local_data_dir):
+        return abspath(local_data_dir)
+    else:
+        return abspath(join(sys.prefix, 'share'))
+
+data_dir = find_data_dir()
 
 if sys.platform == 'win32':
     from .load_pygtk import load_pygtk
-    load_pygtk()
+    load_pygtk(data_dir)
 
 import pygtk
 pygtk.require('2.0')
@@ -88,23 +101,19 @@ def sourceview_keyhandler(keyval, state):
 
 class DreamPie(SimpleGladeApp):
     def __init__(self, pyexec):
-        self.data_dir = find_data_dir()
-        
-        gladefile = os.path.join(self.data_dir, 'dreampie', 'dreampie.glade')
+        gladefile = os.path.join(data_dir, 'dreampie', 'dreampie.glade')
         SimpleGladeApp.__init__(self, gladefile)
 
         self.config = Config()
 
         self.window_main.set_icon_from_file(
-            os.path.join(self.data_dir, 'pixmaps', 'dreampie.png'))
+            os.path.join(data_dir, 'pixmaps', 'dreampie.png'))
 
         self.init_textbufferview()
 
         self.init_sourcebufferview()
 
-        self.output_encoding = sys.stdout.encoding if sys.stdout.encoding else 'UTF-8'
-
-        self.output = Output(self.textview, self.output_encoding)
+        self.output = Output(self.textview)
 
         self.selection = Selection(self.textview, self.sourceview,
                                    self.on_is_something_selected_changed)
@@ -129,7 +138,7 @@ class DreamPie(SimpleGladeApp):
                                   INDENT_WIDTH)
 
         self.subp = SubprocessHandler(
-            pyexec, self.data_dir, self.output_encoding,
+            pyexec, data_dir,
             self.on_stdout_recv, self.on_stderr_recv, self.on_object_recv,
             self.on_subp_restarted)
         # Is the subprocess executing a command
@@ -651,7 +660,7 @@ class DreamPie(SimpleGladeApp):
         w.set_wrap_license(True)
         w.set_authors([_('Noam Yorav-Raphael <noamraph@gmail.com>')])
         w.set_logo(gdk.pixbuf_new_from_file(
-            os.path.join(self.data_dir, 'pixmaps', 'dreampie.png')))
+            os.path.join(data_dir, 'pixmaps', 'dreampie.png')))
         w.run()
         w.destroy()
     
@@ -659,17 +668,6 @@ class DreamPie(SimpleGladeApp):
         self.getting_started_dialog.run()
         self.getting_started_dialog.hide()
 
-
-def find_data_dir():
-    # If there's a "share" directory near the "dreampielib" directory, use it.
-    # Otherwise, use sys.prefix
-    from os.path import join, dirname, isdir, pardir, abspath
-    
-    local_data_dir = join(dirname(__file__), pardir, pardir, 'share')
-    if isdir(local_data_dir):
-        return abspath(local_data_dir)
-    else:
-        return abspath(join(sys.prefix, 'share'))
 
 def make_style_scheme(spec):
     # Quite stupidly, there's no way to create a SourceStyleScheme without
@@ -721,8 +719,19 @@ def main():
         parser.error("Can accept at most one argument")
     if len(args) == 1:
         pyexec = args[0]
+    elif 'dreampie' in sys.executable.lower():
+        # We are under py2exe.
+        msg = gtk.MessageDialog(
+            None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_CLOSE,
+            _("DreamPie must be given the file name of a Python interpreter. "
+              "Please create a shortcut to something like 'dreampie.exe "
+              "c:\\python26\\python.exe'."))
+        response = msg.run()
+        msg.destroy()
+        sys.exit(1)
     else:
         pyexec = sys.executable
+        
     
     if sys.platform == 'win32' and not opts.dont_hide_console:
         from .hide_console_window import hide_console_window

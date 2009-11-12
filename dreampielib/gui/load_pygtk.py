@@ -18,13 +18,12 @@
 __all__ = ['load_pygtk']
 
 import os
+from os.path import join, pardir
 import sys
 
-def load_pygtk():
+def load_pygtk(data_dir):
     """On win32, load PyGTK from subdirectory, if available."""
-    join = os.path.join
-    
-    pygtk_dir = join(sys.prefix,
+    pygtk_dir = join(data_dir, pardir,
                      'pygtk-%d.%d' % (sys.version_info[0], sys.version_info[1]))
     if os.path.isdir(pygtk_dir):
         orig_pypath = sys.path
@@ -32,7 +31,7 @@ def load_pygtk():
     else:
         orig_pypath = None
         
-    gtk_runtime_dir = join(sys.prefix, 'gtk-runtime')
+    gtk_runtime_dir = join(data_dir, pardir, 'gtk-runtime')
     if os.path.isdir(gtk_runtime_dir):
         orig_path = os.environ['PATH']
         os.environ['PATH'] = join(gtk_runtime_dir, 'bin')
