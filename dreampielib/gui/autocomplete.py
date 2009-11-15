@@ -35,12 +35,12 @@ from os.path import sep
 #sep = '\\'
 
 class Autocomplete(object):
-    def __init__(self, sourceview, complete_attributes, subp_abspath,
+    def __init__(self, sourceview, complete_attributes, complete_filenames,
                  INDENT_WIDTH):
         self.sourceview = sourceview
         self.sourcebuffer = sourceview.get_buffer()
         self.complete_attributes = complete_attributes
-        self.subp_abspath = subp_abspath
+        self.complete_filenames = complete_filenames
         self.INDENT_WIDTH = INDENT_WIDTH
 
         self.window = AutocompleteWindow(sourceview, self._on_complete)
@@ -68,15 +68,21 @@ class Autocomplete(object):
             res = None
 
         if res is not None:
-            comp_prefix, public, private = res
+            comp_prefix, public, private, is_case_insen = res
         else:
             if not is_auto:
                 beep()
             return
 
         combined = public + private
-        combined.sort()
-        start, end = find_prefix_range(combined, comp_prefix)
+        if is_case_insen:
+            combined.sort(key = lambda s: s.lower())
+            combined_keys = [s.lower() for s in combined]
+        else:
+            combined.sort()
+            combined_keys = combined
+        comp_prefix_key = comp_prefix.lower() if is_case_insen else comp_prefix
+        start, end = find_prefix_range(combined_keys, comp_prefix_key)
         if start == end:
             # No completions
             if not is_auto:
@@ -85,19 +91,19 @@ class Autocomplete(object):
 
         if complete:
             # Find maximum prefix
-            first = combined[start]
-            last = combined[end-1]
+            first = combined_keys[start]
+            last = combined_keys[end-1]
             i = 0
             while i < len(first) and i < len(last) and first[i] == last[i]:
                 i += 1
             if i > len(comp_prefix):
-                sb.insert_at_cursor(first[len(comp_prefix):i])
+                sb.insert_at_cursor(combined[start][len(comp_prefix):i])
                 comp_prefix = first[:i]
             if end == start + 1:
                 # Only one matchine completion - don't show the window
                 return
 
-        self.window.show(public, private, len(comp_prefix))
+        self.window.show(public, private, is_case_insen, len(comp_prefix))
         
     def _complete_attributes(self, text, index, hp, is_auto):
         """
@@ -126,7 +132,8 @@ class Autocomplete(object):
         if public_and_private is None:
             return
         public, private = public_and_private
-        return comp_prefix, public, private
+        is_case_insen = False
+        return comp_prefix, public, private, is_case_insen
 
     def _complete_filenames(self, text, index, hp, is_auto):
         """
@@ -137,6 +144,7 @@ class Autocomplete(object):
         # Analyze string a bit
         pos = str_start - 1
         str_char = text[pos]
+        assert str_char in ('"', "'")
         if text[pos+1:pos+3] == str_char + str_char:
             # triple-quoted string - not for us
             return
@@ -148,82 +156,32 @@ class Autocomplete(object):
             pos -= 1
         str_prefix = text[pos:str_start]
 
-        # Check whether autocompletion is really appropriate
-        if is_auto:
-            if text[index-1] != sep:
-                return
-            if sep == '\\' and not is_raw:
-                if not self._is_backslash_char(text, index-1):
-                    return
+        # Do not open a completion list if after a single backslash in a
+        # non-raw string
+        if is_auto and text[index-1] == '\\' \
+           and not is_raw and not self._is_backslash_char(text, index-1):
+            return
 
-        # Find completion start - last (real) sep
-        i = index
-        while True:
-            i = text.rfind(sep, 0, i)
-            if i == -1 or i < str_start:
-                # not found - prefix is all the string.
-                comp_prefix_index = str_start
-                break
-            if sep != '\\' or is_raw or self._is_backslash_char(text, i):
-                comp_prefix_index = i+1
-                break
+        # Find completion start - last '/' or real '\\'
+        sep_ind = max(text.rfind('/', 0, index), text.rfind('\\', 0, index))
+        if sep_ind == -1 or sep_ind < str_start:
+            # not found - prefix is all the string.
+            comp_prefix_index = str_start
+        elif text[sep_ind] == '\\' and not is_raw and not self._is_backslash_char(text, sep_ind):
+            # Do not complete if the completion prefix contains a backslash.
+            return
+        else:
+            comp_prefix_index = sep_ind+1
 
         comp_prefix = text[comp_prefix_index:index]
-        try:
-            # We add a space because a backslash can't be the last
-            # char of a raw string literal
-            comp_what = eval(str_prefix
-                             + text[str_start:comp_prefix_index]
-                             + ' '
-                             + str_char)[:-1]
-        except SyntaxError:
+        
+        res = self.complete_filenames(
+            str_prefix, text[str_start:comp_prefix_index], str_char)
+        if res is None:
             return
-
-        abspath = self.subp_abspath(unicode(comp_what))
-        if abspath is None:
-            return
-        try:
-            dirlist = os.listdir(abspath)
-        except OSError:
-            return
-        dirlist.sort()
-        public = []
-        private = []
-        for name in dirlist:
-            if is_unicode and isinstance(name, str):
-                # A filename which can't be unicode
-                continue
-            if not is_unicode:
-                # We need a unicode string. From what I see, Python evaluates
-                # unicode characters in byte strings as utf-8.
-                try:
-                    name = name.decode('utf8')
-                except UnicodeDecodeError:
-                    continue
-            # skip troublesome names
-            try:
-                rename = eval(str_prefix + name + str_char)
-            except (SyntaxError, UnicodeDecodeError):
-                continue
-            if rename != name:
-                continue
-
-            is_dir = os.path.isdir(os.path.join(abspath, name))
-
-            if not is_dir:
-                name += str_char
-            else:
-                if sep == '\\' and not is_raw:
-                    name += '\\\\'
-                else:
-                    name += sep
-
-            if name.startswith('.'):
-                private.append(name)
-            else:
-                public.append(name)
-
-        return comp_prefix, public, private
+        public, private, is_case_insen = res
+        
+        return comp_prefix, public, private, is_case_insen
     
     def _on_complete(self):
         # Called when the user completed. This is relevant if he completed

@@ -67,6 +67,8 @@ PyCF_DONT_IMPLY_DEDENT = 0x200
 _features = [getattr(__future__, fname)
              for fname in __future__.all_feature_names]
 
+case_insen_filenames = (os.path.normcase('A') == 'a')
+
 class Subprocess(object):
     def __init__(self, port):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -270,9 +272,70 @@ class Subprocess(object):
         return public, private
 
     @rpc_func
-    def abspath(self, path):
-        return unicode(os.path.abspath(os.path.expanduser(path)))
+    def complete_filenames(self, str_prefix, text, str_char):
+        is_raw = 'r' in str_prefix.lower()
+        is_unicode = 'u' in str_prefix.lower()
+        try:
+            # We add a space because a backslash can't be the last
+            # char of a raw string literal
+            comp_what = eval(str_prefix
+                             + text
+                             + ' '
+                             + str_char)[:-1]
+        except SyntaxError:
+            return
 
+        try:
+            dirlist = os.listdir(comp_what)
+        except OSError:
+            return
+        if case_insen_filenames:
+            dirlist.sort(key=lambda s: s.lower())
+        else:
+            dirlist.sort()
+        public = []
+        private = []
+        for name in dirlist:
+            if not py3k:
+                if is_unicode and isinstance(name, str):
+                    # A filename which can't be unicode
+                    continue
+                if not is_unicode:
+                    # We need a unicode string as the code. From what I see,
+                    # Python evaluates unicode characters in byte strings as utf-8.
+                    try:
+                        name = name.decode('utf8')
+                    except UnicodeDecodeError:
+                        continue
+            # skip troublesome names
+            try:
+                rename = eval(str_prefix + name + str_char)
+            except (SyntaxError, UnicodeDecodeError):
+                continue
+            if rename != name:
+                continue
+
+            is_dir = os.path.isdir(os.path.join(comp_what, name))
+
+            if not is_dir:
+                name += str_char
+            else:
+                if '/' in text or os.path.sep == '/':
+                    # Prefer forward slash
+                    name += '/'
+                else:
+                    if not is_raw:
+                        name += '\\\\'
+                    else:
+                        name += '\\'
+
+            if name.startswith('.'):
+                private.append(name)
+            else:
+                public.append(name)
+        
+        return public, private, case_insen_filenames
+    
     @rpc_func
     def get_welcome(self):
         name = 'Python' if not sys.platform.startswith('java') else 'Jython'

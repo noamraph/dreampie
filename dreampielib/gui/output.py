@@ -32,6 +32,10 @@ class Output(object):
     def write(self, data, tag_name):
         tb = self.textbuffer
 
+        # Keep lines if after the cr there was no data before the lf.
+        # Since that's the normal Windows newline, it's very important.
+        data = data.replace('\r\n', '\n')
+        # But remove chars before cr if something follows.
         data = ansi_escape_re.sub('', data)
         
         has_trailing_cr = data.endswith('\r')

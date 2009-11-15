@@ -86,6 +86,10 @@ class AutocompleteWindow(object):
 
         self.is_shown = False
         self.cur_list = None
+        # cur_list_keys is cur_list if not is_case_insen, otherwise,
+        # lowercase strings.
+        self.cur_list_keys = None
+        self.is_case_insen = None
         self.private_list = None
         self.showing_private = None
         self.cur_prefix = None
@@ -102,7 +106,7 @@ class AutocompleteWindow(object):
             widget.disconnect(handler)
         self.signals[:] = []
 
-    def show(self, public, private, start_len):
+    def show(self, public, private, is_case_insen, start_len):
         sb = self.sourcebuffer
 
         if self.is_shown:
@@ -115,6 +119,11 @@ class AutocompleteWindow(object):
 
         # Update list and check if is empty
         self.cur_list = public
+        self.is_case_insen = is_case_insen
+        if not is_case_insen:
+            self.cur_list_keys = self.cur_list
+        else:
+            self.cur_list_keys = [s.lower() for s in self.cur_list]
         self.private_list = private
         self.showing_private = False
         self.cur_prefix = None
@@ -150,13 +159,19 @@ class AutocompleteWindow(object):
         if prefix == self.cur_prefix:
             return True and not return_false
         self.cur_prefix = prefix
+        prefix_key = prefix.lower() if self.is_case_insen else prefix
 
-        start, end = find_prefix_range(self.cur_list, prefix)
+        start, end = find_prefix_range(self.cur_list_keys, prefix_key)
         if start == end and not self.showing_private:
             self.showing_private = True
             self.cur_list.extend(self.private_list)
-            self.cur_list.sort()
-            start, end = find_prefix_range(self.cur_list, prefix)
+            if self.is_case_insen:
+                self.cur_list.sort(key = lambda s: s.lower())
+                self.cur_list_keys = [s.lower() for s in self.cur_list]
+            else:
+                self.cur_list.sort()
+                self.cur_list_keys = self.cur_list
+            start, end = find_prefix_range(self.cur_list_keys, prefix_key)
         if start == end:
             self.hide()
             return False

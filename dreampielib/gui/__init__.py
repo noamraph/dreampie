@@ -127,7 +127,7 @@ class DreamPie(SimpleGladeApp):
 
         self.autocomplete = Autocomplete(self.sourceview,
                                          self.complete_attributes,
-                                         self.subp_abspath,
+                                         self.complete_filenames,
                                          INDENT_WIDTH)
 
         # Hack: we connect this signal here, so that it will have lower
@@ -592,10 +592,10 @@ class DreamPie(SimpleGladeApp):
             return None
         return self.call_subp(u'complete_attributes', expr)
 
-    def subp_abspath(self, path):
+    def complete_filenames(self, str_prefix, text, str_char):
         if self.is_executing:
             return None
-        return self.call_subp(u'abspath', path)
+        return self.call_subp(u'complete_filenames', str_prefix, text, str_char)
 
     def on_show_calltip(self, widget):
         self.call_tips.show(is_auto=False)
