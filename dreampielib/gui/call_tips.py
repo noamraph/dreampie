@@ -75,10 +75,9 @@ class CallTips(object):
         if not hp.is_in_code():
             return and_maybe_beep()
 
-        sur_parens = hp.get_surrounding_brackets('(')
-        if not sur_parens:
+        opener, closer = hp.get_surrounding_brackets('(')
+        if not opener:
             return and_maybe_beep()
-        opener, closer = sur_parens
         if not closer:
             closer = len(text)
         hp.set_index(opener)
