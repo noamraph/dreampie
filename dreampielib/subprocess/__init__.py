@@ -296,6 +296,7 @@ class Subprocess(object):
         public = []
         private = []
         for name in dirlist:
+            orig_name = name
             if not py3k:
                 if is_unicode and isinstance(name, str):
                     # A filename which can't be unicode
@@ -312,7 +313,7 @@ class Subprocess(object):
                 rename = eval(str_prefix + name + str_char)
             except (SyntaxError, UnicodeDecodeError):
                 continue
-            if rename != name:
+            if rename != orig_name:
                 continue
 
             is_dir = os.path.isdir(os.path.join(comp_what, name))
