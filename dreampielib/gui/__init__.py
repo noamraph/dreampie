@@ -494,6 +494,7 @@ class DreamPie(SimpleGladeApp):
         self.write('>>> ', COMMAND, PROMPT)
 
     def on_subp_restarted(self):
+        self.is_executing = False
         self.write(
             '\n==================== New Session ====================\n',
             MESSAGE)
