@@ -284,6 +284,8 @@ class Subprocess(object):
                              + str_char)[:-1]
         except SyntaxError:
             return
+        if comp_what == '':
+            comp_what = '.'
 
         try:
             dirlist = os.listdir(comp_what)
