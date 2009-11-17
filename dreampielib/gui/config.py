@@ -27,6 +27,7 @@ default_config = """
 [DreamPie]
 font=Courier New 10
 show-getting-started = True
+recall-1-char-commands = False
 
 [Colors]
 text-fg = white
@@ -85,9 +86,24 @@ class Config(object):
     def get(self, key, section='DreamPie'):
         return self.parser.get(section, key)
     
+    def get_bool(self, key, section='DreamPie'):
+        s = self.get(key, section)
+        s = s.lower()
+        if s in ('1', 'true'):
+            return True
+        elif s in ('0', 'false'):
+            return False
+        else:
+            raise ValueError("Expecting boolean value for key %s in section %s, "
+                             "found %r." % (key, section, s))
+    
     def set(self, key, value, section='DreamPie'):
         self.parser.set(section, key, value)
         f = open(self.filename, 'w')
         self.parser.write(f)
         f.close()
+    
+    def set_bool(self, key, value, section='DreamPie'):
+        key = 'True' if value else 'False'
+        self.set(key, value, section)
 

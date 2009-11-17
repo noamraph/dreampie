@@ -123,7 +123,7 @@ class DreamPie(SimpleGladeApp):
         self.vadj_to_bottom = VAdjToBottom(self.scrolledwindow_textview
                                            .get_vadjustment())
 
-        self.history = History(self.textview, self.sourceview)
+        self.history = History(self.textview, self.sourceview, self.config)
 
         self.autocomplete = Autocomplete(self.sourceview,
                                          self.complete_attributes,
@@ -149,10 +149,10 @@ class DreamPie(SimpleGladeApp):
         self.set_window_default_size()
         self.window_main.show_all()
         
-        if self.config.get('show-getting-started') in ('True', 'true', '1'):
+        if self.config.get_bool('show-getting-started'):
             self.getting_started_dialog.run()
             self.getting_started_dialog.hide()
-            self.config.set('show-getting-started', 'False')
+            self.config.set_bool('show-getting-started', False)
 
 
     # Colors

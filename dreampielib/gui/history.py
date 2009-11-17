@@ -1,8 +1,5 @@
 __all__ = ['History']
 
-import gtk
-from gtk import gdk
-
 from .tags import COMMAND, PROMPT
 from .beep import beep
 
@@ -11,11 +8,12 @@ class History(object):
     Manage moving between commands on the text view, and recalling commands
     in the source view.
     """
-    def __init__(self, textview, sourceview):
+    def __init__(self, textview, sourceview, config):
         self.textview = textview
         self.textbuffer = textview.get_buffer()
         self.sourceview = sourceview
         self.sourcebuffer = sourceview.get_buffer()
+        self.recall_1_char_commands = config.get_bool('recall-1-char-commands')
 
         tb = self.textbuffer
 
@@ -132,7 +130,7 @@ class History(object):
                 first_line = self._iter_get_command(it, only_first_line=True)
                 if (first_line
                     and first_line.startswith(self.hist_prefix)
-                    and len(first_line) > 2):
+                    and (len(first_line) > 2 or self.recall_1_char_commands)):
                     
                     command = self._iter_get_command(it)
                     sb.set_text(command)
@@ -183,7 +181,7 @@ class History(object):
                 first_line = self._iter_get_command(it, only_first_line=True)
                 if (first_line
                     and first_line.startswith(self.hist_prefix)
-                    and len(first_line) > 2):
+                    and (len(first_line) > 2 or self.recall_1_char_commands)):
                     
                     command = self._iter_get_command(it)
                     sb.set_text(command)
