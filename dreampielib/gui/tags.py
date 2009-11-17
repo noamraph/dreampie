@@ -24,3 +24,5 @@ PROMPT = 'prompt'; COMMAND = 'command'; MESSAGE = 'message'
 
 KEYWORD = 'keyword'; BUILTIN = 'builtin'; STRING = 'string'
 NUMBER = 'number'; COMMENT = 'comment'
+
+HIDDEN = 'hidden'

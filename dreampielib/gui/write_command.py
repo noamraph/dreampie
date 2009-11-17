@@ -23,15 +23,21 @@ from .tags import PROMPT, COMMAND
 
 from .tags import KEYWORD, BUILTIN, STRING, NUMBER, COMMENT
 
+from .tags import HIDDEN
+
 keywords = set(keyword.kwlist)
 builtins = set(__builtins__)
 
-def write_command(write, command):
+def write_command(write_func, command, hide_defs):
     """Write a command to the textview, with syntax highlighting and "...".
     """
     lines = [x+'\n' for x in command.split('\n')]
     # Remove last newline - we don't tag it with COMMAND to separate commands
     lines[-1] = lines[-1][:-1]
+    if hide_defs:
+        hidden_lines = get_hidden_lines(lines)
+    else:
+        hidden_lines = [False for line in lines]
     tok_iter = tokenize.generate_tokens(iter(lines).next)
     highs = []
     for typ, token, (sline, scol), (eline, ecol), line in tok_iter:
@@ -56,6 +62,11 @@ def write_command(write, command):
     cur_high = highs[0]
     in_high = False
     for lineno, line in enumerate(lines):
+        if hidden_lines[lineno]:
+            write = lambda s, *args: write_func(s, HIDDEN, *args)
+        else:
+            write = write_func
+            
         if lineno != 0:
             write('... ', COMMAND, PROMPT)
         col = 0
@@ -80,4 +91,39 @@ def write_command(write, command):
                 else:
                     write(line[col:], COMMAND, cur_high[0])
                     col = len(line)
-    write('\n')
+    write_func('\n')
+
+def get_hidden_lines(lines):
+    """
+    Get a list of lines - strings with Python code.
+    Return a list of booleans - whether a line should be hidden, because it's
+    a part of a function or class definitions.
+    """
+    # return value
+    hidden_lines = [False for line in lines]
+    # Last line with a 'def' or 'class' NAME
+    last_def_line = None
+    # Indentation depth - when reaches 0, we are back in a non-filtered area.
+    cur_depth = 0
+    # First line of current filtered area
+    first_filtered_line = None
+    
+    tok_iter = tokenize.generate_tokens(iter(lines).next)
+    for typ, token, (sline, scol), (eline, ecol), line in tok_iter:
+        if cur_depth > 0:
+            if typ == tokenize.INDENT:
+                cur_depth += 1
+            elif typ == tokenize.DEDENT:
+                cur_depth -= 1
+                if cur_depth == 0:
+                    for i in range(first_filtered_line, sline-1):
+                        hidden_lines[i] = True
+                    first_filtered_line = None
+        else:
+            if typ == tokenize.NAME and token in ('def', 'class'):
+                last_def_line = sline
+            elif typ == tokenize.INDENT and sline == last_def_line + 1:
+                cur_depth = 1
+                first_filtered_line = sline-1
+    
+    return hidden_lines

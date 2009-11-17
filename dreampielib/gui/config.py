@@ -28,6 +28,8 @@ default_config = """
 font=Courier New 10
 show-getting-started = True
 recall-1-char-commands = False
+hide-defs = False
+leave-code = False
 
 [Colors]
 text-fg = white

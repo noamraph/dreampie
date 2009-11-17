@@ -79,6 +79,8 @@ from .tags import STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND, MESSAGE
 
 from .tags import KEYWORD, BUILTIN, STRING, NUMBER, COMMENT
 
+from .tags import HIDDEN
+
 INDENT_WIDTH = 4
 
 # Default line length, by which we set the default window size
@@ -226,7 +228,8 @@ class DreamPie(SimpleGladeApp):
                     KEYWORD, BUILTIN, STRING, NUMBER, COMMENT):
             tb.create_tag(tag, foreground=self.get_fg_color(tag),
                           background=self.get_bg_color(tag))
-
+        tb.create_tag(HIDDEN, invisible=True)        
+        
         tv.connect('key-press-event', self.on_textview_keypress)
         tv.connect('focus-in-event', self.on_textview_focus_in)
 
@@ -307,9 +310,12 @@ class DreamPie(SimpleGladeApp):
                 self.status_bar.set_status(status_msg)
                 beep()
         else:
-            write_command(self.write, source.strip())
+            hide_defs = self.config.get_bool('hide-defs')
+            write_command(self.write, source.strip(), hide_defs)
+            leave_code = self.config.get_bool('leave-code')
             self.output.set_mark(tb.get_end_iter())
-            sb.delete(sb.get_start_iter(), sb.get_end_iter())
+            if not leave_code:
+                sb.delete(sb.get_start_iter(), sb.get_end_iter())
             self.vadj_to_bottom.scroll_to_bottom()
             self.is_executing = True
             self.menuitem_execute.props.visible = False
