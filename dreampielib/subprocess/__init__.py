@@ -29,6 +29,7 @@ import keyword
 import __builtin__
 import inspect
 from repr import repr as safe_repr
+import pprint
 try:
     # Executing multiple statements in 'single' mode (print results) is done
     # with the ast module. Python 2.5 doesn't have it, so we use the compiler
@@ -74,6 +75,10 @@ class Subprocess(object):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect(('localhost', port))
 
+        # Make sys.displayhook change self.last_val
+        self.last_val = None
+        sys.displayhook = self.displayhook
+
         # Trick things like pdb into thinking that the namespace we create is
         # the main module
         mainmodule = types.ModuleType('__main__')
@@ -84,6 +89,13 @@ class Subprocess(object):
 
         self.gid = 0
         self.flags = PyCF_DONT_IMPLY_DEDENT
+        
+        # Config
+        self.is_pprint = False
+        self.cache_size = 0
+        
+        # The cache index of the next value to enter the cache
+        self.cache_counter = 0
 
         # Run endless loop
         self.loop()
@@ -110,6 +122,10 @@ class Subprocess(object):
                 print >> sys.stderr, "Unknown command: %s" % funcname
                 send_object(self.sock, None)
 
+    def displayhook(self, val):
+        if val is not None:
+            self.last_val = val
+
     def handle_gui_events(self, sock):
         """
         Handle GUI events until there's something to read from sock.
@@ -134,8 +150,11 @@ class Subprocess(object):
         Compile it. If there was a syntax error, return
         (False, (msg, line, col)).
         If compilation was successful, return (True, None), then run the code
-        and then send (is_success, exception_string, rem_stdin).
+        and then send (is_success, val_no, val_str, exception_string, rem_stdin).
         is_success - True if there was no exception.
+        val_no - number of the result in the history count, or None if there
+                 was no result or there's no history.
+        val_str - a string representation of the result.
         exception_string - description of the exception, or None if is_success.
         rem_stdin - data that was sent into stdin and wasn't consumed.
         """
@@ -162,8 +181,7 @@ class Subprocess(object):
             if codeob.co_flags & feature.compiler_flag:
                 self.flags |= feature.compiler_flag
 
-        is_success = True
-        exception_string = None
+        self.last_val = None
         try:
             exec codeob in self.locs
         except (Exception, KeyboardInterrupt), e:
@@ -189,6 +207,20 @@ class Subprocess(object):
                 print>>efile, line,
             is_success = False
             exception_string = efile.getvalue()
+            val_no = None
+            val_str = None
+        else:
+            is_success = True
+            exception_string = None
+            if self.last_val is not None:
+                val_no = self.store_in_cache(self.last_val)
+                if self.is_pprint:
+                    val_str = unicode(pprint.pformat(self.last_val))
+                else:
+                    val_str = unicode(repr(self.last_val))
+            else:
+                val_no = None
+                val_str = None
             
         # Send back any data left on stdin.
         rem_stdin = []
@@ -209,9 +241,51 @@ class Subprocess(object):
 
         rem_stdin = u''.join(rem_stdin)
 
-        yield is_success, exception_string, rem_stdin
+        yield is_success, val_no, val_str, exception_string, rem_stdin
 
+    @rpc_func
+    def set_pprint(self, is_pprint):
+        self.is_pprint = is_pprint
 
+    @rpc_func
+    def set_cache_size(self, new_cache_size):
+        if new_cache_size < self.cache_size:
+            for i in range(self.cache_counter-self.cache_size,
+                           self.cache_counter-new_cache_size):
+                self.locs.pop('_%d' % i, None)
+        self.cache_size = new_cache_size
+        if new_cache_size > 0:
+            self.locs['clear_cache'] = self.clear_cache
+    
+    def clear_cache(self):
+        for i in range(self.cache_counter-self.cache_size, self.cache_counter):
+            self.locs.pop('_%d' % i, None)
+
+    def store_in_cache(self, val):
+        """
+        Get a value to store in the cache.
+        Store it, and return the value's cache index.
+        If the value isn't stored, return None.
+        """
+        if val is None:
+            return None
+            
+        if '__' in self.locs:
+            self.locs['___'] = self.locs['__']
+        if '_' in self.locs:
+            self.locs['__'] = self.locs['_']
+        self.locs['_'] = val
+        
+        if self.cache_size == 0:
+            return None
+        val_index = self.cache_counter
+        self.locs['_%d' % val_index] = val
+        del_index = self.cache_counter - self.cache_size
+        if del_index >= 0:
+            self.locs.pop('_%d' % del_index, None)
+        self.cache_counter += 1
+        return val_index
+    
     @staticmethod
     def split_list(L, public_set):
         """

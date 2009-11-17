@@ -75,7 +75,8 @@ from .beep import beep
 
 # Tags and colors
 
-from .tags import STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND, MESSAGE
+from .tags import (STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND, MESSAGE,
+                   CACHE_IND, CACHE_VAL)
 
 from .tags import KEYWORD, BUILTIN, STRING, NUMBER, COMMENT
 
@@ -145,6 +146,7 @@ class DreamPie(SimpleGladeApp):
             self.on_subp_restarted)
         # Is the subprocess executing a command
         self.is_executing = False
+        self.configure_subp()
 
         self.show_welcome()
 
@@ -224,7 +226,8 @@ class DreamPie(SimpleGladeApp):
 
         # We have to add the tags in a specific order, so that the priority
         # of the syntax tags will be higher.
-        for tag in (STDOUT, STDERR, EXCEPTION, COMMAND, PROMPT, STDIN, MESSAGE,
+        for tag in (STDOUT, STDERR, EXCEPTION, COMMAND, PROMPT, STDIN,
+                    CACHE_IND, CACHE_VAL, MESSAGE,
                     KEYWORD, BUILTIN, STRING, NUMBER, COMMENT):
             tb.create_tag(tag, foreground=self.get_fg_color(tag),
                           background=self.get_bg_color(tag))
@@ -499,8 +502,13 @@ class DreamPie(SimpleGladeApp):
 
         self.write('>>> ', COMMAND, PROMPT)
 
+    def configure_subp(self):
+        self.call_subp(u'set_cache_size', int(self.config.get('cache-size')))
+        self.call_subp(u'set_pprint', self.config.get_bool('pprint'))
+
     def on_subp_restarted(self):
         self.is_executing = False
+        self.configure_subp()
         self.write(
             '\n==================== New Session ====================\n',
             MESSAGE)
@@ -522,10 +530,15 @@ class DreamPie(SimpleGladeApp):
     def on_object_recv(self, object):
         assert self.is_executing
 
-        is_ok, exc_info, rem_stdin = object
+        is_success, val_no, val_str, exception_string, rem_stdin = object
 
-        if not is_ok:
-            self.write(exc_info, EXCEPTION)
+        if not is_success:
+            self.write(exception_string, EXCEPTION)
+        else:
+            if val_str is not None:
+                if val_no is not None:
+                    self.write('%d: ' % val_no, CACHE_IND)
+                self.write(val_str+'\n', CACHE_VAL)
         if self.textbuffer.get_end_iter().get_line_offset() != 0:
             self.write('\n')
         self.write('>>> ', COMMAND, PROMPT)
