@@ -46,7 +46,7 @@ import pygtk
 pygtk.require('2.0')
 import gobject
 import gtk
-from gtk import gdk
+from gtk import gdk, glade
 import pango
 import gtksourceview2
 from . import gtkexcepthook
@@ -102,8 +102,8 @@ def sourceview_keyhandler(keyval, state):
 
 class DreamPie(SimpleGladeApp):
     def __init__(self, pyexec):
-        gladefile = os.path.join(data_dir, 'dreampie', 'dreampie.glade')
-        SimpleGladeApp.__init__(self, gladefile)
+        self.gladefile = os.path.join(data_dir, 'dreampie', 'dreampie.glade')
+        SimpleGladeApp.__init__(self, self.gladefile, 'window_main')
 
         self.config = Config()
 
@@ -152,8 +152,7 @@ class DreamPie(SimpleGladeApp):
         self.window_main.show_all()
         
         if self.config.get_bool('show-getting-started'):
-            self.getting_started_dialog.run()
-            self.getting_started_dialog.hide()
+            self.show_getting_started_dialog()
             self.config.set_bool('show-getting-started', False)
 
 
@@ -684,9 +683,13 @@ class DreamPie(SimpleGladeApp):
         w.destroy()
     
     def on_getting_started(self, widget):
-        self.getting_started_dialog.run()
-        self.getting_started_dialog.hide()
-
+        self.show_getting_started_dialog()
+    
+    def show_getting_started_dialog(self):
+        xml = glade.XML(self.gladefile, 'getting_started_dialog')
+        dialog = xml.get_widget('getting_started_dialog')
+        dialog.run()
+        dialog.destroy()
 
 def make_style_scheme(spec):
     # Quite stupidly, there's no way to create a SourceStyleScheme without
