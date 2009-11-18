@@ -75,12 +75,10 @@ from .beep import beep
 
 # Tags and colors
 
-from .tags import (STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND, MESSAGE,
-                   CACHE_IND, CACHE_VAL)
+from .tags import (STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND,
+                   COMMAND_DEFS, MESSAGE, CACHE_IND, CACHE_VAL)
 
 from .tags import KEYWORD, BUILTIN, STRING, NUMBER, COMMENT
-
-from .tags import HIDDEN
 
 INDENT_WIDTH = 4
 
@@ -231,7 +229,9 @@ class DreamPie(SimpleGladeApp):
                     KEYWORD, BUILTIN, STRING, NUMBER, COMMENT):
             tb.create_tag(tag, foreground=self.get_fg_color(tag),
                           background=self.get_bg_color(tag))
-        tb.create_tag(HIDDEN, invisible=True)        
+        command_defs = tb.create_tag(COMMAND_DEFS)
+        if self.config.get_bool('hide-defs'):
+            command_defs.props.invisible = True
         
         tv.connect('key-press-event', self.on_textview_keypress)
         tv.connect('focus-in-event', self.on_textview_focus_in)
@@ -313,8 +313,7 @@ class DreamPie(SimpleGladeApp):
                 self.status_bar.set_status(status_msg)
                 beep()
         else:
-            hide_defs = self.config.get_bool('hide-defs')
-            write_command(self.write, source.strip(), hide_defs)
+            write_command(self.write, source.strip())
             leave_code = self.config.get_bool('leave-code')
             self.output.set_mark(tb.get_end_iter())
             if not leave_code:

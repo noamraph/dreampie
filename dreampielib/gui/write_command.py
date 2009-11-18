@@ -19,25 +19,20 @@ __all__ = ['write_command']
 import tokenize
 import keyword
 
-from .tags import PROMPT, COMMAND
+from .tags import PROMPT, COMMAND, COMMAND_DEFS
 
 from .tags import KEYWORD, BUILTIN, STRING, NUMBER, COMMENT
-
-from .tags import HIDDEN
 
 keywords = set(keyword.kwlist)
 builtins = set(__builtins__)
 
-def write_command(write_func, command, hide_defs):
+def write_command(write, command):
     """Write a command to the textview, with syntax highlighting and "...".
     """
     lines = [x+'\n' for x in command.split('\n')]
     # Remove last newline - we don't tag it with COMMAND to separate commands
     lines[-1] = lines[-1][:-1]
-    if hide_defs:
-        hidden_lines = get_hidden_lines(lines)
-    else:
-        hidden_lines = [False for line in lines]
+    defs_lines = get_defs_lines(lines)
     tok_iter = tokenize.generate_tokens(iter(lines).next)
     highs = []
     for typ, token, (sline, scol), (eline, ecol), line in tok_iter:
@@ -58,49 +53,53 @@ def write_command(write_func, command, hide_defs):
     # Adding a terminal highlight will help us avoid end-cases
     highs.append((None, len(lines), 0, len(lines), 0))
 
+    def my_write(s, is_defs, *tags):
+        if not is_defs:
+            write(s, *tags)
+        else:
+            write(s, COMMAND_DEFS, *tags)
+
     high_pos = 0
     cur_high = highs[0]
     in_high = False
     for lineno, line in enumerate(lines):
-        if hidden_lines[lineno]:
-            write = lambda s, *args: write_func(s, HIDDEN, *args)
-        else:
-            write = write_func
+        is_defs = defs_lines[lineno]
             
         if lineno != 0:
-            write('... ', COMMAND, PROMPT)
+            my_write('... ', is_defs, COMMAND, PROMPT)
         col = 0
         while col < len(line):
             if not in_high:
                 if cur_high[1] == lineno:
                     if cur_high[2] > col:
-                        write(line[col:cur_high[2]], COMMAND)
+                        my_write(line[col:cur_high[2]], is_defs, COMMAND)
                         col = cur_high[2]
                     in_high = True
                 else:
-                    write(line[col:], COMMAND)
+                    my_write(line[col:], is_defs, COMMAND)
                     col = len(line)
             else:
                 if cur_high[3] == lineno:
                     if cur_high[4] > col:
-                        write(line[col:cur_high[4]], COMMAND, cur_high[0])
+                        my_write(line[col:cur_high[4]],
+                                 is_defs, COMMAND, cur_high[0])
                         col = cur_high[4]
                     in_high = False
                     high_pos += 1
                     cur_high = highs[high_pos]
                 else:
-                    write(line[col:], COMMAND, cur_high[0])
+                    my_write(line[col:], is_defs, COMMAND, cur_high[0])
                     col = len(line)
-    write_func('\n')
+    write('\n')
 
-def get_hidden_lines(lines):
+def get_defs_lines(lines):
     """
     Get a list of lines - strings with Python code.
-    Return a list of booleans - whether a line should be hidden, because it's
-    a part of a function or class definitions.
+    Return a list of booleans - whether a line should be hidden when hide-defs
+    is True, because it's a part of a function or class definitions.
     """
     # return value
-    hidden_lines = [False for line in lines]
+    defs_lines = [False for line in lines]
     # Last line with a 'def' or 'class' NAME
     last_def_line = None
     # Indentation depth - when reaches 0, we are back in a non-filtered area.
@@ -117,7 +116,7 @@ def get_hidden_lines(lines):
                 cur_depth -= 1
                 if cur_depth == 0:
                     for i in range(first_filtered_line, sline-1):
-                        hidden_lines[i] = True
+                        defs_lines[i] = True
                     first_filtered_line = None
         else:
             if typ == tokenize.NAME and token in ('def', 'class'):
@@ -126,4 +125,4 @@ def get_hidden_lines(lines):
                 cur_depth = 1
                 first_filtered_line = sline-1
     
-    return hidden_lines
+    return defs_lines
