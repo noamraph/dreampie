@@ -341,7 +341,7 @@
                 <property name="left_padding">9</property>
                 <property name="right_padding">9</property>
                 <child>
-                  <widget class="GtkFontSelection" id="fontselection1">
+                  <widget class="GtkFontSelection" id="fontsel">
                     <property name="visible">True</property>
                     <property name="orientation">vertical</property>
                     <property name="spacing">12</property>
@@ -736,7 +736,7 @@
                     <property name="orientation">vertical</property>
                     <property name="spacing">3</property>
                     <child>
-                      <widget class="GtkCheckButton" id="checkbutton1">
+                      <widget class="GtkCheckButton" id="pprint_chk">
                         <property name="label" translatable="yes">Pretty-print results</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
@@ -749,12 +749,13 @@
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkCheckButton" id="checkbutton2">
+                      <widget class="GtkCheckButton" id="cache_chk">
                         <property name="label" translatable="yes">Keep result history</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
                         <property name="draw_indicator">True</property>
+                        <signal name="toggled" handler="on_cache_chk_toggled"/>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
@@ -779,7 +780,7 @@
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkSpinButton" id="spinbutton1">
+                              <widget class="GtkSpinButton" id="cache_spin">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="invisible_char">&#x25CF;</property>
@@ -847,7 +848,7 @@
                             <property name="orientation">vertical</property>
                             <property name="spacing">3</property>
                             <child>
-                              <widget class="GtkCheckButton" id="checkbutton3">
+                              <widget class="GtkCheckButton" id="leave_code_chk">
                                 <property name="label" translatable="yes">Leave code in the code box after execution</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -859,7 +860,7 @@
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkCheckButton" id="checkbutton4">
+                              <widget class="GtkCheckButton" id="hide_defs_chk">
                                 <property name="label" translatable="yes">Hide content of function and class definitions</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -868,18 +869,6 @@
                               </widget>
                               <packing>
                                 <property name="position">1</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <widget class="GtkCheckButton" id="checkbutton5">
-                                <property name="label" translatable="yes">Recall code segments with only one character</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">False</property>
-                                <property name="draw_indicator">True</property>
-                              </widget>
-                              <packing>
-                                <property name="position">2</property>
                               </packing>
                             </child>
                           </widget>
@@ -927,13 +916,14 @@
             <property name="visible">True</property>
             <property name="layout_style">end</property>
             <child>
-              <widget class="GtkButton" id="button1">
+              <widget class="GtkButton" id="ok_btn">
                 <property name="label">gtk-ok</property>
                 <property name="response_id">-5</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
+                <signal name="clicked" handler="on_ok_btn_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>

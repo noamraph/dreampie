@@ -61,6 +61,7 @@ from .. import __version__
 
 from .SimpleGladeApp import SimpleGladeApp
 from .config import Config
+from .config_dialog import ConfigDialog
 from .write_command import write_command
 from .newline_and_indent import newline_and_indent
 from .output import Output
@@ -113,6 +114,8 @@ class DreamPie(SimpleGladeApp):
         self.init_textbufferview()
 
         self.init_sourcebufferview()
+        
+        self.configure()
 
         self.output = Output(self.textview)
 
@@ -150,6 +153,7 @@ class DreamPie(SimpleGladeApp):
         self.window_main.show_all()
         
         self.configure_subp()
+        self.run_init_code()
 
         if self.config.get_bool('show-getting-started'):
             self.show_getting_started_dialog()
@@ -219,7 +223,6 @@ class DreamPie(SimpleGladeApp):
 
         tv.modify_base(0, gdk.color_parse(self.get_bg_color('text')))
         tv.modify_text(0, gdk.color_parse(self.get_fg_color('text')))
-        tv.modify_font(pango.FontDescription(self.config.get('font')))
 
         # We have to add the tags in a specific order, so that the priority
         # of the syntax tags will be higher.
@@ -228,9 +231,7 @@ class DreamPie(SimpleGladeApp):
                     KEYWORD, BUILTIN, STRING, NUMBER, COMMENT):
             tb.create_tag(tag, foreground=self.get_fg_color(tag),
                           background=self.get_bg_color(tag))
-        command_defs = tb.create_tag(COMMAND_DEFS)
-        if self.config.get_bool('hide-defs'):
-            command_defs.props.invisible = True
+        tb.create_tag(COMMAND_DEFS)
         
         tv.connect('key-press-event', self.on_textview_keypress)
         tv.connect('focus-in-event', self.on_textview_focus_in)
@@ -255,8 +256,6 @@ class DreamPie(SimpleGladeApp):
         self.sourcebuffer.set_language(python)
         self.sourcebuffer.set_style_scheme(
             make_style_scheme(self.get_style_scheme_spec()))
-        self.sourceview.modify_font(
-            pango.FontDescription(self.config.get('font')))
         self.scrolledwindow_sourceview.add(self.sourceview)
         self.sourceview.connect('focus-in-event', self.on_sourceview_focus_in)
         self.sourceview.grab_focus()
@@ -313,9 +312,8 @@ class DreamPie(SimpleGladeApp):
                 beep()
         else:
             write_command(self.write, source.strip())
-            leave_code = self.config.get_bool('leave-code')
             self.output.set_mark(tb.get_end_iter())
-            if not leave_code:
+            if not self.config.get_bool('leave-code'):
                 sb.delete(sb.get_start_iter(), sb.get_end_iter())
             self.vadj_to_bottom.scroll_to_bottom()
             self.is_executing = True
@@ -500,9 +498,22 @@ class DreamPie(SimpleGladeApp):
         self.output.set_mark(self.textbuffer.get_end_iter())
 
     def configure_subp(self):
-        self.call_subp(u'set_cache_size', int(self.config.get('cache-size')))
-        self.call_subp(u'set_pprint', self.config.get_bool('pprint'))
+        config = self.config
         
+        if config.get_bool('use-cache'):
+            cache_size = config.get_int('cache-size')
+        else:
+            cache_size = 0
+        self.call_subp(u'set_cache_size', cache_size)
+        
+        self.call_subp(u'set_pprint', config.get_bool('pprint'))
+        
+    def run_init_code(self):
+        """
+        Runs the init code.
+        This will result in the code being run and a '>>>' printed afterwards.
+        If there's no init code, will just print '>>>'.
+        """
         init_code = unicode(eval(self.config.get('init-code')))
         if init_code:
             is_ok, syntax_error_info = self.call_subp(u'execute', init_code)
@@ -531,6 +542,7 @@ class DreamPie(SimpleGladeApp):
             MESSAGE)
         self.output.set_mark(self.textbuffer.get_end_iter())
         self.configure_subp()
+        self.run_init_code()
 
     def on_restart_subprocess(self, widget):
         self.subp.kill()
@@ -642,6 +654,30 @@ class DreamPie(SimpleGladeApp):
         if self.is_executing:
             return None
         return self.call_subp(u'get_arg_text', expr)
+
+    def configure(self):
+        """
+        Apply configuration. Called on initialization and after configuration
+        was changed by the configuration dialog.
+        """
+        config = self.config
+        
+        font_name = config.get('font')
+        font = pango.FontDescription(font_name)
+        self.textview.modify_font(font)
+        self.sourceview.modify_font(font)
+        self.set_window_default_size()
+        
+        command_defs = self.textbuffer.get_tag_table().lookup(COMMAND_DEFS)
+        command_defs.props.invisible = config.get_bool('hide-defs')
+
+    def on_preferences(self, widget):
+        cd = ConfigDialog(self.config, self.gladefile)
+        r = cd.run()
+        if r == gtk.RESPONSE_OK:
+            self.configure()
+            self.configure_subp()
+        cd.destroy()
 
     def on_choose_font(self, widget):
         fontsel = gtk.FontSelectionDialog(_("Choose DreamPie font"))

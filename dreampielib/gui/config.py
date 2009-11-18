@@ -28,8 +28,9 @@ default_config = """
 show-getting-started = True
 font=Courier New 10
 current-theme = dark
-pprint = False
-cache-size = 0
+pprint = True
+use-cache = True
+cache-size = 30
 init-code = ''
 
 recall-1-char-commands = False
@@ -123,9 +124,7 @@ class Config(object):
         f = StringIO(default_config)
         self.parser.readfp(f)
         self.parser.read(self.filename)
-        f = open(self.filename, 'w')
-        self.parser.write(f)
-        f.close()
+        self.save()
     
     def get(self, key, section='DreamPie'):
         return self.parser.get(section, key)
@@ -141,13 +140,23 @@ class Config(object):
             raise ValueError("Expecting boolean value for key %s in section %s, "
                              "found %r." % (key, section, s))
     
+    def get_int(self, key, section='DreamPie'):
+        return int(self.get(key, section))
+    
     def set(self, key, value, section='DreamPie'):
         self.parser.set(section, key, value)
+    
+    def set_bool(self, key, value, section='DreamPie'):
+        value_str = 'True' if value else 'False'
+        self.set(key, value_str, section)
+    
+    def set_int(self, key, value, section='DreamPie'):
+        if value != int(value):
+            raise ValueError("Expected an int, got %r" % value)
+        self.set(key, '%d' % value, section)
+    
+    def save(self):
         f = open(self.filename, 'w')
         self.parser.write(f)
         f.close()
-    
-    def set_bool(self, key, value, section='DreamPie'):
-        key = 'True' if value else 'False'
-        self.set(key, value, section)
 
