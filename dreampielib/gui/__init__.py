@@ -76,7 +76,7 @@ from .beep import beep
 # Tags and colors
 
 from .tags import (STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND,
-                   COMMAND_DEFS, MESSAGE, CACHE_IND, CACHE_VAL)
+                   COMMAND_DEFS, MESSAGE, CACHE_IND, EXPR_RES)
 
 from .tags import KEYWORD, BUILTIN, STRING, NUMBER, COMMENT
 
@@ -144,13 +144,13 @@ class DreamPie(SimpleGladeApp):
             self.on_subp_restarted)
         # Is the subprocess executing a command
         self.is_executing = False
-        self.configure_subp()
-
         self.show_welcome()
 
         self.set_window_default_size()
         self.window_main.show_all()
         
+        self.configure_subp()
+
         if self.config.get_bool('show-getting-started'):
             self.show_getting_started_dialog()
             self.config.set_bool('show-getting-started', False)
@@ -159,10 +159,10 @@ class DreamPie(SimpleGladeApp):
     # Colors
 
     def get_fg_color(self, name):
-        return self.config.get('%s-fg' % name, section='Colors')
+        return self.config.get('%s-fg' % name, section='dark-theme')
 
     def get_bg_color(self, name):
-        return self.config.get('%s-bg' % name, section='Colors')
+        return self.config.get('%s-bg' % name, section='dark-theme')
 
     def get_style_scheme_spec(self):
         mapping = {
@@ -224,7 +224,7 @@ class DreamPie(SimpleGladeApp):
         # We have to add the tags in a specific order, so that the priority
         # of the syntax tags will be higher.
         for tag in (STDOUT, STDERR, EXCEPTION, COMMAND, PROMPT, STDIN,
-                    CACHE_IND, CACHE_VAL, MESSAGE,
+                    CACHE_IND, EXPR_RES, MESSAGE,
                     KEYWORD, BUILTIN, STRING, NUMBER, COMMENT):
             tb.create_tag(tag, foreground=self.get_fg_color(tag),
                           background=self.get_bg_color(tag))
@@ -497,20 +497,40 @@ class DreamPie(SimpleGladeApp):
         s = self.call_subp(u'get_welcome')
         s += 'DreamPie %s\n' % __version__
         self.write(s, MESSAGE)
-
-        self.write('>>> ', COMMAND, PROMPT)
+        self.output.set_mark(self.textbuffer.get_end_iter())
 
     def configure_subp(self):
         self.call_subp(u'set_cache_size', int(self.config.get('cache-size')))
         self.call_subp(u'set_pprint', self.config.get_bool('pprint'))
+        
+        init_code = unicode(eval(self.config.get('init-code')))
+        if init_code:
+            is_ok, syntax_error_info = self.call_subp(u'execute', init_code)
+            if not is_ok:
+                msg, lineno, offset = syntax_error_info
+                warning = _(
+                    "Could not run initialization code because of a syntax "
+                    "error:\n"
+                    "%s at line %d col %d.") % (msg, lineno+1, offset+1)
+                msg = gtk.MessageDialog(self.window_main, gtk.DIALOG_MODAL,
+                                        gtk.MESSAGE_WARNING, gtk.BUTTONS_CLOSE,
+                                        warning)
+                response = msg.run()
+                msg.destroy()
+            else:
+                self.is_executing = True
+                self.menuitem_execute.props.visible = False
+                self.menuitem_stdin.props.visible = True
+        if not self.is_executing:
+            self.write('>>> ', COMMAND, PROMPT)
 
     def on_subp_restarted(self):
         self.is_executing = False
-        self.configure_subp()
         self.write(
             '\n==================== New Session ====================\n',
             MESSAGE)
-        self.write('>>> ', COMMAND, PROMPT)
+        self.output.set_mark(self.textbuffer.get_end_iter())
+        self.configure_subp()
 
     def on_restart_subprocess(self, widget):
         self.subp.kill()
@@ -525,10 +545,10 @@ class DreamPie(SimpleGladeApp):
         self.subp.send_object((funcname, args))
         return self.subp.recv_object()
 
-    def on_object_recv(self, object):
+    def on_object_recv(self, obj):
         assert self.is_executing
 
-        is_success, val_no, val_str, exception_string, rem_stdin = object
+        is_success, val_no, val_str, exception_string, rem_stdin = obj
 
         if not is_success:
             self.write(exception_string, EXCEPTION)
@@ -536,7 +556,7 @@ class DreamPie(SimpleGladeApp):
             if val_str is not None:
                 if val_no is not None:
                     self.write('%d: ' % val_no, CACHE_IND)
-                self.write(val_str+'\n', CACHE_VAL)
+                self.write(val_str+'\n', EXPR_RES)
         if self.textbuffer.get_end_iter().get_line_offset() != 0:
             self.write('\n')
         self.write('>>> ', COMMAND, PROMPT)

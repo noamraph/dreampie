@@ -21,7 +21,7 @@ Tags for the textview and sourceview.
 
 STDIN = 'stdin'; STDOUT = 'stdout'; STDERR = 'stderr'; EXCEPTION = 'exception'
 PROMPT = 'prompt'; COMMAND = 'command'; COMMAND_DEFS='command-defs';
-MESSAGE = 'message'; CACHE_IND = 'cache-ind'; CACHE_VAL = 'cache-val'
+MESSAGE = 'message'; CACHE_IND = 'cache-ind'; EXPR_RES = 'expr-res'
 
 KEYWORD = 'keyword'; BUILTIN = 'builtin'; STRING = 'string'
 NUMBER = 'number'; COMMENT = 'comment'

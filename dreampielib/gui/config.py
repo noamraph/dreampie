@@ -25,15 +25,18 @@ from .odict import OrderedDict
 
 default_config = """
 [DreamPie]
-font=Courier New 10
 show-getting-started = True
-recall-1-char-commands = False
+font=Courier New 10
+current-theme = dark
 pprint = False
 cache-size = 0
+init-code = ''
+
+recall-1-char-commands = False
 hide-defs = False
 leave-code = False
 
-[Colors]
+[dark-theme]
 text-fg = white
 text-bg = black
 
@@ -45,8 +48,8 @@ stderr-fg = #ff8080
 stderr-bg = black
 cache-ind-fg = blue
 cache-ind-bg = black
-cache-val-fg = #bcffff
-cache-val-bg = black
+expr-res-fg = #bcffff
+expr-res-bg = black
 exception-fg = #ff8080
 exception-bg = black
 prompt-fg = #e400b6
@@ -69,6 +72,39 @@ comment-bg = black
 
 bracket-match-fg = white
 bracket-match-bg = darkblue
+
+stdin-fg-set = False
+stdin-bg-set = False
+stdout-fg-set = True
+stdout-bg-set = False
+stderr-fg-set = True
+stderr-bg-set = False
+cache-ind-fg-set = True
+cache-ind-bg-set = False
+expr-res-fg-set = True
+expr-res-bg-set = False
+exception-fg-set = True
+exception-bg-set = False
+prompt-fg-set = True
+prompt-bg-set = False
+command-fg-set = True
+command-bg-set = False
+message-fg-set = True
+message-bg-set = False
+
+keyword-fg-set = True
+keyword-bg-set = False
+builtin-fg-set = True
+builtin-bg-set = False
+string-fg-set = True
+string-bg-set = False
+number-fg-set = True
+number-bg-set = False
+comment-fg-set = True
+comment-bg-set = False
+
+bracket-match-fg-set = False
+bracket-match-bg-set = True
 """
 
 class Config(object):
