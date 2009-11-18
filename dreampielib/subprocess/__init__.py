@@ -221,6 +221,8 @@ class Subprocess(object):
             else:
                 val_no = None
                 val_str = None
+        # Discard the reference to the result
+        self.last_val = None
             
         # Send back any data left on stdin.
         rem_stdin = []
