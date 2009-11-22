@@ -73,13 +73,9 @@ from .autocomplete import Autocomplete
 from .call_tips import CallTips
 from .subprocess_handler import SubprocessHandler
 from .beep import beep
-
-# Tags and colors
-
 from .tags import (STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND,
-                   COMMAND_DEFS, MESSAGE, CACHE_IND, EXPR_RES)
-
-from .tags import KEYWORD, BUILTIN, STRING, NUMBER, COMMENT
+                   COMMAND_DEFS, MESSAGE, RESULT_IND, RESULT)
+import tags
 
 INDENT_WIDTH = 4
 
@@ -158,39 +154,7 @@ class DreamPie(SimpleGladeApp):
         if self.config.get_bool('show-getting-started'):
             self.show_getting_started_dialog()
             self.config.set_bool('show-getting-started', False)
-
-
-    # Colors
-
-    def get_fg_color(self, name):
-        return self.config.get('%s-fg' % name, section='dark-theme')
-
-    def get_bg_color(self, name):
-        return self.config.get('%s-bg' % name, section='dark-theme')
-
-    def get_style_scheme_spec(self):
-        mapping = {
-            'text': 'text',
-            
-            'def:keyword': KEYWORD,
-            'def:preprocessor': KEYWORD,
-
-            'def:builtin': BUILTIN,
-            'def:special-constant': BUILTIN,
-            'def:type': BUILTIN,
-
-            'def:string': STRING,
-            'def:number': NUMBER,
-            'def:comment': COMMENT,
-
-            'bracket-match': 'bracket-match',
-            }
-
-        res = {}
-        for key, value in mapping.iteritems():
-            res[key] = dict(foreground=self.get_fg_color(value),
-                            background=self.get_bg_color(value))
-        return res
+            self.config.save()
 
 
     # Selection
@@ -221,18 +185,8 @@ class DreamPie(SimpleGladeApp):
 
         tv.set_wrap_mode(gtk.WRAP_CHAR)
 
-        tv.modify_base(0, gdk.color_parse(self.get_bg_color('text')))
-        tv.modify_text(0, gdk.color_parse(self.get_fg_color('text')))
+        tags.add_tags(tb)
 
-        # We have to add the tags in a specific order, so that the priority
-        # of the syntax tags will be higher.
-        for tag in (STDOUT, STDERR, EXCEPTION, COMMAND, PROMPT, STDIN,
-                    CACHE_IND, EXPR_RES, MESSAGE,
-                    KEYWORD, BUILTIN, STRING, NUMBER, COMMENT):
-            tb.create_tag(tag, foreground=self.get_fg_color(tag),
-                          background=self.get_bg_color(tag))
-        tb.create_tag(COMMAND_DEFS)
-        
         tv.connect('key-press-event', self.on_textview_keypress)
         tv.connect('focus-in-event', self.on_textview_focus_in)
 
@@ -248,17 +202,15 @@ class DreamPie(SimpleGladeApp):
         self.window_main.set_default_size(width, height)
 
     def init_sourcebufferview(self):
-        self.sourcebuffer = gtksourceview2.Buffer()
-        self.sourceview = gtksourceview2.View(self.sourcebuffer)
+        self.sourcebuffer = sb = gtksourceview2.Buffer()
+        self.sourceview = sv = gtksourceview2.View(self.sourcebuffer)
 
         lm = gtksourceview2.LanguageManager()
         python = lm.get_language('python')
-        self.sourcebuffer.set_language(python)
-        self.sourcebuffer.set_style_scheme(
-            make_style_scheme(self.get_style_scheme_spec()))
+        sb.set_language(python)
         self.scrolledwindow_sourceview.add(self.sourceview)
-        self.sourceview.connect('focus-in-event', self.on_sourceview_focus_in)
-        self.sourceview.grab_focus()
+        sv.connect('focus-in-event', self.on_sourceview_focus_in)
+        sv.grab_focus()
 
     def sb_get_text(self, *args):
         # Unfortunately, PyGTK returns utf-8 encoded byte strings...
@@ -500,11 +452,11 @@ class DreamPie(SimpleGladeApp):
     def configure_subp(self):
         config = self.config
         
-        if config.get_bool('use-cache'):
-            cache_size = config.get_int('cache-size')
+        if config.get_bool('use-reshist'):
+            reshist_size = config.get_int('reshist-size')
         else:
-            cache_size = 0
-        self.call_subp(u'set_cache_size', cache_size)
+            reshist_size = 0
+        self.call_subp(u'set_reshist_size', reshist_size)
         
         self.call_subp(u'set_pprint', config.get_bool('pprint'))
         
@@ -567,8 +519,8 @@ class DreamPie(SimpleGladeApp):
         else:
             if val_str is not None:
                 if val_no is not None:
-                    self.write('%d: ' % val_no, CACHE_IND)
-                self.write(val_str+'\n', EXPR_RES)
+                    self.write('%d: ' % val_no, RESULT_IND)
+                self.write(val_str+'\n', RESULT)
         if self.textbuffer.get_end_iter().get_line_offset() != 0:
             self.write('\n')
         self.write('>>> ', COMMAND, PROMPT)
@@ -661,36 +613,34 @@ class DreamPie(SimpleGladeApp):
         was changed by the configuration dialog.
         """
         config = self.config
+        tv = self.textview; tb = self.textbuffer
+        sv = self.sourceview; sb = self.sourcebuffer
         
         font_name = config.get('font')
         font = pango.FontDescription(font_name)
-        self.textview.modify_font(font)
-        self.sourceview.modify_font(font)
+        tv.modify_font(font)
+        sv.modify_font(font)
+
+        cur_theme = self.config.get('current-theme')
+        tags.apply_theme_text(tv, tb, tags.get_theme(self.config, cur_theme))
+        tags.apply_theme_source(sb, tags.get_theme(self.config, cur_theme))
+
         self.set_window_default_size()
         
         command_defs = self.textbuffer.get_tag_table().lookup(COMMAND_DEFS)
         command_defs.props.invisible = config.get_bool('hide-defs')
 
     def on_preferences(self, widget):
-        cd = ConfigDialog(self.config, self.gladefile)
+        cd = ConfigDialog(self.config, self.gladefile, self.window_main)
         r = cd.run()
         if r == gtk.RESPONSE_OK:
             self.configure()
             self.configure_subp()
         cd.destroy()
 
-    def on_choose_font(self, widget):
-        fontsel = gtk.FontSelectionDialog(_("Choose DreamPie font"))
-        fontsel.set_font_name(self.config.get('font'))
-        response = fontsel.run()
-        font_name = fontsel.get_font_name()
-        fontsel.destroy()
-        if response == gtk.RESPONSE_OK:
-            self.config.set('font', font_name)
-            font = pango.FontDescription(font_name)
-            self.textview.modify_font(font)
-            self.sourceview.modify_font(font)
-            self.set_window_default_size()
+    def on_clear_reshist(self, widget):
+        self.call_subp(u'clear_reshist')
+        self.status_bar.set_status(_("Result history cleared."))
 
     def on_close(self, widget, event):
         self.quit()
@@ -711,75 +661,24 @@ class DreamPie(SimpleGladeApp):
             gtk.main_quit()
 
     def on_about(self, widget):
-        w = gtk.AboutDialog()
-        w.set_name('DreamPie')
-        w.set_version(__version__)
-        w.set_comments(_("The interactive Python shell you've always dreamed "
-                         "about!"))
-        w.set_copyright(_('Copyright 2008,2009 Noam Yorav-Raphael'))
-        w.set_license(
-            "DreamPie is free software; you can redistribute it and/or modify "
-            "it under the terms of the GNU General Public License as published "
-            "by the Free Software Foundation; either version 3 of the License, "
-            "or (at your option) any later version.\n\n"
-            "DreamPie is distributed in the hope that it will be useful, but "
-            "WITHOUT ANY WARRANTY; without even the implied warranty of "
-            "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU "
-            "General Public License for more details.\n\n"
-            "You should have received a copy of the GNU General Public License "
-            "along with DreamPie; if not, write to the Free Software "
-            "Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  "
-            "02110-1301 USA"
-            )
-        w.set_wrap_license(True)
-        w.set_authors([_('Noam Yorav-Raphael <noamraph@gmail.com>')])
-        w.set_logo(gdk.pixbuf_new_from_file(
+        xml = glade.XML(self.gladefile, 'about_dialog')
+        d = xml.get_widget('about_dialog')
+        d.set_transient_for(self.window_main)
+        d.set_version(__version__)
+        d.set_logo(gdk.pixbuf_new_from_file(
             os.path.join(data_dir, 'pixmaps', 'dreampie.png')))
-        w.run()
-        w.destroy()
+        d.run()
+        d.destroy()
     
     def on_getting_started(self, widget):
         self.show_getting_started_dialog()
     
     def show_getting_started_dialog(self):
         xml = glade.XML(self.gladefile, 'getting_started_dialog')
-        dialog = xml.get_widget('getting_started_dialog')
-        dialog.run()
-        dialog.destroy()
-
-def make_style_scheme(spec):
-    # Quite stupidly, there's no way to create a SourceStyleScheme without
-    # reading a file from a search path. So this function creates a file in
-    # a directory, to get you your style scheme.
-    #
-    # spec should be a dict of dicts, mapping style names to (attribute, value)
-    # pairs. Color values will be converted using gdk.color_parse().
-    # Boolean values will be handled correctly.
-    dir = tempfile.mkdtemp()
-    filename = os.path.join(dir, 'scheme.xml')
-    f = open(filename, 'w')
-    f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-    f.write('<style-scheme id="scheme" _name="Scheme" version="1.0">\n')
-    for name, attributes in spec.iteritems():
-        f.write('<style name="%s" ' % name)
-        for attname, attvalue in attributes.iteritems():
-            if attname in ('foreground', 'background'):
-                attvalue = gdk.color_parse(attvalue).to_string()
-            elif attname in ('italic', 'bold', 'underline', 'strikethrough'):
-                attvalue = 'true' if attvalue else 'false'
-            f.write('%s="%s" ' % (attname, attvalue))
-        f.write('/>\n')
-    f.write('</style-scheme>\n')
-    f.close()
-
-    ssm = gtksourceview2.StyleSchemeManager()
-    ssm.set_search_path([dir])
-    scheme = ssm.get_scheme('scheme')
-
-    os.remove(filename)
-    os.rmdir(dir)
-
-    return scheme
+        d = xml.get_widget('getting_started_dialog')
+        d.set_transient_for(self.window_main)
+        d.run()
+        d.destroy()
 
 
 def main():

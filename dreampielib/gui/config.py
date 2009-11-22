@@ -18,7 +18,7 @@
 __all__ = ['Config']
 
 import os
-from ConfigParser import RawConfigParser
+from ConfigParser import SafeConfigParser
 from StringIO import StringIO
 
 from .odict import OrderedDict
@@ -27,19 +27,21 @@ default_config = """
 [DreamPie]
 show-getting-started = True
 font=Courier New 10
-current-theme = dark
+current-theme = Dark
 pprint = True
-use-cache = True
-cache-size = 30
+use-reshist = True
+reshist-size = 30
 init-code = ''
 
 recall-1-char-commands = False
 hide-defs = False
 leave-code = False
 
-[dark-theme]
-text-fg = white
-text-bg = black
+[Dark theme]
+is-active = True
+
+default-fg = white
+default-bg = black
 
 stdin-fg = white
 stdin-bg = black
@@ -47,16 +49,14 @@ stdout-fg = #bcffff
 stdout-bg = black
 stderr-fg = #ff8080
 stderr-bg = black
-cache-ind-fg = blue
-cache-ind-bg = black
-expr-res-fg = #bcffff
-expr-res-bg = black
+result-ind-fg = blue
+result-ind-bg = black
+result-fg = #bcffff
+result-bg = black
 exception-fg = #ff8080
 exception-bg = black
 prompt-fg = #e400b6
 prompt-bg = black
-command-fg = white
-command-bg = black
 message-fg = yellow
 message-bg = black
 
@@ -80,16 +80,14 @@ stdout-fg-set = True
 stdout-bg-set = False
 stderr-fg-set = True
 stderr-bg-set = False
-cache-ind-fg-set = True
-cache-ind-bg-set = False
-expr-res-fg-set = True
-expr-res-bg-set = False
+result-ind-fg-set = True
+result-ind-bg-set = False
+result-fg-set = True
+result-bg-set = False
 exception-fg-set = True
 exception-bg-set = False
 prompt-fg-set = True
 prompt-bg-set = False
-command-fg-set = True
-command-bg-set = False
 message-fg-set = True
 message-bg-set = False
 
@@ -106,21 +104,90 @@ comment-bg-set = False
 
 bracket-match-fg-set = False
 bracket-match-bg-set = True
+
+[Light theme]
+is-active = True
+
+default-fg = black
+default-bg = white
+
+stdin-fg = #770000
+stdin-bg = white
+stdout-fg = blue
+stdout-bg = white
+stderr-fg = red
+stderr-bg = white
+result-ind-fg = #808080
+result-ind-bg = white
+result-fg = blue
+result-bg = white
+exception-fg = red
+exception-bg = white
+prompt-fg = #770000
+prompt-bg = white
+message-fg = #008000
+message-bg = white
+
+keyword-fg = #ff7700
+keyword-bg = white
+builtin-fg = #0000ff
+builtin-bg = white
+string-fg = #00aa00
+string-bg = white
+number-fg = blue
+number-bg = white
+comment-fg = #dd0000
+comment-bg = white
+
+bracket-match-fg = black
+bracket-match-bg = lightblue
+
+stdin-fg-set = False
+stdin-bg-set = False
+stdout-fg-set = True
+stdout-bg-set = False
+stderr-fg-set = True
+stderr-bg-set = False
+result-ind-fg-set = True
+result-ind-bg-set = False
+result-fg-set = True
+result-bg-set = False
+exception-fg-set = True
+exception-bg-set = False
+prompt-fg-set = True
+prompt-bg-set = False
+message-fg-set = True
+message-bg-set = False
+
+keyword-fg-set = True
+keyword-bg-set = False
+builtin-fg-set = True
+builtin-bg-set = False
+string-fg-set = True
+string-bg-set = False
+number-fg-set = True
+number-bg-set = False
+comment-fg-set = True
+comment-bg-set = False
+
+bracket-match-fg-set = False
+bracket-match-bg-set = True
+
 """
 
 class Config(object):
     """
-    Manage configuration.
-    config.get(key) - gets a value from the loaded file.
-    config.set(key, value) - stores a value, and saves.
+    Manage configuration - a simple wrapper around SafeConfigParser.
+    Upon initialization, the loaded file is updated with the default values.
+    config.save() will save the current state.
     """
     def __init__(self):
         self.filename = os.path.join(os.path.expanduser('~'), '.dreampie')
         try:
-            self.parser = RawConfigParser(dict_type=OrderedDict)
+            self.parser = SafeConfigParser(dict_type=OrderedDict)
         except TypeError:
             # Python versions < 2.6 don't support dict_type
-            self.parser = RawConfigParser()
+            self.parser = SafeConfigParser()
         f = StringIO(default_config)
         self.parser.readfp(f)
         self.parser.read(self.filename)
@@ -130,18 +197,10 @@ class Config(object):
         return self.parser.get(section, key)
     
     def get_bool(self, key, section='DreamPie'):
-        s = self.get(key, section)
-        s = s.lower()
-        if s in ('1', 'true'):
-            return True
-        elif s in ('0', 'false'):
-            return False
-        else:
-            raise ValueError("Expecting boolean value for key %s in section %s, "
-                             "found %r." % (key, section, s))
+        return self.parser.getboolean(section, key)
     
     def get_int(self, key, section='DreamPie'):
-        return int(self.get(key, section))
+        return self.parser.getint(section, key)
     
     def set(self, key, value, section='DreamPie'):
         self.parser.set(section, key, value)
@@ -155,6 +214,18 @@ class Config(object):
             raise ValueError("Expected an int, got %r" % value)
         self.set(key, '%d' % value, section)
     
+    def sections(self):
+        return self.parser.sections()
+
+    def has_section(self, section):
+        return self.parser.has_section(section)
+
+    def add_section(self, section):
+        return self.parser.add_section(section)
+
+    def remove_section(self, section):
+        return self.parser.remove_section(section)
+
     def save(self):
         f = open(self.filename, 'w')
         self.parser.write(f)

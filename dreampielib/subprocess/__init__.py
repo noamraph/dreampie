@@ -75,8 +75,8 @@ class Subprocess(object):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect(('localhost', port))
 
-        # Make sys.displayhook change self.last_val
-        self.last_val = None
+        # Make sys.displayhook change self.last_res
+        self.last_res = None
         sys.displayhook = self.displayhook
 
         # Trick things like pdb into thinking that the namespace we create is
@@ -92,10 +92,10 @@ class Subprocess(object):
         
         # Config
         self.is_pprint = False
-        self.cache_size = 0
+        self.reshist_size = 0
         
-        # The cache index of the next value to enter the cache
-        self.cache_counter = 0
+        # The result history index of the next value to enter the history
+        self.reshist_counter = 0
 
         # Run endless loop
         self.loop()
@@ -122,9 +122,9 @@ class Subprocess(object):
                 print >> sys.stderr, "Unknown command: %s" % funcname
                 send_object(self.sock, None)
 
-    def displayhook(self, val):
-        if val is not None:
-            self.last_val = val
+    def displayhook(self, res):
+        if res is not None:
+            self.last_res = res
 
     def handle_gui_events(self, sock):
         """
@@ -150,11 +150,11 @@ class Subprocess(object):
         Compile it. If there was a syntax error, return
         (False, (msg, line, col)).
         If compilation was successful, return (True, None), then run the code
-        and then send (is_success, val_no, val_str, exception_string, rem_stdin).
+        and then send (is_success, res_no, res_str, exception_string, rem_stdin).
         is_success - True if there was no exception.
-        val_no - number of the result in the history count, or None if there
+        res_no - number of the result in the history count, or None if there
                  was no result or there's no history.
-        val_str - a string representation of the result.
+        res_str - a string representation of the result.
         exception_string - description of the exception, or None if is_success.
         rem_stdin - data that was sent into stdin and wasn't consumed.
         """
@@ -181,7 +181,7 @@ class Subprocess(object):
             if codeob.co_flags & feature.compiler_flag:
                 self.flags |= feature.compiler_flag
 
-        self.last_val = None
+        self.last_res = None
         try:
             exec codeob in self.locs
         except (Exception, KeyboardInterrupt), e:
@@ -207,22 +207,22 @@ class Subprocess(object):
                 print>>efile, line,
             is_success = False
             exception_string = efile.getvalue()
-            val_no = None
-            val_str = None
+            res_no = None
+            res_str = None
         else:
             is_success = True
             exception_string = None
-            if self.last_val is not None:
-                val_no = self.store_in_cache(self.last_val)
+            if self.last_res is not None:
+                res_no = self.store_in_reshist(self.last_res)
                 if self.is_pprint:
-                    val_str = unicode(pprint.pformat(self.last_val))
+                    res_str = unicode(pprint.pformat(self.last_res))
                 else:
-                    val_str = unicode(repr(self.last_val))
+                    res_str = unicode(repr(self.last_res))
             else:
-                val_no = None
-                val_str = None
+                res_no = None
+                res_str = None
         # Discard the reference to the result
-        self.last_val = None
+        self.last_res = None
             
         # Send back any data left on stdin.
         rem_stdin = []
@@ -243,50 +243,49 @@ class Subprocess(object):
 
         rem_stdin = u''.join(rem_stdin)
 
-        yield is_success, val_no, val_str, exception_string, rem_stdin
+        yield is_success, res_no, res_str, exception_string, rem_stdin
 
     @rpc_func
     def set_pprint(self, is_pprint):
         self.is_pprint = is_pprint
 
     @rpc_func
-    def set_cache_size(self, new_cache_size):
-        if new_cache_size < self.cache_size:
-            for i in range(self.cache_counter-self.cache_size,
-                           self.cache_counter-new_cache_size):
+    def set_reshist_size(self, new_reshist_size):
+        if new_reshist_size < self.reshist_size:
+            for i in range(self.reshist_counter-self.reshist_size,
+                           self.reshist_counter-new_reshist_size):
                 self.locs.pop('_%d' % i, None)
-        self.cache_size = new_cache_size
-        if new_cache_size > 0:
-            self.locs['clear_cache'] = self.clear_cache
+        self.reshist_size = new_reshist_size
     
-    def clear_cache(self):
-        for i in range(self.cache_counter-self.cache_size, self.cache_counter):
+    @rpc_func
+    def clear_reshist(self):
+        for i in range(self.reshist_counter-self.reshist_size, self.reshist_counter):
             self.locs.pop('_%d' % i, None)
 
-    def store_in_cache(self, val):
+    def store_in_reshist(self, res):
         """
-        Get a value to store in the cache.
-        Store it, and return the value's cache index.
-        If the value isn't stored, return None.
+        Get a result value to store in the result history.
+        Store it, and return the result's index.
+        If the result isn't stored, return None.
         """
-        if val is None:
+        if res is None:
             return None
             
         if '__' in self.locs:
             self.locs['___'] = self.locs['__']
         if '_' in self.locs:
             self.locs['__'] = self.locs['_']
-        self.locs['_'] = val
+        self.locs['_'] = res
         
-        if self.cache_size == 0:
+        if self.reshist_size == 0:
             return None
-        val_index = self.cache_counter
-        self.locs['_%d' % val_index] = val
-        del_index = self.cache_counter - self.cache_size
+        res_index = self.reshist_counter
+        self.locs['_%d' % res_index] = res
+        del_index = self.reshist_counter - self.reshist_size
         if del_index >= 0:
             self.locs.pop('_%d' % del_index, None)
-        self.cache_counter += 1
-        return val_index
+        self.reshist_counter += 1
+        return res_index
     
     @staticmethod
     def split_list(L, public_set):

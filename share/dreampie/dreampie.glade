@@ -188,6 +188,14 @@
                         <accelerator key="Down" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem12">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Clear result history</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_clear_reshist"/>
+                      </widget>
+                    </child>
                   </widget>
                 </child>
               </widget>
@@ -330,9 +338,10 @@
         <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
-          <widget class="GtkNotebook" id="notebook1">
+          <widget class="GtkNotebook" id="notebook">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
+            <signal name="switch_page" handler="on_notebook_switch_page"/>
             <child>
               <widget class="GtkAlignment" id="alignment1">
                 <property name="visible">True</property>
@@ -396,9 +405,13 @@
                             <property name="hscrollbar_policy">automatic</property>
                             <property name="vscrollbar_policy">automatic</property>
                             <child>
-                              <widget class="GtkTreeView" id="treeview1">
+                              <widget class="GtkTreeView" id="themes_trv">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
+                                <property name="headers_visible">False</property>
+                                <property name="fixed_height_mode">True</property>
+                                <signal name="key_press_event" handler="on_themes_trv_key_press_event"/>
+                                <signal name="cursor_changed" handler="on_themes_trv_cursor_changed"/>
                               </widget>
                             </child>
                           </widget>
@@ -411,10 +424,12 @@
                             <property name="visible">True</property>
                             <property name="spacing">3</property>
                             <child>
-                              <widget class="GtkButton" id="button3">
+                              <widget class="GtkButton" id="copy_theme_btn">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
+                                <property name="tooltip" translatable="yes">Copy Theme</property>
+                                <signal name="clicked" handler="on_copy_theme_btn_clicked"/>
                                 <child>
                                   <widget class="GtkImage" id="image1">
                                     <property name="visible">True</property>
@@ -428,10 +443,12 @@
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkButton" id="button4">
+                              <widget class="GtkButton" id="del_theme_btn">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
+                                <property name="tooltip" translatable="yes">Delete Theme</property>
+                                <signal name="clicked" handler="on_del_theme_btn_clicked"/>
                                 <child>
                                   <widget class="GtkImage" id="image2">
                                     <property name="visible">True</property>
@@ -491,17 +508,17 @@
                               <widget class="GtkScrolledWindow" id="scrolledwindow2">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="hscrollbar_policy">automatic</property>
-                                <property name="vscrollbar_policy">automatic</property>
+                                <property name="hscrollbar_policy">never</property>
                                 <child>
-                                  <widget class="GtkTreeView" id="treeview2">
+                                  <widget class="GtkTreeView" id="elements_trv">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
+                                    <property name="headers_visible">False</property>
+                                    <signal name="cursor_changed" handler="on_elements_trv_cursor_changed"/>
                                   </widget>
                                 </child>
                               </widget>
                               <packing>
-                                <property name="expand">False</property>
                                 <property name="position">0</property>
                               </packing>
                             </child>
@@ -509,12 +526,16 @@
                               <widget class="GtkScrolledWindow" id="scrolledwindow4">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="hscrollbar_policy">automatic</property>
+                                <property name="hscrollbar_policy">never</property>
                                 <property name="vscrollbar_policy">automatic</property>
                                 <child>
-                                  <widget class="GtkTextView" id="textview1">
+                                  <widget class="GtkTextView" id="textview">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
+                                    <property name="editable">False</property>
+                                    <property name="cursor_visible">False</property>
+                                    <signal name="button_press_event" handler="on_textview_button_press_event"/>
+                                    <signal name="realize" handler="on_textview_realize"/>
                                   </widget>
                                 </child>
                               </widget>
@@ -561,7 +582,7 @@
                                     <property name="visible">True</property>
                                     <property name="orientation">vertical</property>
                                     <child>
-                                      <widget class="GtkRadioButton" id="radiobutton1">
+                                      <widget class="GtkRadioButton" id="fg_default_rad">
                                         <property name="label" translatable="yes">Default</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
@@ -574,13 +595,14 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <widget class="GtkRadioButton" id="radiobutton2">
-                                        <property name="label" translatable="yes">Custom:</property>
+                                      <widget class="GtkRadioButton" id="fg_special_rad">
+                                        <property name="label" translatable="yes">Special:</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">False</property>
                                         <property name="active">True</property>
                                         <property name="draw_indicator">True</property>
+                                        <signal name="toggled" handler="on_fg_special_rad_toggled"/>
                                       </widget>
                                       <packing>
                                         <property name="position">1</property>
@@ -591,11 +613,12 @@
                                         <property name="visible">True</property>
                                         <property name="left_padding">20</property>
                                         <child>
-                                          <widget class="GtkColorButton" id="colorbutton1">
+                                          <widget class="GtkColorButton" id="fg_cbut">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">True</property>
                                             <property name="color">#000000000000</property>
+                                            <signal name="color_set" handler="on_fg_cbut_color_set"/>
                                           </widget>
                                         </child>
                                       </widget>
@@ -637,7 +660,7 @@
                                     <property name="visible">True</property>
                                     <property name="orientation">vertical</property>
                                     <child>
-                                      <widget class="GtkRadioButton" id="radiobutton3">
+                                      <widget class="GtkRadioButton" id="bg_default_rad">
                                         <property name="label" translatable="yes">Default</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
@@ -650,13 +673,14 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <widget class="GtkRadioButton" id="radiobutton4">
-                                        <property name="label" translatable="yes">Custom:</property>
+                                      <widget class="GtkRadioButton" id="bg_special_rad">
+                                        <property name="label" translatable="yes">Special:</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">False</property>
                                         <property name="active">True</property>
                                         <property name="draw_indicator">True</property>
+                                        <signal name="toggled" handler="on_bg_special_rad_toggled"/>
                                       </widget>
                                       <packing>
                                         <property name="position">1</property>
@@ -667,11 +691,12 @@
                                         <property name="visible">True</property>
                                         <property name="left_padding">20</property>
                                         <child>
-                                          <widget class="GtkColorButton" id="colorbutton2">
+                                          <widget class="GtkColorButton" id="bg_cbut">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">True</property>
                                             <property name="color">#000000000000</property>
+                                            <signal name="color_set" handler="on_bg_cbut_color_set"/>
                                           </widget>
                                         </child>
                                       </widget>
@@ -749,7 +774,7 @@
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkCheckButton" id="cache_chk">
+                      <widget class="GtkCheckButton" id="reshist_chk">
                         <property name="label" translatable="yes">Keep result history</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
@@ -780,7 +805,7 @@
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkSpinButton" id="cache_spin">
+                              <widget class="GtkSpinButton" id="reshist_spin">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="invisible_char">&#x25CF;</property>
@@ -811,7 +836,7 @@
                             <property name="visible">True</property>
                             <property name="left_padding">22</property>
                             <child>
-                              <widget class="GtkScrolledWindow" id="scrolledwindow3">
+                              <widget class="GtkScrolledWindow" id="scrolledwindow_sourceview">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="hscrollbar_policy">automatic</property>
@@ -946,6 +971,42 @@
                 <property name="position">1</property>
               </packing>
             </child>
+          </widget>
+          <packing>
+            <property name="expand">False</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+      </widget>
+    </child>
+  </widget>
+  <widget class="GtkAboutDialog" id="about_dialog">
+    <property name="border_width">5</property>
+    <property name="type_hint">normal</property>
+    <property name="has_separator">False</property>
+    <property name="program_name">DreamPie</property>
+    <property name="copyright" translatable="yes">Copyright &#xA9; 2009 Noam Yorav-Raphael</property>
+    <property name="comments" translatable="yes">The Python shell you've always dreamed about!</property>
+    <property name="license" translatable="yes">DreamPie is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
+
+DreamPie is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with DreamPie; if not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA</property>
+    <property name="authors">Noam Yorav-Raphael &lt;noamraph@gmail.com&gt;</property>
+    <property name="wrap_license">True</property>
+    <child internal-child="vbox">
+      <widget class="GtkVBox" id="dialog-vbox4">
+        <property name="visible">True</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">2</property>
+        <child>
+          <placeholder/>
+        </child>
+        <child internal-child="action_area">
+          <widget class="GtkHButtonBox" id="dialog-action_area4">
+            <property name="visible">True</property>
+            <property name="layout_style">end</property>
           </widget>
           <packing>
             <property name="expand">False</property>
