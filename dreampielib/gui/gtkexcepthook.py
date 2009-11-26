@@ -97,6 +97,7 @@ def _info (exctyp, value, tb):
     try:
         import pdb
     except ImportError:
+        # py2exe
         pdb = None
         
     if exctyp is KeyboardInterrupt:

@@ -19,6 +19,8 @@ __all__ = ['HistPersist']
 
 from os.path import abspath, dirname, basename, exists
 import re
+from HTMLParser import HTMLParser
+from htmlentitydefs import name2codepoint
 
 import gtk
 
@@ -32,6 +34,7 @@ class HistPersist(object):
     def __init__(self, window_main, textview, status_bar):
         self.window_main = window_main
         self.textview = textview
+        self.textbuffer = textview.get_buffer()
         self.status_bar = status_bar
         
         self.filename = None
@@ -101,6 +104,37 @@ class HistPersist(object):
                     
             success = self._save_or_warn(d, filename)
             if success:
+                break
+        d.destroy()
+    
+    def load(self):
+        d = gtk.FileChooserDialog(
+            _('Choose the saved history file'), self.window_main,
+            gtk.FILE_CHOOSER_ACTION_OPEN,
+            (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+             gtk.STOCK_OK, gtk.RESPONSE_OK))
+        fil = gtk.FileFilter()
+        fil.set_name(_('HTML Files'))
+        fil.add_pattern('*.html')
+        d.add_filter(fil)
+        while True:
+            r = d.run()
+            if r == gtk.RESPONSE_CANCEL:
+                break
+            filename = abspath(d.get_filename())
+            try:
+                s = open(filename, 'rb').read()
+                parser = Parser(self.textbuffer)
+                parser.feed(s)
+                parser.close()
+                self.status_bar.set_status(_('History loaded.'))
+            except Exception, e:
+                m = gtk.MessageDialog(d, gtk.DIALOG_MODAL, gtk.MESSAGE_WARNING,
+                                        gtk.BUTTONS_OK)
+                m.props.text = _('Error when loading file: %s') % e
+                m.run()
+                m.destroy()
+            else:
                 break
         d.destroy()
 
@@ -207,3 +241,74 @@ body {
 </body>
 </html>
 """)
+
+class LoadError(Exception):
+    pass
+
+class Parser(HTMLParser):
+    def __init__(self, textbuffer):
+        HTMLParser.__init__(self)
+        
+        self.textbuffer = tb = textbuffer
+
+        self.reached_body = False
+        self.version = None
+        self.cur_tags = []
+        self.leftmark = tb.create_mark(None, tb.get_start_iter(), True)
+        self.rightmark = tb.create_mark(None, tb.get_start_iter(), False)
+    
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if not self.reached_body:
+            if tag == 'meta':
+                if 'name' in attrs and attrs['name'] == 'DreamPie Format':
+                    if attrs['content'] != '1':
+                        raise LoadError("Unrecognized DreamPie Format")
+                    self.version = 1
+            if tag == 'body':
+                if self.version is None:
+                    raise LoadError("File is not a DreamPie history file.")
+                self.reached_body = True
+        else:
+            if tag == 'span':
+                if 'class' not in attrs:
+                    raise LoadError("<span> without a 'class' attribute")
+                self.cur_tags.append(attrs['class'])
+    
+    def handle_endtag(self, tag):
+        if tag == 'span':
+            if not self.cur_tags:
+                raise LoadError("Too many </span> tags")
+            self.cur_tags.pop()
+    
+    def insert(self, data):
+        tb = self.textbuffer
+        leftmark = self.leftmark; rightmark = self.rightmark
+        # For some reasoin, insert_with_tags_by_name marks everything with the
+        # message tag. So we do it all by ourselves...
+        tb.insert(tb.get_iter_at_mark(leftmark), data)
+        leftit = tb.get_iter_at_mark(leftmark)
+        rightit = tb.get_iter_at_mark(rightmark)
+        tb.remove_all_tags(leftit, rightit)
+        for tag in self.cur_tags:
+            tb.apply_tag_by_name(tag, leftit, rightit)
+        tb.move_mark(leftmark, rightit)
+
+    def handle_data(self, data):
+        if self.reached_body:
+            self.insert(data.decode('utf8'))
+    
+    def handle_charref(self, name):
+        raise LoadError("Got a charref %r and not expecting it." % name)
+    
+    def handle_entityref(self, name):
+        if self.reached_body:
+            self.insert(unichr(name2codepoint[name]))
+    
+    def close(self):
+        HTMLParser.close(self)
+        
+        tb = self.textbuffer
+        tb.delete_mark(self.leftmark)
+        tb.delete_mark(self.rightmark)
+

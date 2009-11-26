@@ -601,6 +601,9 @@ class DreamPie(SimpleGladeApp):
     
     def on_save_history_as(self, widget):
         self.histpersist.save_as()
+    
+    def on_load_history(self, widget):
+        self.histpersist.load()
 
     # Other events
 

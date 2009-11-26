@@ -22,11 +22,12 @@
                     <property name="visible">True</property>
                     <child>
                       <widget class="GtkImageMenuItem" id="menuitem16">
-                        <property name="label" translatable="yes">_Add Previous History...</property>
+                        <property name="label" translatable="yes">_Load History...</property>
                         <property name="visible">True</property>
-                        <property name="tooltip" translatable="yes">Add history previously saved to a file on to op the history the is currently shown.</property>
+                        <property name="tooltip" translatable="yes">Load history previously saved to a file and add it before the history the is currently displayed.</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">False</property>
+                        <signal name="activate" handler="on_load_history"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image3">
                             <property name="visible">True</property>
