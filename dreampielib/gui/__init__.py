@@ -248,6 +248,7 @@ class DreamPie(SimpleGladeApp):
         self.menuitem_execute.props.sensitive = not is_executing
         self.menuitem_stdin.props.visible = is_executing
         self.menuitem_stdin.props.sensitive = is_executing
+        self.menuitem_discard_hist.props.sensitive = not is_executing
 
     def execute_source(self, warn):
         """Execute the source in the source buffer.
@@ -604,6 +605,48 @@ class DreamPie(SimpleGladeApp):
     
     def on_load_history(self, widget):
         self.histpersist.load()
+    
+    # Discard history
+    
+    def discard_hist_before_tag(self, tag):
+        """
+        Discard history before the given tag. If tag == COMMAND, this discards
+        all history, and if tag == MESSAGE, this discards previous sessions.
+        """
+        tb = self.textbuffer
+        
+        tag = tb.get_tag_table().lookup(tag)
+        it = tb.get_end_iter()
+        it.backward_to_tag_toggle(tag)
+        if not it.begins_tag(tag):
+            it.backward_to_tag_toggle(tag)
+        tb.delete(tb.get_start_iter(), it)
+
+    def on_discard_history(self, widget):
+        xml = glade.XML(self.gladefile, 'discard_hist_dialog')
+        d = xml.get_widget('discard_hist_dialog')
+        d.set_transient_for(self.window_main)
+        d.set_default_response(gtk.RESPONSE_OK)
+
+        previous_rad = xml.get_widget('previous_rad')
+        all_rad = xml.get_widget('all_rad')
+        previous_rad.set_group(all_rad)
+        previous_rad.props.active = True
+        
+        r = d.run()
+        d.destroy()
+        
+        if r == gtk.RESPONSE_OK:
+            tb = self.textbuffer
+            if previous_rad.props.active:
+                self.discard_hist_before_tag(MESSAGE)
+            else:
+                self.discard_hist_before_tag(COMMAND)
+                tb.insert_with_tags_by_name(
+                    tb.get_start_iter(),
+                    '================= History Discarded =================\n',
+                    MESSAGE)
+            self.status_bar.set_status(_('History discarded.'))
 
     # Other events
 

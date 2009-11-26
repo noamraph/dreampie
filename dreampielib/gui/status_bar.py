@@ -17,6 +17,13 @@
 
 __all__ = ['StatusBar']
 
+try:
+    from glib import timeout_add_seconds, source_remove
+except ImportError:
+    timetout_add_seconds = None
+    # In PyGObject 2.14, it's in gobject.
+    from gobject import timeout_add, source_remove
+
 class StatusBar(object):
     """
     Add messages to the status bar which disappear when the contents is changed.
@@ -29,6 +36,8 @@ class StatusBar(object):
         # the contents of the source buffer is changed
         self.sourcebuffer_status_id = None
         self.sourcebuffer_changed_handler_id = None
+        
+        self.timeout_handle = None
 
     def set_status(self, message):
         """Set a message in the status bar to be removed when the contents
@@ -37,9 +46,14 @@ class StatusBar(object):
             self.clear_status(None)
         self.sourcebuffer_status_id = self.statusbar.push(0, message)
         self.sourcebuffer_changed_handler_id = \
-            self.sourcebuffer.connect('changed', self.clear_status)
+            self.sourcebuffer.connect('changed', self.on_sourcebuffer_changed)
+        
+        if timeout_add_seconds is not None:
+            timeout_add_seconds(10, self.on_timeout)
+        else:
+            timeout_add(10000, self.on_timeout)
 
-    def clear_status(self, widget):
+    def clear_status(self):
         try:
             self.statusbar.remove_message(0, self.sourcebuffer_status_id)
         except AttributeError:
@@ -49,3 +63,16 @@ class StatusBar(object):
         self.sourcebuffer.disconnect(self.sourcebuffer_changed_handler_id)
         self.sourcebuffer_changed_handler_id = None
         
+        if self.timeout_handle is not None:
+            source_remove(self.timeout_handle)
+            self.timeout_handle = None
+    
+    def on_sourcebuffer_changed(self, widget):
+        self.clear_status()
+        return False
+    
+    def on_timeout(self):
+        self.clear_status()
+        return False
+    
+    
