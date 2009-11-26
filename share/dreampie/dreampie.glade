@@ -265,7 +265,7 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="menuitem12">
+                      <widget class="GtkMenuItem" id="menuitem_clear_reshist">
                         <property name="visible">True</property>
                         <property name="tooltip" translatable="yes">Remove all previously computed results which are stored in the result history.</property>
                         <property name="label" translatable="yes">Clear Result History</property>
@@ -857,7 +857,7 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="toggled" handler="on_cache_chk_toggled"/>
+                        <signal name="toggled" handler="on_reshist_chk_toggled"/>
                       </widget>
                       <packing>
                         <property name="expand">False</property>

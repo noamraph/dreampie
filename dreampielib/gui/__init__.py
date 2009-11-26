@@ -470,6 +470,7 @@ class DreamPie(SimpleGladeApp):
         else:
             reshist_size = 0
         self.call_subp(u'set_reshist_size', reshist_size)
+        self.menuitem_clear_reshist.props.sensitive = (reshist_size > 0)
         
         self.call_subp(u'set_pprint', config.get_bool('pprint'))
         
