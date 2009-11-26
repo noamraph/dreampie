@@ -17,6 +17,8 @@ import pygtk
 pygtk.require ('2.0')
 import gtk, pango
 
+feedback = None
+
 #def analyse (exctyp, value, tb):
 #    trace = StringIO()
 #    traceback.print_exception (exctyp, value, tb, None, trace)
@@ -92,6 +94,11 @@ def analyse (exctyp, value, tb):
     return trace
 
 def _info (exctyp, value, tb):
+    try:
+        import pdb
+    except ImportError:
+        pdb = None
+        
     if exctyp is KeyboardInterrupt:
         sys.exit(1)
     trace = None
@@ -103,29 +110,23 @@ def _info (exctyp, value, tb):
     primary = _("<big><b>A programming error has been detected during the execution of this program.</b></big>")
     secondary = _("It probably isn't fatal, but should be reported to the developers nonetheless.")
 
-    try:
-        setsec = dialog.format_secondary_text
-    except AttributeError:
-        raise
-        dialog.vbox.get_children()[0].get_children()[1].set_markup ('%s\n\n%s' % (primary, secondary))
-        #lbl.set_property ("use-markup", True)
-    else:
-        del setsec
-        dialog.set_markup (primary)
-        dialog.format_secondary_text (secondary)
+    dialog.set_markup (primary)
+    dialog.format_secondary_text (secondary)
 
-    try:
-        email = feedback
+    if feedback is not None:
         dialog.add_button (_("Report..."), 3)
-    except NameError:
-        # could ask for an email address instead...
-        pass
+        
     dialog.add_button (_("Details..."), 2)
+    if pdb:
+        dialog.add_button (_("Debug..."), 4)
     dialog.add_button (gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE)
     dialog.add_button (gtk.STOCK_QUIT, 1)
 
     while True:
         resp = dialog.run()
+        if resp == 4:
+            pdb.post_mortem(tb)
+            
         if resp == 3:
 #            if trace == None:
 #                trace = analyse (exctyp, value, tb)
@@ -140,7 +141,7 @@ def _info (exctyp, value, tb):
 #
 #            s = SMTP()
 #            s.connect (server)
-#            s.sendmail (email, (email,), message)
+#            s.sendmail (feedback, (feedback,), message)
 #            s.quit()
             break
 

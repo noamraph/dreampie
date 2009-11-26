@@ -17,6 +17,7 @@
 
 import sys
 import os
+from os import path
 import time
 import tempfile
 from optparse import OptionParser
@@ -69,6 +70,7 @@ from .selection import Selection
 from .status_bar import StatusBar
 from .vadj_to_bottom import VAdjToBottom
 from .history import History
+from .hist_persist import HistPersist
 from .autocomplete import Autocomplete
 from .call_tips import CallTips
 from .subprocess_handler import SubprocessHandler
@@ -99,13 +101,13 @@ def sourceview_keyhandler(keyval, state):
 
 class DreamPie(SimpleGladeApp):
     def __init__(self, pyexec):
-        self.gladefile = os.path.join(data_dir, 'dreampie', 'dreampie.glade')
+        self.gladefile = path.join(data_dir, 'dreampie', 'dreampie.glade')
         SimpleGladeApp.__init__(self, self.gladefile, 'window_main')
 
         self.config = Config()
 
         self.window_main.set_icon_from_file(
-            os.path.join(data_dir, 'pixmaps', 'dreampie.png'))
+            path.join(data_dir, 'pixmaps', 'dreampie.png'))
 
         self.init_textbufferview()
 
@@ -125,11 +127,14 @@ class DreamPie(SimpleGladeApp):
 
         self.history = History(self.textview, self.sourceview, self.config)
 
+        self.histpersist = HistPersist(self.window_main, self.textview,
+                                       self.status_bar)
+
         self.autocomplete = Autocomplete(self.sourceview,
                                          self.complete_attributes,
                                          self.complete_filenames,
                                          INDENT_WIDTH)
-
+        
         # Hack: we connect this signal here, so that it will have lower
         # priority than the key-press event of autocomplete, when active.
         self.sourceview.connect('key-press-event', self.on_sourceview_keypress)
@@ -141,13 +146,15 @@ class DreamPie(SimpleGladeApp):
             pyexec, data_dir,
             self.on_stdout_recv, self.on_stderr_recv, self.on_object_recv,
             self.on_subp_restarted)
+
         # Is the subprocess executing a command
         self.is_executing = False
-        self.show_welcome()
 
         self.set_window_default_size()
         self.window_main.show_all()
+        self.set_is_executing(False)
         
+        self.show_welcome()
         self.configure_subp()
         self.run_init_code()
 
@@ -235,6 +242,13 @@ class DreamPie(SimpleGladeApp):
         self.textbuffer.insert_with_tags_by_name(
             self.textbuffer.get_end_iter(), data, *tag_names)
 
+    def set_is_executing(self, is_executing):
+        self.is_executing = is_executing
+        self.menuitem_execute.props.visible = not is_executing
+        self.menuitem_execute.props.sensitive = not is_executing
+        self.menuitem_stdin.props.visible = is_executing
+        self.menuitem_stdin.props.sensitive = is_executing
+
     def execute_source(self, warn):
         """Execute the source in the source buffer.
         Return True if successful (No syntax error).
@@ -268,9 +282,7 @@ class DreamPie(SimpleGladeApp):
             if not self.config.get_bool('leave-code'):
                 sb.delete(sb.get_start_iter(), sb.get_end_iter())
             self.vadj_to_bottom.scroll_to_bottom()
-            self.is_executing = True
-            self.menuitem_execute.props.visible = False
-            self.menuitem_stdin.props.visible = True
+            self.set_is_executing(True)
         return is_ok
 
     def send_stdin(self):
@@ -488,7 +500,7 @@ class DreamPie(SimpleGladeApp):
             self.write('>>> ', COMMAND, PROMPT)
 
     def on_subp_restarted(self):
-        self.is_executing = False
+        self.set_is_executing(False)
         self.write(
             '\n==================== New Session ====================\n',
             MESSAGE)
@@ -519,14 +531,12 @@ class DreamPie(SimpleGladeApp):
         else:
             if val_str is not None:
                 if val_no is not None:
-                    self.write('%d: ' % val_no, RESULT_IND)
-                self.write(val_str+'\n', RESULT)
+                    self.output.write('%d: ' % val_no, RESULT_IND)
+                self.output.write(val_str+'\n', RESULT)
         if self.textbuffer.get_end_iter().get_line_offset() != 0:
             self.write('\n')
         self.write('>>> ', COMMAND, PROMPT)
-        self.is_executing = False
-        self.menuitem_execute.props.visible = True
-        self.menuitem_stdin.props.visible = False
+        self.set_is_executing(False)
         self.handle_rem_stdin(rem_stdin)
 
     def handle_rem_stdin(self, rem_stdin):
@@ -583,6 +593,14 @@ class DreamPie(SimpleGladeApp):
             self.status_bar.set_status(
                 _("A command isn't being executed currently"))
             beep()
+
+    # History persistence
+    
+    def on_save_history(self, widget):
+        self.histpersist.save()
+    
+    def on_save_history_as(self, widget):
+        self.histpersist.save_as()
 
     # Other events
 
@@ -666,7 +684,7 @@ class DreamPie(SimpleGladeApp):
         d.set_transient_for(self.window_main)
         d.set_version(__version__)
         d.set_logo(gdk.pixbuf_new_from_file(
-            os.path.join(data_dir, 'pixmaps', 'dreampie.png')))
+            path.join(data_dir, 'pixmaps', 'dreampie.png')))
         d.run()
         d.destroy()
     

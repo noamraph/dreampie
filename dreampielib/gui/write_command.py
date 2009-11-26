@@ -101,7 +101,7 @@ def get_defs_lines(lines):
     # return value
     defs_lines = [False for line in lines]
     # Last line with a 'def' or 'class' NAME
-    last_def_line = None
+    last_def_line = -2
     # Indentation depth - when reaches 0, we are back in a non-filtered area.
     cur_depth = 0
     # First line of current filtered area

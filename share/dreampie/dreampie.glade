@@ -15,11 +15,104 @@
             <child>
               <widget class="GtkMenuItem" id="menuitem1">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">_File</property>
+                <property name="label" translatable="yes">_History</property>
                 <property name="use_underline">True</property>
                 <child>
                   <widget class="GtkMenu" id="menu1">
                     <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="menuitem16">
+                        <property name="label" translatable="yes">_Add Previous History...</property>
+                        <property name="visible">True</property>
+                        <property name="tooltip" translatable="yes">Add history previously saved to a file on to op the history the is currently shown.</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">False</property>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="image3">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-open</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="menuitem13">
+                        <property name="label" translatable="yes">_Save History</property>
+                        <property name="visible">True</property>
+                        <property name="tooltip" translatable="yes">Save the history the is currently displayed to a file.</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">False</property>
+                        <signal name="activate" handler="on_save_history"/>
+                        <accelerator key="s" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="image1">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-save</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="menuitem14">
+                        <property name="label" translatable="yes">Save History _As...</property>
+                        <property name="visible">True</property>
+                        <property name="tooltip" translatable="yes">Save the history that is currently displayed to a file with a new name.</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">False</property>
+                        <signal name="activate" handler="on_save_history_as"/>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="image2">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-save-as</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="menuitem18">
+                        <property name="label" translatable="yes">_Discard History...</property>
+                        <property name="visible">True</property>
+                        <property name="tooltip" translatable="yes">Discard the history that is currently displayed.</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">False</property>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="image4">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-delete</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkSeparatorMenuItem" id="menuitem20">
+                        <property name="visible">True</property>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem5">
+                        <property name="visible">True</property>
+                        <property name="tooltip" translatable="yes">Search the history upwards</property>
+                        <property name="label" translatable="yes">History Up</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_history_up"/>
+                        <accelerator key="Up" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem7">
+                        <property name="visible">True</property>
+                        <property name="tooltip" translatable="yes">Search the history downwards</property>
+                        <property name="label" translatable="yes">History Down</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_history_down"/>
+                        <accelerator key="Down" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkSeparatorMenuItem" id="menuitem22">
+                        <property name="visible">True</property>
+                      </widget>
+                    </child>
                     <child>
                       <widget class="GtkImageMenuItem" id="imagemenuitem5">
                         <property name="label">gtk-quit</property>
@@ -65,8 +158,8 @@
                       <widget class="GtkMenuItem" id="menuitem_copy_commands_only">
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
-                        <property name="tooltip" translatable="yes">Copy only the commands, without output or leading dots.</property>
-                        <property name="label" translatable="yes">Copy commands only</property>
+                        <property name="tooltip" translatable="yes">Copy only the code, without output or leading dots.</property>
+                        <property name="label" translatable="yes">Copy Code Only</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_copy_commands_only"/>
                         <accelerator key="c" signal="activate" modifiers="GDK_SHIFT_MASK | GDK_CONTROL_MASK"/>
@@ -89,7 +182,7 @@
                     <child>
                       <widget class="GtkMenuItem" id="menuitem9">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Show completions</property>
+                        <property name="label" translatable="yes">Show Completions</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_show_completions"/>
                         <accelerator key="space" signal="activate" modifiers="GDK_CONTROL_MASK"/>
@@ -98,7 +191,7 @@
                     <child>
                       <widget class="GtkMenuItem" id="menuitem10">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Show call tip</property>
+                        <property name="label" translatable="yes">Show Call Tip</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_show_calltip"/>
                         <accelerator key="backslash" signal="activate" modifiers="GDK_CONTROL_MASK"/>
@@ -134,7 +227,7 @@
                       <widget class="GtkMenuItem" id="menuitem_execute">
                         <property name="visible">True</property>
                         <property name="tooltip" translatable="yes">Execute the current command in the shell</property>
-                        <property name="label" translatable="yes">Execute command</property>
+                        <property name="label" translatable="yes">Execute Command</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_execute_command"/>
                         <accelerator key="Return" signal="activate" modifiers="GDK_CONTROL_MASK"/>
@@ -142,8 +235,9 @@
                     </child>
                     <child>
                       <widget class="GtkMenuItem" id="menuitem_stdin">
+                        <property name="sensitive">False</property>
                         <property name="tooltip" translatable="yes">Write input to the process</property>
-                        <property name="label" translatable="yes">Write input</property>
+                        <property name="label" translatable="yes">Write Input</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_execute_command"/>
                         <accelerator key="Return" signal="activate" modifiers="GDK_CONTROL_MASK"/>
@@ -152,7 +246,7 @@
                     <child>
                       <widget class="GtkMenuItem" id="menuitem_interrupt">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Interrupt subprocess</property>
+                        <property name="label" translatable="yes">Interrupt Subprocess</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_interrupt"/>
                         <accelerator key="C" signal="activate" modifiers="GDK_CONTROL_MASK"/>
@@ -162,36 +256,17 @@
                       <widget class="GtkMenuItem" id="menuitem6">
                         <property name="visible">True</property>
                         <property name="tooltip" translatable="yes">Restart the subprocess, and start with a fresh one. Be warned that all your variables will be lost!</property>
-                        <property name="label" translatable="yes">Restart subprocess</property>
+                        <property name="label" translatable="yes">Restart Subprocess</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_restart_subprocess"/>
                         <accelerator key="F6" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="menuitem5">
-                        <property name="visible">True</property>
-                        <property name="tooltip" translatable="yes">Search the history upwards</property>
-                        <property name="label" translatable="yes">History up</property>
-                        <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_history_up"/>
-                        <accelerator key="Up" signal="activate" modifiers="GDK_CONTROL_MASK"/>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkMenuItem" id="menuitem7">
-                        <property name="visible">True</property>
-                        <property name="tooltip" translatable="yes">Search the history downwards</property>
-                        <property name="label" translatable="yes">History down</property>
-                        <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_history_down"/>
-                        <accelerator key="Down" signal="activate" modifiers="GDK_CONTROL_MASK"/>
-                      </widget>
-                    </child>
-                    <child>
                       <widget class="GtkMenuItem" id="menuitem12">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Clear result history</property>
+                        <property name="tooltip" translatable="yes">Remove all previously computed results which are stored in the result history.</property>
+                        <property name="label" translatable="yes">Clear Result History</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_clear_reshist"/>
                       </widget>
@@ -941,14 +1016,13 @@
             <property name="visible">True</property>
             <property name="layout_style">end</property>
             <child>
-              <widget class="GtkButton" id="ok_btn">
-                <property name="label">gtk-ok</property>
-                <property name="response_id">-5</property>
+              <widget class="GtkButton" id="button2">
+                <property name="label">gtk-cancel</property>
+                <property name="response_id">-6</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
-                <signal name="clicked" handler="on_ok_btn_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
@@ -957,13 +1031,14 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkButton" id="button2">
-                <property name="label">gtk-cancel</property>
-                <property name="response_id">-6</property>
+              <widget class="GtkButton" id="ok_btn">
+                <property name="label">gtk-ok</property>
+                <property name="response_id">-5</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
+                <signal name="clicked" handler="on_ok_btn_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
