@@ -164,13 +164,15 @@ class Subprocess(object):
         linecache.cache[filename] = len(source)+1, None, lines, filename
         try:
             if ast:
-                a = compile(source, filename, 'exec', ast.PyCF_ONLY_AST)
+                a = compile(source, filename, 'exec',
+                            ast.PyCF_ONLY_AST | self.flags)
                 b = ast.Interactive(a.body)
-                codeob = compile(b, filename, 'single')
+                codeob = compile(b, filename, 'single', self.flags)
             else:
                 # We use compiler.compile instead of plain compile, because
                 # compiler.compile does what you'd want when it gets multiple
                 # statements, while plain compile complains about a syntax error.
+                # FIXME: This doesn't handle compilation flags
                 codeob = compiler.compile(source, filename, 'single')
         except SyntaxError, e:
             yield False, (unicode(e.msg), e.lineno-1, e.offset-1)
