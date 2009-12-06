@@ -279,7 +279,7 @@ class DreamPie(SimpleGladeApp):
                 beep()
         else:
             write_command(self.write, source.strip())
-            self.output.set_mark(tb.get_end_iter())
+            self.output.start_new_section()
             if not self.config.get_bool('leave-code'):
                 sb.delete(sb.get_start_iter(), sb.get_end_iter())
             self.vadj_to_bottom.scroll_to_bottom()
@@ -300,7 +300,7 @@ class DreamPie(SimpleGladeApp):
         self.write('\n', STDIN)
         self.vadj_to_bottom.scroll_to_bottom()
         self.subp.write(s)
-        self.output.set_mark(self.textbuffer.get_end_iter())
+        self.output.start_new_section()
         sb.delete(sb.get_start_iter(), sb.get_end_iter())
 
     @sourceview_keyhandler('Return', 0)
@@ -460,7 +460,7 @@ class DreamPie(SimpleGladeApp):
         s = self.call_subp(u'get_welcome')
         s += 'DreamPie %s\n' % __version__
         self.write(s, MESSAGE)
-        self.output.set_mark(self.textbuffer.get_end_iter())
+        self.output.start_new_section()
 
     def configure_subp(self):
         config = self.config
@@ -503,10 +503,11 @@ class DreamPie(SimpleGladeApp):
 
     def on_subp_restarted(self):
         self.set_is_executing(False)
+        self.write('\n')
         self.write(
-            '\n==================== New Session ====================\n',
+            '==================== New Session ====================\n',
             MESSAGE)
-        self.output.set_mark(self.textbuffer.get_end_iter())
+        self.output.start_new_section()
         self.configure_subp()
         self.run_init_code()
 
@@ -529,14 +530,13 @@ class DreamPie(SimpleGladeApp):
         is_success, val_no, val_str, exception_string, rem_stdin = obj
 
         if not is_success:
-            self.write(exception_string, EXCEPTION)
+            self.output.write(exception_string, EXCEPTION, onnewline=True)
         else:
             if val_str is not None:
                 if val_no is not None:
-                    self.output.write('%d: ' % val_no, RESULT_IND)
+                    self.output.write('%d: ' % val_no, RESULT_IND,
+                                      onnewline=True)
                 self.output.write(val_str+'\n', RESULT)
-        if self.textbuffer.get_end_iter().get_line_offset() != 0:
-            self.write('\n')
         self.write('>>> ', COMMAND, PROMPT)
         self.set_is_executing(False)
         self.handle_rem_stdin(rem_stdin)

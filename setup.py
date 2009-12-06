@@ -12,7 +12,7 @@ from distutils.core import Command
 try:
     import py2exe
 except ImportError:
-    pass
+    py2exe = None
 
 try:
     from lib2to3 import refactor
@@ -82,7 +82,7 @@ class build_subp_zips(Command):
 build.sub_commands.append(('build_subp_zips', None))
 
 
-setup(
+setup_args = dict(
     name='DreamPie',
     version='0.1',
     description="The interactive Python shell you've always dreamed about!",
@@ -122,4 +122,8 @@ setup(
              }},
      
     )
-
+if py2exe is None:
+    # Avoid the warning if py2exe is not available
+    del setup_args['console']
+    del setup_args['windows']
+setup(**setup_args)

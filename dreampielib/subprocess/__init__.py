@@ -88,7 +88,7 @@ class Subprocess(object):
         self.gui_handlers = [GtkHandler(), Qt4Handler(), TkHandler()]
 
         self.gid = 0
-        self.flags = PyCF_DONT_IMPLY_DEDENT
+        self.flags = 0
         
         # Config
         self.is_pprint = False

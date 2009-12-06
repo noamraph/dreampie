@@ -43,7 +43,7 @@ class StatusBar(object):
         """Set a message in the status bar to be removed when the contents
         of the source buffer is changed"""
         if self.sourcebuffer_status_id is not None:
-            self.clear_status(None)
+            self.clear_status()
         self.sourcebuffer_status_id = self.statusbar.push(0, message)
         self.sourcebuffer_changed_handler_id = \
             self.sourcebuffer.connect('changed', self.on_sourcebuffer_changed)

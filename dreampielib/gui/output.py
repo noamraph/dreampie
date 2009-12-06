@@ -21,7 +21,7 @@ import sys
 import re
 from StringIO import StringIO
 
-from .tags import STDOUT, STDERR
+from .tags import OUTPUT
 
 remove_cr_re = re.compile(r'\n[^\n]*\r')
 # Match ANSI escapes. See http://en.wikipedia.org/wiki/ANSI_escape_code
@@ -33,21 +33,58 @@ BREAK_LEN = 1600
 
 class Output(object):
     """
-    Manage writing output (stdout and stderr) to the text view.
+    Manage writing output to the text view.
+    See a long documentation string in tags.py for more information about the
+    model.
     """
     def __init__(self, textview):
         self.textview = textview
         self.textbuffer = tb = textview.get_buffer()
 
+        # A mark where new output should be written
         self.mark = tb.create_mark(None, tb.get_end_iter(), left_gravity=True)
+        # Does the real output end with a newline?
+        # We don't write it, because there's always a '\n' after an output
+        # section, but if more output is written, it's written.
+        self.is_newline = False
+        # Was something written at all in this section?
+        self.was_something_written = False
+        # Does the output end with a cr? (If it does, the last line may be
+        # deleted)
         self.is_cr = False
 
-    def set_mark(self, it):
-        self.textbuffer.move_mark(self.mark, it)
-        self.is_cr = False
-
-    def write(self, data, tag_name):
+    def start_new_section(self):
         tb = self.textbuffer
+        it = tb.get_end_iter()
+        tb.move_mark(self.mark, it)
+        self.is_newline = False
+        self.was_something_written = False
+        self.is_cr = False
+
+    def write(self, data, tag_name, onnewline=False):
+        """
+        Write data (unicode string) to the text buffer, marked with tag_name.
+        If onnewline is True, will add a newline if the output until now doesn't
+        end with one.
+        """
+        tb = self.textbuffer
+        
+        if not data:
+            return
+        
+        if not self.was_something_written:
+            it = tb.get_iter_at_mark(self.mark)
+            tb.insert(it, '\n')
+
+        if onnewline and not self.is_newline and self.was_something_written:
+            data = '\n' + data
+        if self.is_newline:
+            data = '\n' + data
+        if data[-1] == '\n':
+            self.is_newline = True
+            data = data[:-1]
+        else:
+            self.is_newline = False
 
         # Keep lines if after the cr there was no data before the lf.
         # Since that's the normal Windows newline, it's very important.
@@ -62,12 +99,15 @@ class Output(object):
         data = remove_cr_re.sub('\n', data)
 
         cr_pos = data.rfind('\r')
-        if self.is_cr or cr_pos != -1:
+        if (self.is_cr or cr_pos != -1) and self.was_something_written:
             # Delete last written line
             it = tb.get_iter_at_mark(self.mark)
-            it2 = it.copy()
-            it2.set_line_offset(0)
-            tb.delete(it2, it)
+            output_start = it.copy()
+            output_start.backward_to_tag_toggle(OUTPUT)
+            assert output_start.begins_tag(OUTPUT)
+            before_newline, after_newline = it.backward_search(
+                '\n', 0, output_start)
+            tb.delete(after_newline, it)
 
             # Remove data up to \r.
             if cr_pos != -1:
@@ -99,9 +139,12 @@ class Output(object):
         f.write(data[copied_pos:])
 
         it = tb.get_iter_at_mark(self.mark)
-        tb.insert_with_tags_by_name(it, f.getvalue(), tag_name)
+        tb.insert_with_tags_by_name(it, f.getvalue(), OUTPUT, tag_name)
         # Move mark to after the written text
         tb.move_mark(self.mark, it)
 
         self.is_cr = has_trailing_cr
+
+        self.was_something_written = True
+
 

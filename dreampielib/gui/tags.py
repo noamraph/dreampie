@@ -28,10 +28,16 @@ import gtksourceview2
 # DEFAULT is not really a tag, but it means the default text colors
 DEFAULT = 'default'
 
-# Tags for marking different types of text
+# Tags for marking output
+OUTPUT = 'output'
 STDIN = 'stdin'; STDOUT = 'stdout'; STDERR = 'stderr'; EXCEPTION = 'exception'
+RESULT_IND = 'result-ind'; RESULT = 'result'
+
+# Tags for marking commands
 PROMPT = 'prompt'; COMMAND = 'command'; COMMAND_DEFS='command-defs';
-MESSAGE = 'message'; RESULT_IND = 'result-ind'; RESULT = 'result'
+
+# The MESSAGE tag
+MESSAGE = 'message'; 
 
 # Tags for syntax highlighting
 KEYWORD = 'keyword'; BUILTIN = 'builtin'; STRING = 'string'
@@ -66,6 +72,60 @@ tag_desc = [
     (PROMPT, 'Prompt'),
     (MESSAGE, 'Messages'),
     ]
+
+"""
+Some documentation about what's going on in the text buffer
+-----------------------------------------------------------
+
+The text buffer has two purposes: to show the user what he expects, and to
+store all the information needed about the history. So here I try to document
+what's going on there.
+
+Most tags can be considered to only affect the highlight color. Here only the
+tags which affect the data model are described.
+
+the COMMAND tag is applied to code segments. The last newline is not tagged
+by COMMAND, to separate two command segments even if there was no output in
+between. The prompt is marked with both the COMMAND and the PROMPT tag, so the
+Copy Code Only action copies only text which is marked by COMMAND and not by
+PROMPT (and adds a trailing newline.) lines inside def and class blocks are
+also marked with COMMAND_DEFS, so they can be hidden if the user wants to.
+
+The MESSAGE tag tags a message which is displayed at the beginning of each
+session (that is, subprocess). It's either the welcome message (Python version),
+a "New Session" message or a "History Discarded" message. When you discard
+previous sessions, the MESSAGE tag is used to understand what are the previous
+sessions.
+
+Text marked with OUTPUT was written by output.py. It includes stdout, stderr,
+result and exception. This text is written at the *output mark*, which means
+that if an output is produced after the code execution was finished (for
+example, by another thread), it will appear before the prompt. Also, ANSI
+escapes are removed. '\r' (carriage return) is handled (to a point - there's
+no support for having a part of a line overwritten - after a line starts to be
+overwritten, it's completely removed). When lines are too long (too many chars
+without a '\n', they are broken to a certain maximum length by '\r' chars.
+Original '\r' chars will never pass to the text buffer. These '\r' chars are
+treated by the text buffer just like '\n' chars, but are not copied, because
+they are not real chars - they were only inserted so that the text buffer won't
+become unresponsive. If there are enough lines in an output section, it gets
+automatically collapsed. There's always a '\n' after the output section which
+is not marked by any tag (unless nothing was written, which is not really an
+output section.)
+
+Collapsed output sections look like this:
+
+First few characters of the output section, which are truncated somewhe
+(The rest of the output section, tagged with FOLDED so invisible)
+[About n more lines. Double-click to unfold]
+
+* From some point (which will be a '\n' if the first line isn't too long), the
+  output is marked with FOLDED, so it is invisible.
+* The '\n' which always comes after the output is visible, so it starts a new
+  line.
+* Afterwards comes the FOLD_MESSAGE, which includes a '\n' at the end so that
+  the background color is behind the entire line.
+"""
 
 def get_theme_names(config):
     for section in config.sections():
@@ -134,6 +194,7 @@ def add_tags(textbuffer):
     for tag, desc in tag_desc:
         if tag != DEFAULT:
             textbuffer.create_tag(tag)
+    textbuffer.create_tag(OUTPUT)
     textbuffer.create_tag(COMMAND)
     textbuffer.create_tag(COMMAND_DEFS)
 
