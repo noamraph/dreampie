@@ -72,7 +72,8 @@ class StatusBar(object):
         return False
     
     def on_timeout(self):
-        self.clear_status()
+        if self.sourcebuffer_status_id is not None:
+            self.clear_status()
         return False
     
     
