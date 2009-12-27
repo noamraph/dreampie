@@ -24,6 +24,7 @@ import gtk
 from gtk import gdk
 import pango
 
+from .keyhandler import make_keyhandler_decorator, handle_keypress
 from .beep import beep
 
 try:
@@ -34,13 +35,8 @@ except ImportError:
 N_ROWS = 10
 
 # A decorator for managing sourceview key handlers
-# This decorates some methods of DreamPie.
 keyhandlers = {}
-def keyhandler(keyval, state):
-    def decorator(func):
-        keyhandlers[keyval, state] = func
-        return func
-    return decorator
+keyhandler = make_keyhandler_decorator(keyhandlers)
 
 class AutocompleteWindow(object):
     def __init__(self, sourceview, on_complete):
@@ -304,17 +300,7 @@ class AutocompleteWindow(object):
         return True
 
     def on_keypress(self, widget, event):
-        keyval, group, level, consumed_mods = \
-            gdk.keymap_get_default().translate_keyboard_state(
-                event.hardware_keycode, event.state, event.group)
-        state = event.state & ~consumed_mods
-        keyval_name = gdk.keyval_name(keyval)
-        try:
-            func = keyhandlers[keyval_name, state]
-        except KeyError:
-            pass
-        else:
-            return func(self)
+        return handle_keypress(self, event, keyhandlers)
 
     def on_tv_button_press(self, widget, event):
         if event.type == gdk._2BUTTON_PRESS:

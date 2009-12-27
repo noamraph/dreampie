@@ -61,6 +61,7 @@ except ImportError:
 from .. import __version__
 
 from .SimpleGladeApp import SimpleGladeApp
+from .keyhandler import make_keyhandler_decorator, handle_keypress
 from .config import Config
 from .config_dialog import ConfigDialog
 from .write_command import write_command
@@ -91,13 +92,8 @@ AUTOCOMPLETE_WAIT = 400
 _ = lambda s: s
 
 # A decorator for managing sourceview key handlers
-# This decorates some methods of DreamPie.
 sourceview_keyhandlers = {}
-def sourceview_keyhandler(keyval, state):
-    def decorator(func):
-        sourceview_keyhandlers[keyval, state] = func
-        return func
-    return decorator
+sourceview_keyhandler = make_keyhandler_decorator(sourceview_keyhandlers)
 
 class DreamPie(SimpleGladeApp):
     def __init__(self, pyexec):
@@ -426,20 +422,7 @@ class DreamPie(SimpleGladeApp):
         idle_add(self.call_tips.show, True)
 
     def on_sourceview_keypress(self, widget, event):
-        r = gdk.keymap_get_default().translate_keyboard_state(
-            event.hardware_keycode, event.state, event.group)
-        if r is None:
-            # This seems to be the case when pressing CapsLock on win32
-            return
-        keyval, group, level, consumed_mods = r
-        state = event.state & ~consumed_mods
-        keyval_name = gdk.keyval_name(keyval)
-        try:
-            func = sourceview_keyhandlers[keyval_name, state]
-        except KeyError:
-            pass
-        else:
-            return func(self)
+        return handle_keypress(self, event, sourceview_keyhandlers)
 
     # History
 
