@@ -34,7 +34,8 @@ STDIN = 'stdin'; STDOUT = 'stdout'; STDERR = 'stderr'; EXCEPTION = 'exception'
 RESULT_IND = 'result-ind'; RESULT = 'result'
 
 # Tags for marking commands
-PROMPT = 'prompt'; COMMAND = 'command'; COMMAND_DEFS='command-defs';
+PROMPT = 'prompt'; COMMAND = 'command'; COMMAND_DEFS='command-defs'
+COMMAND_SEP = 'commandsep'
 
 # The MESSAGE tag
 MESSAGE = 'message'; 
@@ -84,8 +85,9 @@ what's going on there.
 Most tags can be considered to only affect the highlight color. Here only the
 tags which affect the data model are described.
 
-the COMMAND tag is applied to code segments. The last newline is not tagged
-by COMMAND, to separate two command segments even if there was no output in
+The COMMAND tag is applied to code segments. The last newline is also tagged.
+After it comes a '\r' char marked with COMMAND_SEP, so it's invisible. It's
+used to separate two code segments even if there was no output in
 between. The prompt is marked with both the COMMAND and the PROMPT tag, so the
 Copy Code Only action copies only text which is marked by COMMAND and not by
 PROMPT (and adds a trailing newline.) lines inside def and class blocks are
@@ -113,7 +115,7 @@ automatically collapsed. There's always a '\n' after the output section which
 is not marked by any tag (unless nothing was written, which is not really an
 output section.)
 
-Collapsed output sections look like this:
+Folded output sections look like this:
 
 First few characters of the output section, which are truncated somewhe
 (The rest of the output section, tagged with FOLDED so invisible)
@@ -197,6 +199,8 @@ def add_tags(textbuffer):
     textbuffer.create_tag(OUTPUT)
     textbuffer.create_tag(COMMAND)
     textbuffer.create_tag(COMMAND_DEFS)
+    tag = textbuffer.create_tag(COMMAND_SEP)
+    tag.props.invisible = True
 
 def apply_theme_text(textview, textbuffer, theme):
     """
@@ -213,6 +217,8 @@ def apply_theme_text(textview, textbuffer, theme):
             tt.props.foreground_set = theme[tag, FG, ISSET]
             tt.props.background = theme[tag, BG, COLOR]
             tt.props.background_set = theme[tag, BG, ISSET]
+            tt.props.paragraph_background = theme[tag, BG, COLOR]
+            tt.props.paragraph_background_set = theme[tag, BG, ISSET]
 
 def _make_style_scheme(spec):
     # Quite stupidly, there's no way to create a SourceStyleScheme without

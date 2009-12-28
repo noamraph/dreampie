@@ -71,7 +71,7 @@ class History(object):
             it.forward_to_tag_toggle(prompt)
             if it.compare(it_end) >= 0:
                 break
-        return ''.join(r)
+        return ''.join(r).strip()
 
     def copy_to_sourceview(self):
         # Copy the current command to the sourceview

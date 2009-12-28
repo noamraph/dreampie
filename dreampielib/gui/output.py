@@ -17,7 +17,6 @@
 
 __all__ = ['Output']
 
-import sys
 import re
 from StringIO import StringIO
 
@@ -74,7 +73,7 @@ class Output(object):
         
         if not self.was_something_written:
             it = tb.get_iter_at_mark(self.mark)
-            tb.insert(it, '\n')
+            tb.insert_with_tags_by_name(it, '\n', OUTPUT)
 
         if onnewline and not self.is_newline and self.was_something_written:
             data = '\n' + data

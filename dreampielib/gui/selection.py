@@ -18,7 +18,6 @@
 __all__ = ['Selection']
 
 import gtk
-from gtk import gdk
 
 from .tags import COMMAND, PROMPT
 from .beep import beep
@@ -85,8 +84,6 @@ class Selection(object):
             return
         # We need to copy the text which has the COMMAND tag, doesn't have
         # the PROMPT tag, and is selected.
-        # We need to remember that the trailing newline of commands isn't
-        # marked, but we need to copy it.
         tb = self.textbuffer
         command = tb.get_tag_table().lookup(COMMAND)
         prompt = tb.get_tag_table().lookup(PROMPT)
@@ -101,11 +98,6 @@ class Selection(object):
                 reached_end = True
             if it.has_tag(command) and not it.has_tag(prompt):
                 r.append(tb.get_text(it, it2).decode('utf8'))
-                if (not reached_end
-                    and not it2.has_tag(command)
-                    and it2.get_char() == '\n'):
-                    
-                    r.append('\n')
             it = it2
         r = ''.join(r)
         if not r:

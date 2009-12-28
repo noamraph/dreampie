@@ -252,7 +252,6 @@ class DreamPie(SimpleGladeApp):
         If warn is True, show the syntax error in the status bar.
         """
         sb = self.sourcebuffer
-        tb = self.textbuffer
         source = self.sb_get_text(sb.get_start_iter(), sb.get_end_iter())
         source = source.rstrip()
         is_ok, syntax_error_info = self.call_subp(u'execute', source)

@@ -19,7 +19,7 @@ __all__ = ['write_command']
 import tokenize
 import keyword
 
-from .tags import PROMPT, COMMAND, COMMAND_DEFS
+from .tags import PROMPT, COMMAND, COMMAND_DEFS, COMMAND_SEP
 
 from .tags import KEYWORD, BUILTIN, STRING, NUMBER, COMMENT
 
@@ -90,7 +90,8 @@ def write_command(write, command):
                 else:
                     my_write(line[col:], is_defs, COMMAND, cur_high[0])
                     col = len(line)
-    write('\n')
+    write('\n', COMMAND)
+    write('\r', COMMAND_SEP)
 
 def get_defs_lines(lines):
     """
