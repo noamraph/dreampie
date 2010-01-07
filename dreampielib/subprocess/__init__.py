@@ -395,7 +395,7 @@ class Subprocess(object):
             if rename != orig_name:
                 continue
 
-            is_dir = os.path.isdir(os.path.join(comp_what, name))
+            is_dir = os.path.isdir(os.path.join(comp_what, orig_name))
 
             if not is_dir:
                 name += str_char
