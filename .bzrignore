@@ -4,3 +4,5 @@ share/dreampie/subp-py2.zip
 share/dreampie/subp-py3.zip
 misc/*
 debian/*
+.project
+.pydevproject
