@@ -61,7 +61,8 @@ except ImportError:
 from .. import __version__
 
 from .SimpleGladeApp import SimpleGladeApp
-from .keyhandler import make_keyhandler_decorator, handle_keypress
+from .keyhandler import (make_keyhandler_decorator, handle_keypress,
+                         parse_keypress_event)
 from .config import Config
 from .config_dialog import ConfigDialog
 from .write_command import write_command
@@ -426,8 +427,8 @@ class DreamPie(SimpleGladeApp):
     # History
 
     def on_textview_keypress(self, widget, event):
-        keyval_name = gdk.keyval_name(event.keyval)
-        if keyval_name == 'Return' and event.state == 0:
+        keyval_name, state = parse_keypress_event(event)
+        if (keyval_name, state) == ('Return', 0):
             return self.history.copy_to_sourceview()
 
     def on_history_up(self, widget):
