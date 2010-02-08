@@ -21,6 +21,7 @@ from os import path
 import time
 import tempfile
 from optparse import OptionParser
+import webbrowser
 
 import logging
 from logging import debug
@@ -38,6 +39,7 @@ def find_data_dir():
         return abspath(join(sys.prefix, 'share'))
 
 data_dir = find_data_dir()
+gladefile = path.join(data_dir, 'dreampie', 'dreampie.glade')
 
 if sys.platform == 'win32':
     from .load_pygtk import load_pygtk
@@ -78,7 +80,7 @@ from .call_tips import CallTips
 from .subprocess_handler import SubprocessHandler
 from .beep import beep
 from .tags import (STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND,
-                   COMMAND_DEFS, MESSAGE, RESULT_IND, RESULT)
+                   COMMAND_DEFS, COMMAND_SEP, MESSAGE, RESULT_IND, RESULT)
 import tags
 
 INDENT_WIDTH = 4
@@ -96,11 +98,17 @@ _ = lambda s: s
 sourceview_keyhandlers = {}
 sourceview_keyhandler = make_keyhandler_decorator(sourceview_keyhandlers)
 
+def get_widget(name):
+    """Create a widget from the glade file"""
+    xml = glade.XML(gladefile, name)
+    return xml.get_widget(name)
+
 class DreamPie(SimpleGladeApp):
     def __init__(self, pyexec):
-        self.gladefile = path.join(data_dir, 'dreampie', 'dreampie.glade')
-        SimpleGladeApp.__init__(self, self.gladefile, 'window_main')
+        SimpleGladeApp.__init__(self, gladefile, 'window_main')
 
+        self.popup_sel_menu = get_widget('popup_sel_menu')
+        
         self.config = Config()
 
         self.window_main.set_icon_from_file(
@@ -241,10 +249,8 @@ class DreamPie(SimpleGladeApp):
 
     def set_is_executing(self, is_executing):
         self.is_executing = is_executing
-        self.menuitem_execute.props.visible = not is_executing
-        self.menuitem_execute.props.sensitive = not is_executing
-        self.menuitem_stdin.props.visible = is_executing
-        self.menuitem_stdin.props.sensitive = is_executing
+        label = _(u'Execute Code') if not is_executing else _(u'Write Input')
+        self.menuitem_execute.child.props.label = label
         self.menuitem_discard_hist.props.sensitive = not is_executing
 
     def execute_source(self, warn):
@@ -288,16 +294,16 @@ class DreamPie(SimpleGladeApp):
         s = self.sb_get_text(sb.get_start_iter(), sb.get_end_iter())
         if not s.endswith('\n'):
             s += '\n'
-        self.write(s[:-1], COMMAND, STDIN)
-        # We don't tag the last newline with COMMAND, so that history search
-        # will separate different STDIN commands. We do tag it with STDIN
-        # so that it will be deleted if the stdin isn't processed - see
-        # handle_rem_stdin().
-        self.write('\n', STDIN)
-        self.vadj_to_bottom.scroll_to_bottom()
-        self.subp.write(s)
+
+        self.output.write(s, [COMMAND, STDIN], addbreaks=False)
+        self.write('\r', COMMAND_SEP)
         self.output.start_new_section()
-        sb.delete(sb.get_start_iter(), sb.get_end_iter())
+        self.vadj_to_bottom.scroll_to_bottom()
+
+        if not self.config.get_bool('leave-code'):
+            sb.delete(sb.get_start_iter(), sb.get_end_iter())
+
+        self.subp.write(s)
 
     @sourceview_keyhandler('Return', 0)
     def on_sourceview_return(self):
@@ -478,9 +484,7 @@ class DreamPie(SimpleGladeApp):
                 response = msg.run()
                 msg.destroy()
             else:
-                self.is_executing = True
-                self.menuitem_execute.props.visible = False
-                self.menuitem_stdin.props.visible = True
+                self.set_is_executing(True)
         if not self.is_executing:
             self.write('>>> ', COMMAND, PROMPT)
 
@@ -607,7 +611,7 @@ class DreamPie(SimpleGladeApp):
         tb.delete(tb.get_start_iter(), it)
 
     def on_discard_history(self, widget):
-        xml = glade.XML(self.gladefile, 'discard_hist_dialog')
+        xml = glade.XML(gladefile, 'discard_hist_dialog')
         d = xml.get_widget('discard_hist_dialog')
         d.set_transient_for(self.window_main)
         d.set_default_response(gtk.RESPONSE_OK)
@@ -679,7 +683,7 @@ class DreamPie(SimpleGladeApp):
         command_defs.props.invisible = config.get_bool('hide-defs')
 
     def on_preferences(self, widget):
-        cd = ConfigDialog(self.config, self.gladefile, self.window_main)
+        cd = ConfigDialog(self.config, gladefile, self.window_main)
         r = cd.run()
         if r == gtk.RESPONSE_OK:
             self.configure()
@@ -709,8 +713,7 @@ class DreamPie(SimpleGladeApp):
             gtk.main_quit()
 
     def on_about(self, widget):
-        xml = glade.XML(self.gladefile, 'about_dialog')
-        d = xml.get_widget('about_dialog')
+        d = get_widget('about_dialog')
         d.set_transient_for(self.window_main)
         d.set_version(__version__)
         d.set_logo(gdk.pixbuf_new_from_file(
@@ -718,16 +721,22 @@ class DreamPie(SimpleGladeApp):
         d.run()
         d.destroy()
     
+    def on_report_bug(self, widget):
+        webbrowser.open('https://bugs.launchpad.net/dreampie/+filebug')
+    
     def on_getting_started(self, widget):
         self.show_getting_started_dialog()
     
     def show_getting_started_dialog(self):
-        xml = glade.XML(self.gladefile, 'getting_started_dialog')
-        d = xml.get_widget('getting_started_dialog')
+        d = get_widget('getting_started_dialog')
         d.set_transient_for(self.window_main)
         d.run()
         d.destroy()
-
+    
+    def on_textview_button_press_event(self, widget, event):
+        if event.button == 3:
+            self.popup_sel_menu.popup(None, None, None, event.button, event.get_time())
+            return True
 
 def main():
     usage = "%prog [options] [python-executable]"

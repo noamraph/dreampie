@@ -93,6 +93,10 @@ Copy Code Only action copies only text which is marked by COMMAND and not by
 PROMPT (and adds a trailing newline.) lines inside def and class blocks are
 also marked with COMMAND_DEFS, so they can be hidden if the user wants to.
 
+STDIN is marked as STDIN, COMMAND and OUTPUT. It always ends with a \n. It is
+marked with COMMAND so that it will be history-searched. It is marked with
+OUTPUT so that it will be considered as output for folding purposes.
+
 The MESSAGE tag tags a message which is displayed at the beginning of each
 session (that is, subprocess). It's either the welcome message (Python version),
 a "New Session" message or a "History Discarded" message. When you discard
@@ -112,19 +116,19 @@ treated by the text buffer just like '\n' chars, but are not copied, because
 they are not real chars - they were only inserted so that the text buffer won't
 become unresponsive. If there are enough lines in an output section, it gets
 automatically collapsed. There's always a '\n' after the output section which
-is not marked by any tag (unless nothing was written, which is not really an
+is marked as OUTPUT (unless nothing was written, which is not really an
 output section.)
 
-Folded output sections look like this:
+Folded output/code sections look like this:
 
-First few characters of the output section, which are truncated somewhe
-(The rest of the output section, tagged with FOLDED so invisible)
+First few characters of the output/code section, which are truncated somewhe
+(The rest of the section, tagged with FOLDED so invisible)
 [About n more lines. Double-click to unfold]
 
 * From some point (which will be a '\n' if the first line isn't too long), the
   output is marked with FOLDED, so it is invisible.
-* The '\n' which always comes after the output is visible, so it starts a new
-  line.
+* The '\n' which always comes at the end of the output is visible, so it starts
+  a new line.
 * Afterwards comes the FOLD_MESSAGE, which includes a '\n' at the end so that
   the background color is behind the entire line.
 """

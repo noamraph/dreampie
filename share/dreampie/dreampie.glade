@@ -229,17 +229,7 @@
                       <widget class="GtkMenuItem" id="menuitem_execute">
                         <property name="visible">True</property>
                         <property name="tooltip" translatable="yes">Execute the current command in the shell</property>
-                        <property name="label" translatable="yes">Execute Command</property>
-                        <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_execute_command"/>
-                        <accelerator key="Return" signal="activate" modifiers="GDK_CONTROL_MASK"/>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkMenuItem" id="menuitem_stdin">
-                        <property name="sensitive">False</property>
-                        <property name="tooltip" translatable="yes">Write input to the process</property>
-                        <property name="label" translatable="yes">Write Input</property>
+                        <property name="label" translatable="yes">Execute Code</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_execute_command"/>
                         <accelerator key="Return" signal="activate" modifiers="GDK_CONTROL_MASK"/>
@@ -294,6 +284,14 @@
                       </widget>
                     </child>
                     <child>
+                      <widget class="GtkMenuItem" id="report_bug_menu">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Report a Problem...</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_report_bug"/>
+                      </widget>
+                    </child>
+                    <child>
                       <widget class="GtkImageMenuItem" id="imagemenuitem10">
                         <property name="label">gtk-about</property>
                         <property name="visible">True</property>
@@ -329,6 +327,7 @@
                     <property name="can_focus">True</property>
                     <property name="editable">False</property>
                     <property name="wrap_mode">char</property>
+                    <signal name="button_press_event" handler="on_textview_button_press_event"/>
                   </widget>
                 </child>
               </widget>
@@ -874,7 +873,7 @@
                             <child>
                               <widget class="GtkLabel" id="label7">
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">History size:</property>
+                                <property name="label" translatable="yes">History size: </property>
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
@@ -901,6 +900,68 @@
                       <packing>
                         <property name="expand">False</property>
                         <property name="position">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkCheckButton" id="checkbutton1">
+                        <property name="label" translatable="yes">Automatically fold long output</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">False</property>
+                        <property name="draw_indicator">True</property>
+                      </widget>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="position">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkAlignment" id="alignment10">
+                        <property name="visible">True</property>
+                        <property name="left_padding">22</property>
+                        <child>
+                          <widget class="GtkHBox" id="hbox5">
+                            <property name="visible">True</property>
+                            <child>
+                              <widget class="GtkLabel" id="label11">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Fold output with more than </property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkSpinButton" id="fold_spin">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="adjustment">1 1 9999 1 10 0</property>
+                                <property name="snap_to_ticks">True</property>
+                                <property name="numeric">True</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkLabel" id="label12">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes"> lines</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">2</property>
+                              </packing>
+                            </child>
+                          </widget>
+                        </child>
+                      </widget>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="position">4</property>
                       </packing>
                     </child>
                     <child>
@@ -937,7 +998,7 @@
                         </child>
                       </widget>
                       <packing>
-                        <property name="position">3</property>
+                        <property name="position">5</property>
                       </packing>
                     </child>
                     <child>
@@ -987,7 +1048,7 @@
                       </widget>
                       <packing>
                         <property name="expand">False</property>
-                        <property name="position">4</property>
+                        <property name="position">6</property>
                       </packing>
                     </child>
                   </widget>
@@ -1215,6 +1276,26 @@ You should have received a copy of the GNU General Public License along with Dre
             <property name="position">0</property>
           </packing>
         </child>
+      </widget>
+    </child>
+  </widget>
+  <widget class="GtkMenu" id="popup_sel_menu">
+    <property name="visible">True</property>
+    <child>
+      <widget class="GtkImageMenuItem" id="copy_popmenu">
+        <property name="label">gtk-copy</property>
+        <property name="visible">True</property>
+        <property name="use_underline">True</property>
+        <property name="use_stock">True</property>
+        <signal name="activate" handler="on_copy"/>
+      </widget>
+    </child>
+    <child>
+      <widget class="GtkMenuItem" id="copy_commands_only_popmenu">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">Copy Code Only</property>
+        <property name="use_underline">True</property>
+        <signal name="activate" handler="on_copy_commands_only"/>
       </widget>
     </child>
   </widget>

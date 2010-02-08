@@ -42,10 +42,11 @@ class Output(object):
 
         # A mark where new output should be written
         self.mark = tb.create_mark(None, tb.get_end_iter(), left_gravity=True)
-        # Does the real output end with a newline?
-        # We don't write it, because there's always a '\n' after an output
-        # section, but if more output is written, it's written.
-        self.is_newline = False
+        # If the real output doesn't end with a newline, we add "our own",
+        # because we want the output section to always end with a newline.
+        # This newline will be deleted if more output is written.
+        # If we did, self.added_newline is True.
+        self.added_newline = False
         # Was something written at all in this section?
         self.was_something_written = False
         # Does the output end with a cr? (If it does, the last line may be
@@ -56,34 +57,34 @@ class Output(object):
         tb = self.textbuffer
         it = tb.get_end_iter()
         tb.move_mark(self.mark, it)
-        self.is_newline = False
+        self.added_newline = False
         self.was_something_written = False
         self.is_cr = False
 
-    def write(self, data, tag_name, onnewline=False):
+    def write(self, data, tag_names, onnewline=False, addbreaks=True):
         """
-        Write data (unicode string) to the text buffer, marked with tag_name.
+        Write data (unicode string) to the text buffer, marked with tag_names.
+        (tag_names can be either a string or a list of strings)
         If onnewline is True, will add a newline if the output until now doesn't
         end with one.
+        If addbreaks is True, '\r' chars will be added so that lines will be
+        broken and output will not burden the textview.
         """
         tb = self.textbuffer
+        
+        if isinstance(tag_names, basestring):
+            tag_names = [tag_names]
         
         if not data:
             return
         
-        if not self.was_something_written:
+        if self.added_newline:
             it = tb.get_iter_at_mark(self.mark)
-            tb.insert_with_tags_by_name(it, '\n', OUTPUT)
-
-        if onnewline and not self.is_newline and self.was_something_written:
-            data = '\n' + data
-        if self.is_newline:
-            data = '\n' + data
-        if data[-1] == '\n':
-            self.is_newline = True
-            data = data[:-1]
-        else:
-            self.is_newline = False
+            it2 = it.copy()
+            it2.backward_char()
+            assert tb.get_text(it2, it) == '\n'
+            tb.delete(it2, it)
+            self.added_newline = False
 
         # Keep lines if after the cr there was no data before the lf.
         # Since that's the normal Windows newline, it's very important.
@@ -112,35 +113,43 @@ class Output(object):
             if cr_pos != -1:
                 data = data[cr_pos+1:]
 
-        # We DO use \r characters as linebreaks after BREAK_LEN chars, which
-        # are not copied.
-        f = StringIO()
-
-        pos = 0
-        copied_pos = 0
-        col = tb.get_iter_at_mark(self.mark).get_line_offset()
-        next_newline = data.find('\n', pos)
-        if next_newline == -1:
-            next_newline = len(data)
-        while pos < len(data):
-            if next_newline - pos + col > BREAK_LEN:
-                pos = pos + BREAK_LEN - col
-                f.write(data[copied_pos:pos])
-                f.write('\r')
-                copied_pos = pos
-                col = 0
-            else:
-                pos = next_newline + 1
-                col = 0
-                next_newline = data.find('\n', pos)
-                if next_newline == -1:
-                    next_newline = len(data)
-        f.write(data[copied_pos:])
+        if addbreaks:
+            # We DO use \r characters as linebreaks after BREAK_LEN chars, which
+            # are not copied.
+            f = StringIO()
+    
+            pos = 0
+            copied_pos = 0
+            col = tb.get_iter_at_mark(self.mark).get_line_offset()
+            next_newline = data.find('\n', pos)
+            if next_newline == -1:
+                next_newline = len(data)
+            while pos < len(data):
+                if next_newline - pos + col > BREAK_LEN:
+                    pos = pos + BREAK_LEN - col
+                    f.write(data[copied_pos:pos])
+                    f.write('\r')
+                    copied_pos = pos
+                    col = 0
+                else:
+                    pos = next_newline + 1
+                    col = 0
+                    next_newline = data.find('\n', pos)
+                    if next_newline == -1:
+                        next_newline = len(data)
+            f.write(data[copied_pos:])
+            data = f.getvalue()
 
         it = tb.get_iter_at_mark(self.mark)
-        tb.insert_with_tags_by_name(it, f.getvalue(), OUTPUT, tag_name)
+        tb.insert_with_tags_by_name(it, data, OUTPUT, *tag_names)
         # Move mark to after the written text
         tb.move_mark(self.mark, it)
+        
+        if not data.endswith('\n'):
+            it = tb.get_iter_at_mark(self.mark)
+            tb.insert_with_tags_by_name(it, '\n', OUTPUT)
+            tb.move_mark(self.mark, it)
+            self.added_newline = True
 
         self.is_cr = has_trailing_cr
 
