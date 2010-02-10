@@ -31,14 +31,14 @@ from logging import debug
 
 def find_data_dir():
     # If there's a "share" directory near the "dreampielib" directory, use it.
-    # Otherwise, use sys.prefix
+    # Otherwise, use directory relative to the executable.
     from os.path import join, dirname, isdir, pardir, abspath
     
     local_data_dir = join(dirname(__file__), pardir, pardir, 'share')
     if isdir(local_data_dir):
         return abspath(local_data_dir)
     else:
-        return abspath(join(sys.prefix, 'share'))
+        return abspath(join(dirname(sys.argv[0]), pardir, 'share'))
 
 data_dir = find_data_dir()
 gladefile = path.join(data_dir, 'dreampie', 'dreampie.glade')
