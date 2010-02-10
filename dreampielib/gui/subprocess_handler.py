@@ -43,34 +43,31 @@ class SubprocessHandler(object):
     and waits for the next object, which is the return value.)
     You can also get objects asyncronically.
     (This happens when not waiting for a function's return value.)
-    
-    Currently, this class doesn't support living without a living subprocess.
-    This means that if the subprocess dies and can't be restarted, or if
-    the subprocess can't be started on the first place, you get a fatal error.
     """
 
     def __init__(self, pyexec, data_dir,
                  on_stdout_recv, on_stderr_recv, on_object_recv,
-                 on_subp_restarted):
+                 on_subp_terminated):
         self._pyexec = pyexec
         self._data_dir = data_dir
         self._on_stdout_recv = on_stdout_recv
         self._on_stderr_recv = on_stderr_recv
         self._on_object_recv = on_object_recv
-        self._on_subp_restarted = on_subp_restarted
+        self._on_subp_terminated = on_subp_terminated
         
         self._sock = None
+        # self._popen is None when there's no subprocess
         self._popen = None
         self._last_kill_time = 0
         
-        self._start()
-
         # I know that polling isn't the best way, but on Windows you have
         # no choice, and it allows us to do it all by ourselves, not use
         # gobject's functionality.
         gobject.timeout_add(10, self._manage_subp)
         
-    def _start(self):
+    def start(self):
+        if self._popen is not None:
+            raise ValueError("Subprocess is already living")
         # Find a socket to listen to
         ports = range(10000, 10100)
         random.shuffle(ports)
@@ -107,7 +104,7 @@ class SubprocessHandler(object):
     def _manage_subp(self):
         popen = self._popen
         if popen is None:
-            # Just continue looping, waiting for better times.
+            # Just continue looping - there's no subprocess.
             return True
 
         # Check if exited
@@ -118,9 +115,7 @@ class SubprocessHandler(object):
             self._sock.close()
             self._sock = None
             self._popen = None
-            self._start()
-            # Now, supposedly, we have a new, running process.
-            self._on_subp_restarted()
+            self._on_subp_terminated()
             return True
 
         # Read from stdout
@@ -142,19 +137,27 @@ class SubprocessHandler(object):
 
     def send_object(self, obj):
         """Send an object to the subprocess"""
+        if self._popen is None:
+            raise ValueError("Subprocess not living")
         send_object(self._sock, obj)
 
     def recv_object(self):
         """Wait for an object from the subprocess and return it"""
+        if self._popen is None:
+            raise ValueError("Subprocess not living")
         return recv_object(self._sock)
 
     def write(self, data):
         """Write data to stdin"""
+        if self._popen is None:
+            raise ValueError("Subprocess not living")
         self._popen.stdin.write(data.encode('utf8'))
 
     def kill(self):
         """Kill the subprocess.
         If the event loop continues, will start another one."""
+        if self._popen is None:
+            raise ValueError("Subprocess not living")
         if sys.platform != 'win32':
             # Send SIGABRT, and if the process didn't terminate within 1 second,
             # send SIGKILL.
@@ -178,6 +181,8 @@ class SubprocessHandler(object):
         self._last_kill_time = time.time()
 
     def interrupt(self):
+        if self._popen is None:
+            raise ValueError("Subprocess not living")
         if sys.platform != 'win32':
             os.kill(self._popen.pid, signal.SIGINT)
         else:

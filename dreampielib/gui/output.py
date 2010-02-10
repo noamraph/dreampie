@@ -69,6 +69,7 @@ class Output(object):
         end with one.
         If addbreaks is True, '\r' chars will be added so that lines will be
         broken and output will not burden the textview.
+        Return a TextIter pointing to the end of the written text.
         """
         tb = self.textbuffer
         
@@ -142,17 +143,18 @@ class Output(object):
 
         it = tb.get_iter_at_mark(self.mark)
         tb.insert_with_tags_by_name(it, data, OUTPUT, *tag_names)
+
+        if not data.endswith('\n'):
+            tb.insert_with_tags_by_name(it, '\n', OUTPUT)
+            self.added_newline = True
+        
         # Move mark to after the written text
         tb.move_mark(self.mark, it)
-        
-        if not data.endswith('\n'):
-            it = tb.get_iter_at_mark(self.mark)
-            tb.insert_with_tags_by_name(it, '\n', OUTPUT)
-            tb.move_mark(self.mark, it)
-            self.added_newline = True
 
         self.is_cr = has_trailing_cr
 
         self.was_something_written = True
+        
+        return it
 
 

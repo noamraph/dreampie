@@ -27,6 +27,10 @@ from .SimpleGladeApp import SimpleGladeApp
 from . import tags
 from .tags import DEFAULT, FG, BG, COLOR, ISSET
 from .beep import beep
+from .file_dialogs import open_dialog
+
+# Allow future translations
+_ = lambda s: s
 
 class ConfigDialog(SimpleGladeApp):
     def __init__(self, config, gladefile, parent):
@@ -45,6 +49,12 @@ class ConfigDialog(SimpleGladeApp):
         self.reshist_chk.props.active = config.get_bool('use-reshist')
         self.on_reshist_chk_toggled(self.reshist_chk)
         self.reshist_spin.props.value = config.get_int('reshist-size')
+        
+        self.autofold_chk.props.active = config.get_bool('autofold')
+        self.on_autofold_chk_toggled(self.autofold_chk)
+        self.autofold_spin.props.value = config.get_int('autofold-numlines')
+        
+        self.viewer_entry.props.text = eval(config.get('viewer'))
         
         self.leave_code_chk.props.active = config.get_bool('leave-code')
         
@@ -98,6 +108,11 @@ class ConfigDialog(SimpleGladeApp):
         
         config.set_bool('use-reshist', self.reshist_chk.props.active)
         config.set_int('reshist-size', self.reshist_spin.props.value)
+        
+        config.set_bool('autofold', self.autofold_chk.props.active)
+        config.set_int('autofold-numlines', self.autofold_spin.props.value)
+        
+        config.set('viewer', repr(self.viewer_entry.props.text.decode('utf8').strip()))
         
         config.set_bool('leave-code', self.leave_code_chk.props.active)
         
@@ -154,7 +169,7 @@ class ConfigDialog(SimpleGladeApp):
 
     def init_textview(self):
         from .tags import (STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, MESSAGE,
-                           RESULT_IND, RESULT,
+                           FOLD_MESSAGE, RESULT_IND, RESULT,
                            KEYWORD, BUILTIN, STRING, NUMBER, COMMENT)
         tv = self.textview; tb = self.textbuffer
         tags.add_tags(tb)
@@ -179,7 +194,8 @@ class ConfigDialog(SimpleGladeApp):
             w(r'"err\n"', STRING); w(', '); w('1', NUMBER); w('/'); \
             w('0', NUMBER); w('\n')
         w('err\n', STDERR)
-        w('Traceback (most recent call last):', EXCEPTION)
+        w('Traceback (most recent call last):\n', EXCEPTION)
+        w('[About 4 more lines.]', FOLD_MESSAGE)
 
     def on_textview_realize(self, widget):
         win = self.textview.get_window(gtk.TEXT_WINDOW_TEXT)
@@ -246,6 +262,12 @@ class ConfigDialog(SimpleGladeApp):
         
         self.cur_tag = tag
 
+    def on_viewer_button_clicked(self, widget):
+        def f(filename):
+            self.viewer_entry.props.text = filename
+        open_dialog(f, _('Choose the viewer program'), self.config_dialog,
+                    _('Executables'), '*')
+    
     def on_textview_button_press_event(self, widget, event):
         tv = self.textview
         if tv.get_window(gtk.TEXT_WINDOW_TEXT) is not event.window:
@@ -368,5 +390,7 @@ class ConfigDialog(SimpleGladeApp):
     def on_reshist_chk_toggled(self, widget):
         self.reshist_spin.props.sensitive = self.reshist_chk.props.active
     
+    def on_autofold_chk_toggled(self, widget):
+        self.autofold_spin.props.sensitive = self.autofold_chk.props.active
 
 

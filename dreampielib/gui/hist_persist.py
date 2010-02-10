@@ -17,12 +17,11 @@
 
 __all__ = ['HistPersist']
 
-from os.path import abspath, dirname, basename, exists
-import re
+import os
 from HTMLParser import HTMLParser
 from htmlentitydefs import name2codepoint
 
-import gtk
+from .file_dialogs import open_dialog, save_dialog
 
 _ = lambda s: s
 
@@ -39,104 +38,48 @@ class HistPersist(object):
         
         self.filename = None
     
-    def _save_or_warn(self, parent, filename):
+    def _save_func(self, filename):
         """
-        Save history to a file. On IOError, display a message and return False.
-        On success, return True.
+        Save history to a file.
         """
-        filename = abspath(filename)
-        try:
-            f = open(filename, 'wb')
-            save_history(self.textview, f)
-            f.close()
-        except IOError, e:
-            m = gtk.MessageDialog(d, gtk.DIALOG_MODAL, gtk.MESSAGE_WARNING,
-                                    gtk.BUTTONS_OK)
-            m.props.text = _('Error when saving file: %s') % e
-            m.run()
-            m.destroy()
-            return False
+        f = open(filename, 'wb')
+        save_history(self.textview, f)
+        f.close()
         self.filename = filename
         self.status_bar.set_status(_('History saved.'))
-        return True
 
     def save(self):
         if self.filename is None:
             self.save_as()
-        self._save_or_warn(self.window_main, self.filename)
+        self._save_func(self.filename)
     
     def save_as(self):
-        d = gtk.FileChooserDialog(
-            _('Choose where to save the history'), self.window_main,
-            gtk.FILE_CHOOSER_ACTION_SAVE,
-            (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-             gtk.STOCK_OK, gtk.RESPONSE_OK))
-        fil = gtk.FileFilter()
-        fil.set_name(_('HTML Files'))
-        fil.add_pattern('*.html')
-        d.add_filter(fil)
         if self.filename:
-            d.set_current_folder(dirname(self.filename))
-            d.set_current_name(basename(self.filename))
+            prev_dir = os.path.dirname(self.filename)
+            prev_name = os.path.basename(self.filename)
         else:
-            d.set_current_name('dreampie-history.html')
-        while True:
-            r = d.run()
-            if r == gtk.RESPONSE_CANCEL:
-                break
-            filename = abspath(d.get_filename())
-            if exists(filename):
-                m = gtk.MessageDialog(d, gtk.DIALOG_MODAL, gtk.MESSAGE_QUESTION)
-                m.props.text = _('A file named "%s" already exists.  Do '
-                                    'you want to replace it?'
-                                    ) % basename(filename)
-                m.props.secondary_text = _(
-                    'The file already exists in "%s".  Replacing it will '
-                    'overwrite its contents.'
-                    ) % basename(dirname(filename))
-                m.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-                m.add_button(_('_Replace'), gtk.RESPONSE_OK)
-                m.set_default_response(gtk.RESPONSE_CANCEL)
-                mr = m.run()
-                m.destroy()
-                if mr == gtk.RESPONSE_CANCEL:
-                    continue
-                    
-            success = self._save_or_warn(d, filename)
-            if success:
-                break
-        d.destroy()
+            prev_dir = None
+            prev_name = 'dreampie-history.html'
+        save_dialog(self._save_func,
+                    _('Choose where to save the history'),
+                    self.window_main,
+                    _('HTML Files'),
+                    '*.html',
+                    prev_dir, prev_name)
+
+    def _load_func(self, filename):
+        s = open(filename, 'rb').read()
+        parser = Parser(self.textbuffer)
+        parser.feed(s)
+        parser.close()
+        self.status_bar.set_status(_('History loaded.'))
     
     def load(self):
-        d = gtk.FileChooserDialog(
-            _('Choose the saved history file'), self.window_main,
-            gtk.FILE_CHOOSER_ACTION_OPEN,
-            (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-             gtk.STOCK_OK, gtk.RESPONSE_OK))
-        fil = gtk.FileFilter()
-        fil.set_name(_('HTML Files'))
-        fil.add_pattern('*.html')
-        d.add_filter(fil)
-        while True:
-            r = d.run()
-            if r == gtk.RESPONSE_CANCEL:
-                break
-            filename = abspath(d.get_filename())
-            try:
-                s = open(filename, 'rb').read()
-                parser = Parser(self.textbuffer)
-                parser.feed(s)
-                parser.close()
-                self.status_bar.set_status(_('History loaded.'))
-            except Exception, e:
-                m = gtk.MessageDialog(d, gtk.DIALOG_MODAL, gtk.MESSAGE_WARNING,
-                                        gtk.BUTTONS_OK)
-                m.props.text = _('Error when loading file: %s') % e
-                m.run()
-                m.destroy()
-            else:
-                break
-        d.destroy()
+        open_dialog(self._load_func,
+                    _('Choose the saved history file'),
+                    self.window_main,
+                    _('HTML Files'),
+                    '*.html')
 
 def _html_escape(s):
     """

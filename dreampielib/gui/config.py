@@ -31,6 +31,9 @@ current-theme = Dark
 pprint = True
 use-reshist = True
 reshist-size = 30
+autofold = True
+autofold-numlines = 30
+viewer = ''
 init-code = ''
 
 recall-1-char-commands = False
@@ -59,6 +62,8 @@ prompt-fg = #e400b6
 prompt-bg = black
 message-fg = yellow
 message-bg = black
+fold-message-fg = #a7a7a7
+fold-message-bg = #003b6c
 
 keyword-fg = #ff7700
 keyword-bg = black
@@ -90,6 +95,8 @@ prompt-fg-set = True
 prompt-bg-set = False
 message-fg-set = True
 message-bg-set = False
+fold-message-fg-set = True
+fold-message-bg-set = True
 
 keyword-fg-set = True
 keyword-bg-set = False
@@ -127,6 +134,8 @@ prompt-fg = #770000
 prompt-bg = white
 message-fg = #008000
 message-bg = white
+fold-message-fg = #404040
+fold-message-bg = #b2ddff
 
 keyword-fg = #ff7700
 keyword-bg = white
@@ -158,6 +167,8 @@ prompt-fg-set = True
 prompt-bg-set = False
 message-fg-set = True
 message-bg-set = False
+fold-message-fg-set = True
+fold-message-bg-set = True
 
 keyword-fg-set = True
 keyword-bg-set = False

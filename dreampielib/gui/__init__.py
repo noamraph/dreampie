@@ -14,6 +14,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with DreamPie.  If not, see <http://www.gnu.org/licenses/>.
+from dreampielib.gui.tags import OUTPUT
 
 import sys
 import os
@@ -21,6 +22,7 @@ from os import path
 import time
 import tempfile
 from optparse import OptionParser
+import subprocess
 import webbrowser
 
 import logging
@@ -70,6 +72,7 @@ from .config_dialog import ConfigDialog
 from .write_command import write_command
 from .newline_and_indent import newline_and_indent
 from .output import Output
+from .folding import Folding
 from .selection import Selection
 from .status_bar import StatusBar
 from .vadj_to_bottom import VAdjToBottom
@@ -79,6 +82,7 @@ from .autocomplete import Autocomplete
 from .call_tips import CallTips
 from .subprocess_handler import SubprocessHandler
 from .beep import beep
+from .file_dialogs import save_dialog
 from .tags import (STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND,
                    COMMAND_DEFS, COMMAND_SEP, MESSAGE, RESULT_IND, RESULT)
 import tags
@@ -99,28 +103,33 @@ sourceview_keyhandlers = {}
 sourceview_keyhandler = make_keyhandler_decorator(sourceview_keyhandlers)
 
 def get_widget(name):
-    """Create a widget from the glade file"""
+    """Create a widget from the glade file."""
     xml = glade.XML(gladefile, name)
     return xml.get_widget(name)
 
 class DreamPie(SimpleGladeApp):
     def __init__(self, pyexec):
         SimpleGladeApp.__init__(self, gladefile, 'window_main')
-
-        self.popup_sel_menu = get_widget('popup_sel_menu')
+        self.load_popup_menus()
         
         self.config = Config()
 
         self.window_main.set_icon_from_file(
             path.join(data_dir, 'pixmaps', 'dreampie.png'))
 
+        self.textbuffer = tb = self.textview.get_buffer()
         self.init_textbufferview()
+        # Mark where the cursor was when the popup menu was popped
+        self.popup_mark = tb.create_mark('popup-mark', tb.get_start_iter(),
+                                         left_gravity=True)
 
         self.init_sourcebufferview()
         
         self.configure()
 
         self.output = Output(self.textview)
+        
+        self.folding = Folding(self.textbuffer, LINE_LEN)
 
         self.selection = Selection(self.textview, self.sourceview,
                                    self.on_is_something_selected_changed)
@@ -150,10 +159,14 @@ class DreamPie(SimpleGladeApp):
         self.subp = SubprocessHandler(
             pyexec, data_dir,
             self.on_stdout_recv, self.on_stderr_recv, self.on_object_recv,
-            self.on_subp_restarted)
+            self.on_subp_terminated)
+        self.subp.start()
 
         # Is the subprocess executing a command
         self.is_executing = False
+        
+        # Are we trying to shut down
+        self.is_terminating = False
 
         self.set_window_default_size()
         self.window_main.show_all()
@@ -168,8 +181,20 @@ class DreamPie(SimpleGladeApp):
             self.config.set_bool('show-getting-started', False)
             self.config.save()
 
-
-    # Selection
+    def load_popup_menus(self):
+        # Load popup menus from the glade file. Would not have been needed if
+        # popup menus could be children of windows.
+        xml = glade.XML(gladefile, 'popup_sel_menu')
+        xml.signal_autoconnect(self)
+        self.popup_sel_menu = xml.get_widget('popup_sel_menu')
+        
+        xml = glade.XML(gladefile, 'popup_nosel_menu')
+        xml.signal_autoconnect(self)
+        self.popup_nosel_menu = xml.get_widget('popup_nosel_menu')
+        self.fold_unfold_section_menu = xml.get_widget('fold_unfold_section_menu')
+        self.copy_section_menu = xml.get_widget('copy_section_menu')
+        self.view_section_menu = xml.get_widget('view_section_menu')
+        self.save_section_menu = xml.get_widget('save_section_menu')
 
     def on_cut(self, widget):
         return self.selection.cut()
@@ -193,7 +218,7 @@ class DreamPie(SimpleGladeApp):
 
     def init_textbufferview(self):
         tv = self.textview
-        self.textbuffer = tb = tv.get_buffer()
+        tb = self.textbuffer
 
         tv.set_wrap_mode(gtk.WRAP_CHAR)
 
@@ -247,6 +272,14 @@ class DreamPie(SimpleGladeApp):
         self.textbuffer.insert_with_tags_by_name(
             self.textbuffer.get_end_iter(), data, *tag_names)
 
+    def write_output(self, data, tag_names, onnewline=False, addbreaks=True):
+        """
+        Call self.output.write with the given arguments, and autofold if needed.
+        """
+        it = self.output.write(data, tag_names, onnewline, addbreaks)
+        if self.config.get_bool('autofold'):
+            self.folding.autofold(it, self.config.get_int('autofold-numlines'))
+    
     def set_is_executing(self, is_executing):
         self.is_executing = is_executing
         label = _(u'Execute Code') if not is_executing else _(u'Write Input')
@@ -295,7 +328,7 @@ class DreamPie(SimpleGladeApp):
         if not s.endswith('\n'):
             s += '\n'
 
-        self.output.write(s, [COMMAND, STDIN], addbreaks=False)
+        self.write_output(s, [COMMAND, STDIN], addbreaks=False)
         self.write('\r', COMMAND_SEP)
         self.output.start_new_section()
         self.vadj_to_bottom.scroll_to_bottom()
@@ -488,7 +521,10 @@ class DreamPie(SimpleGladeApp):
         if not self.is_executing:
             self.write('>>> ', COMMAND, PROMPT)
 
-    def on_subp_restarted(self):
+    def on_subp_terminated(self):
+        if self.is_terminating:
+            return
+        self.subp.start()
         self.set_is_executing(False)
         self.write('\n')
         self.write(
@@ -502,10 +538,10 @@ class DreamPie(SimpleGladeApp):
         self.subp.kill()
 
     def on_stdout_recv(self, data):
-        self.output.write(data, STDOUT)
+        self.write_output(data, STDOUT)
 
     def on_stderr_recv(self, data):
-        self.output.write(data, STDERR)
+        self.write_output(data, STDERR)
 
     def call_subp(self, funcname, *args):
         self.subp.send_object((funcname, args))
@@ -517,13 +553,13 @@ class DreamPie(SimpleGladeApp):
         is_success, val_no, val_str, exception_string, rem_stdin = obj
 
         if not is_success:
-            self.output.write(exception_string, EXCEPTION, onnewline=True)
+            self.write_output(exception_string, EXCEPTION, onnewline=True)
         else:
             if val_str is not None:
                 if val_no is not None:
-                    self.output.write('%d: ' % val_no, RESULT_IND,
+                    self.write_output('%d: ' % val_no, RESULT_IND,
                                       onnewline=True)
-                self.output.write(val_str+'\n', RESULT)
+                self.write_output(val_str+'\n', RESULT)
         self.write('>>> ', COMMAND, PROMPT)
         self.set_is_executing(False)
         self.handle_rem_stdin(rem_stdin)
@@ -636,6 +672,91 @@ class DreamPie(SimpleGladeApp):
                     MESSAGE)
             self.status_bar.set_status(_('History discarded.'))
 
+    # Folding
+    
+    def on_section_menu_activate(self, widget):
+        """
+        Called when the used clicked a section-related item in a popup menu.
+        """
+        tb = self.textbuffer
+        it = tb.get_iter_at_mark(self.popup_mark)
+        r = self.folding.get_section_status(it)
+        if r is None:
+            # May happen if something was changed in the textbuffer between
+            # popup and activation
+            return
+        typ, is_folded, start_it = r
+        
+        if widget is self.fold_unfold_section_menu:
+            # Fold/Unfold
+            if not is_folded:
+                self.folding.fold(typ, start_it)
+            else:
+                self.folding.unfold(typ, start_it)
+        else:
+            text = self.folding.get_text(typ, start_it)
+            if widget is self.copy_section_menu:
+                # Copy
+                self.selection.clipboard.set_text(text)
+            elif widget is self.view_section_menu:
+                # View
+                fd, fn = tempfile.mkstemp()
+                os.write(fd, text)
+                os.close(fd)
+                viewer = eval(self.config.get('viewer'))
+                self.spawn_and_forget('%s %s' % (viewer, fn))
+            elif widget is self.save_section_menu:
+                def func(filename):
+                    f = open(filename, 'wb')
+                    f.write(text)
+                    f.close()
+                save_dialog(func, _("Choose where to save the section"),
+                            self.main_widget, _("All Files"), "*")
+            else:
+                assert False, "Unexpected widget"
+            
+    def spawn_and_forget(self, argv):
+        """
+        Start a process and forget about it.
+        """
+        if sys.platform == 'linux2':
+            # We use a trick so as not to create zombie processes: we fork,
+            # and let the fork spawn the process (actually another fork). The
+            # (first) fork immediately exists, so the process we spawned is
+            # made the child of process number 1.
+            pid = os.fork()
+            if pid == 0:
+                _p = subprocess.Popen(argv, shell=True)
+                os._exit(0)
+            else:
+                os.waitpid(pid, 0)
+        else:
+            _p = subprocess.Popen(argv, shell=True)
+    
+    def on_double_click(self, event):
+        """If we are on a folded section, unfold it and return True, to
+        avoid event propagation."""
+        tv = self.textview
+
+        if tv.get_window(gtk.TEXT_WINDOW_TEXT) is not event.window:
+            # Probably a click on the border or something
+            return
+        x, y = tv.window_to_buffer_coords(gtk.TEXT_WINDOW_TEXT,
+                                          int(event.x), int(event.y))
+        it = tv.get_iter_at_location(x, y)
+        r = self.folding.get_section_status(it)
+        if r is not None:
+            typ, is_folded, start_it = r
+            if is_folded:
+                self.folding.unfold(typ, start_it)
+                return True
+    
+    def on_fold_last(self, widget):
+        self.folding.fold_last()
+    
+    def on_unfold_last(self, widget):
+        self.folding.unfold_last()
+
     # Other events
 
     def on_show_completions(self, widget):
@@ -708,6 +829,7 @@ class DreamPie(SimpleGladeApp):
         response = msg.run()
         msg.destroy()
         if response == gtk.RESPONSE_YES:
+            self.is_terminating = True
             self.window_main.destroy()
             self.subp.kill()
             gtk.main_quit()
@@ -724,6 +846,9 @@ class DreamPie(SimpleGladeApp):
     def on_report_bug(self, widget):
         webbrowser.open('https://bugs.launchpad.net/dreampie/+filebug')
     
+    def on_homepage(self, widget):
+        webbrowser.open('http://dreampie.sourceforge.net/')
+    
     def on_getting_started(self, widget):
         self.show_getting_started_dialog()
     
@@ -735,8 +860,46 @@ class DreamPie(SimpleGladeApp):
     
     def on_textview_button_press_event(self, widget, event):
         if event.button == 3:
-            self.popup_sel_menu.popup(None, None, None, event.button, event.get_time())
+            self.show_popup_menu(event)
             return True
+        
+        if event.type == gdk._2BUTTON_PRESS:
+            return self.on_double_click(event)
+    
+    def show_popup_menu(self, event):
+        tv = self.textview
+        tb = self.textbuffer
+        
+        if tb.get_has_selection():
+            self.popup_sel_menu.popup(None, None, None, event.button,
+                                      event.get_time())
+        else:
+            if tv.get_window(gtk.TEXT_WINDOW_TEXT) is not event.window:
+                # Probably a click on the border or something
+                return
+            x, y = tv.window_to_buffer_coords(gtk.TEXT_WINDOW_TEXT,
+                                              int(event.x), int(event.y))
+            it = tv.get_iter_at_location(x, y)
+            r = self.folding.get_section_status(it)
+            if r is not None:
+                typ, is_folded, _start_it = r
+                if typ == OUTPUT:
+                    typ_s = _('Output Section')
+                else:
+                    typ_s = _('Code Section')
+                self.fold_unfold_section_menu.child.props.label = (
+                    _('Unfold %s') if is_folded else _('Fold %s')) % typ_s
+                self.copy_section_menu.child.props.label = _('Copy %s') % typ_s
+                self.view_section_menu.child.props.label = _('View %s') % typ_s
+                self.save_section_menu.child.props.label = _('Save %s') % typ_s
+                self.view_section_menu.props.visible = \
+                    bool(eval(self.config.get('viewer')))
+                
+                tb.move_mark(self.popup_mark, it)
+                self.popup_nosel_menu.popup(None, None, None, event.button,
+                                            event.get_time())
+            else:
+                beep()
 
 def main():
     usage = "%prog [options] [python-executable]"

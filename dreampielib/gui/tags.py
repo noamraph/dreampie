@@ -37,8 +37,12 @@ RESULT_IND = 'result-ind'; RESULT = 'result'
 PROMPT = 'prompt'; COMMAND = 'command'; COMMAND_DEFS='command-defs'
 COMMAND_SEP = 'commandsep'
 
+# Folding tags
+FOLDED = 'folded'
+FOLD_MESSAGE = 'fold-message'
+
 # The MESSAGE tag
-MESSAGE = 'message'; 
+MESSAGE = 'message'
 
 # Tags for syntax highlighting
 KEYWORD = 'keyword'; BUILTIN = 'builtin'; STRING = 'string'
@@ -72,6 +76,7 @@ tag_desc = [
     (EXCEPTION, 'Exception'),
     (PROMPT, 'Prompt'),
     (MESSAGE, 'Messages'),
+    (FOLD_MESSAGE, 'Folded Text'),
     ]
 
 """
@@ -127,8 +132,9 @@ First few characters of the output/code section, which are truncated somewhe
 
 * From some point (which will be a '\n' if the first line isn't too long), the
   output is marked with FOLDED, so it is invisible.
-* The '\n' which always comes at the end of the output is visible, so it starts
-  a new line.
+* The '\n' which always comes at the end of the output is also invisible. It
+  doesn't make a lot of sense, because that way no newline is visible, but it
+  turns out that if it's visible, you get an extra empty line.
 * Afterwards comes the FOLD_MESSAGE, which includes a '\n' at the end so that
   the background color is behind the entire line.
 """
@@ -204,6 +210,8 @@ def add_tags(textbuffer):
     textbuffer.create_tag(COMMAND)
     textbuffer.create_tag(COMMAND_DEFS)
     tag = textbuffer.create_tag(COMMAND_SEP)
+    tag.props.invisible = True
+    tag = textbuffer.create_tag(FOLDED)
     tag.props.invisible = True
 
 def apply_theme_text(textview, textbuffer, theme):
