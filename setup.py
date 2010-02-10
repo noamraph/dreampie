@@ -1,91 +1,104 @@
 #!/usr/bin/env python
 
 import os
-from os.path import join, dirname, getmtime, exists
-import sys
-import zipfile
 
 from distutils.core import setup
 from distutils.command.build import build
+from distutils.command.install import install
 from distutils.core import Command
+from distutils import log
+
+from dreampielib import __version__, subp_zips
 
 try:
     import py2exe
 except ImportError:
     py2exe = None
 
-try:
-    from lib2to3 import refactor
-except ImportError:
-    refactor = None
-
 class build_subp_zips(Command):
     description = 'Build the subprocess zips, which include the needed modules.'
 
-    user_options = []
+    user_options = [
+        ('build-dir=', 'd', "directory to build to"),
+        ('force', 'f', "forcibly build everything (ignore file timestamps"),
+        ]
+    
+    boolean_options = ['force']
+
 
     def initialize_options(self):
-    	pass
+        self.build_dir = None
+        self.force = None
 
     def finalize_options(self):
-    	pass
+        self.set_undefined_options('build',
+                                   ('build_lib', 'build_dir'),
+                                   ('force', 'force'),
+                                   )
 
     def run(self):
-        join = os.path.join
-        
-        files = ['subprocess/__init__.py',
-                 'common/__init__.py',
-                 'common/objectstream.py',
-                 'common/brine.py',
-                 ]
-        
-        my_dir = dirname(__file__)
-        src_dir = join(my_dir, 'dreampielib')
-        zip_fns = {2: join(my_dir, 'share/dreampie/subp-py2.zip'),
-                   3: join(my_dir, 'share/dreampie/subp-py3.zip')}
-        
-        last_mtime = max(getmtime(join(src_dir, fn)) for fn in files)
-        
-        if refactor:
-            vers = [2, 3]
-        else:
-            print >> sys.stderr, "Warning: Python 3 support will not be built, "\
-                                 "because lib2to3 is not available. Build with "\
-                                 "Python 2.6!"
-            vers = [2]
-            
-        for ver in vers:
-            zip_fn = zip_fns[ver]
-            if not exists(zip_fn) or getmtime(zip_fn) < last_mtime:
-                print >> sys.stderr, "Building %s" % zip_fn
-                zf = zipfile.ZipFile(zip_fn, 'w')
-                if ver == 3:
-                    avail_fixes = refactor.get_fixers_from_package('lib2to3.fixes')
-                    rt = refactor.RefactoringTool(avail_fixes)
-                    for fn in files:
-                        print >> sys.stderr, "Converting %s to Python 3 and archiving..." % fn
-                        f = open(join(src_dir, fn), 'rb')
-                        src = f.read()
-                        f.close()
-                        dst = str(rt.refactor_string(src+'\n', fn))[:-1]
-                        zf.writestr(fn, dst)
-                else:
-                    for fn in files:
-                        print >> sys.stderr, "Archiving %s..." % fn
-                        f = open(join(src_dir, fn), 'rb')
-                        src = f.read()
-                        f.close()
-                        zf.writestr(fn, src)
-                zf.close()
-                print >> sys.stderr, "Finished building %s." % zip_fn
+        my_dir = os.path.dirname(__file__)
+        src_dir = os.path.join(my_dir, 'dreampielib')
+        subp_zips.build(src_dir, self.build_dir, log, self.force)
 
 build.sub_commands.append(('build_subp_zips', None))
 
+class install_subp_zips (Command):
+
+    description = "install the subprocess zips"
+
+    user_options = [
+        ('install-dir=', 'd', "directory to install zips to"),
+        ('build-dir=','b', "build directory (where to install from)"),
+        ('force', 'f', "force installation (overwrite existing files)"),
+        ('skip-build', None, "skip the build steps"),
+    ]
+
+    boolean_options = ['force', 'skip-build']
+
+
+    def initialize_options (self):
+        self.install_dir = None
+        self.force = 0
+        self.build_dir = None
+        self.skip_build = None
+        self.infiles = []
+        self.outfiles = []
+
+    def finalize_options (self):
+        self.set_undefined_options('build', ('build_lib', 'build_dir'))
+        self.set_undefined_options('install',
+                                   ('install_data', 'install_dir'),
+                                   ('force', 'force'),
+                                   ('skip_build', 'skip_build'),
+                                  )
+
+    def run (self):
+        join = os.path.join
+
+        if not self.skip_build:
+            self.run_command('build_subp_zips')
+        
+        for ver in subp_zips.zip_vers:
+            src = join(self.build_dir, subp_zips.zip_fns[ver])
+            dst = join(self.install_dir, 'share', 'dreampie', subp_zips.zip_fns[ver])
+            self.copy_file(src, dst)
+            self.infiles.append(src)
+            self.outfiles.append(dst)
+
+    def get_inputs (self):
+        return self.infiles
+
+    def get_outputs(self):
+        return self.outfiles
+
+install.sub_commands.append(('install_subp_zips', None))
+
 
 setup_args = dict(
-    name='DreamPie',
-    version='0.1',
-    description="The interactive Python shell you've always dreamed about!",
+    name='dreampie',
+    version=__version__,
+    description="DreamPie - The interactive Python shell you've always dreamed about!",
     author='Noam Yorav-Raphael',
     author_email='noamraph@gmail.com',
     url='https://launchpad.net/dreampie',
@@ -108,11 +121,10 @@ setup_args = dict(
                 ('share/pixmaps', ['share/pixmaps/dreampie.svg',
                                    'share/pixmaps/dreampie.png']),
                 ('share/dreampie', ['share/dreampie/subp_main.py',
-                                    'share/dreampie/dreampie.glade',
-                                    'share/dreampie/subp-py2.zip']
-                                 + ['share/dreampie/subp-py3.zip'] if refactor else []),
+                                    'share/dreampie/dreampie.glade']),
                ],
-    cmdclass={'build_subp_zips': build_subp_zips},
+    cmdclass={'build_subp_zips': build_subp_zips,
+              'install_subp_zips': install_subp_zips},
     options={'py2exe':
              {'ignores':['_scproxy', 'glib', 'gobject', 'gtk',
                          'gtk.gdk', 'gtk.glade', 'gtksourceview2',

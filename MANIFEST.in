@@ -1,0 +1,3 @@
+recursive-include share *.png *.svg *.desktop *.py *.glade *.1
+include COPYING
+

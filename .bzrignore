@@ -6,3 +6,5 @@ misc/*
 debian/*
 .project
 .pydevproject
+dist
+MANIFEST
