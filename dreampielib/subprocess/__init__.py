@@ -208,7 +208,7 @@ class Subprocess(object):
             for line in lines:
                 print>>efile, line,
             is_success = False
-            exception_string = efile.getvalue()
+            exception_string = unicode(efile.getvalue())
             res_no = None
             res_str = None
         else:
