@@ -1,0 +1,40 @@
+This is DreamPie - The Python shell you've always dreamed about!
+
+Homepage: http://dreampie.sourceforge.net/
+
+Requirements: Python 2.5/2.6, PyGTK
+
+DreamPie can also use Python 3.1 and Jython 1.5 as interpreters, but it requires
+Python 2.5/2.6 in order to run the main process (There's no PyGTK on those
+interpreters.) To run Python 3.1 you'll need Python 2.6, since lib2to3
+(available only in 2.6) is needed.
+
+If you have those, you simply run ./dreampie or ./dreampie.py from the source
+directory.
+To use another interpreter, run something like ./dreampie jython
+
+A general-purpose python install:
+* python setup.py install
+
+To build the windows installer:
+* Remove the 'dist' directory
+* Make sure setup.nsi has the correct version number
+* \python26\python.exe setup.py py2exe
+* Copy pygtk-2.6, gtk-runtime directories from a previous installation into
+  the dist directory.
+* Compile setup.nsi
+
+To build the debian package: (The version numbers are just to give you an idea)
+* python2.6 setup.py sdist
+* mkdir packaging
+* cd packaging
+* cp ../dist/dreampie-0.9.tar.gz dreampie_0.9.orig.tar.gz
+* tar -xvzf dreampie_0.9.orig.tar.gz
+* Copy the 'debian' directory from the previous package into dreampie-0.9
+* cd dreampie-0.9/debian
+* dch -i (update version number, write something like "update to upstream")
+* cd ..
+* To create a source package:
+    debuild -S
+  To create a binary package:
+    dpkg-buildpackage (Add -us -uc if you don't have a private key set up)

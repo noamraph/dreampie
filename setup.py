@@ -15,6 +15,18 @@ try:
 except ImportError:
     py2exe = None
 
+# This file is non-standard because we want to build the subprocess zips
+# (subp-py2.zip, subp-py3.zip) and put them in share/dreampie.
+# When run from the source directory, these files are automatically
+# created in the locals share/dreampie.
+# We don't want to always do that in the setup script because the debian 
+# packaging doesn't expect to find new files outside the build directory.
+# So we build them in the build directory and have a special install command
+# which copies them to the right place.
+# However, py2exe doesn't run custom install commands. So it py2exe is
+# available, the build_subp_zips commands puts them in the local share/dreampie
+# dir, and they are added to the data_files list. 
+
 class build_subp_zips(Command):
     description = 'Build the subprocess zips, which include the needed modules.'
 
@@ -39,7 +51,11 @@ class build_subp_zips(Command):
     def run(self):
         my_dir = os.path.dirname(__file__)
         src_dir = os.path.join(my_dir, 'dreampielib')
-        subp_zips.build(src_dir, self.build_dir, log, self.force)
+        if py2exe is None:
+            dst_dir = self.build_dir
+        else:
+            dst_dir = os.path.join(my_dir, 'share', 'dreampie')
+        subp_zips.build(src_dir, dst_dir, log, self.force)
 
 build.sub_commands.append(('build_subp_zips', None))
 
@@ -94,6 +110,12 @@ class install_subp_zips (Command):
 
 install.sub_commands.append(('install_subp_zips', None))
 
+if py2exe is not None:
+    additional_py2exe_data_files = [
+        os.path.join('share/dreampie', subp_zips.zip_fns[v])
+        for v in subp_zips.zip_vers]
+else:
+    additional_py2exe_data_files = []
 
 setup_args = dict(
     name='dreampie',
@@ -121,7 +143,8 @@ setup_args = dict(
                 ('share/pixmaps', ['share/pixmaps/dreampie.svg',
                                    'share/pixmaps/dreampie.png']),
                 ('share/dreampie', ['share/dreampie/subp_main.py',
-                                    'share/dreampie/dreampie.glade']),
+                                    'share/dreampie/dreampie.glade']
+                                    +additional_py2exe_data_files),
                ],
     cmdclass={'build_subp_zips': build_subp_zips,
               'install_subp_zips': install_subp_zips},
@@ -129,7 +152,8 @@ setup_args = dict(
              {'ignores':['_scproxy', 'glib', 'gobject', 'gtk',
                          'gtk.gdk', 'gtk.glade', 'gtksourceview2',
                          'pango', 'pygtk'],
-              'excludes':['_ssl', 'doctest', 'pdb', 'unittest', 'difflib' ],
+              'excludes':['_ssl', 'doctest', 'pdb', 'unittest', 'difflib',
+                          'unicodedata', 'bz2', 'zipfile', 'lib2to3'],
               'includes':['fnmatch', 'glob'],
              }},
      

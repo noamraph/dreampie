@@ -2,7 +2,7 @@ Name DreamPie
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 0.1
+!define VERSION 0.9.2
 !define COMPANY DreamPie
 !define URL https://launchpad.net/dreampie
 
@@ -31,7 +31,7 @@ Var StartMenuGroup
 !insertmacro MUI_LANGUAGE English
 
 # Installer attributes
-OutFile dreampie-0.1-setup.exe
+OutFile dreampie-${VERSION}-setup.exe
 InstallDir $PROGRAMFILES\DreamPie
 CRCCheck on
 XPStyle on

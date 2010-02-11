@@ -14,7 +14,6 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with DreamPie.  If not, see <http://www.gnu.org/licenses/>.
-from dreampielib.gui.tags import OUTPUT
 
 import sys
 import os
@@ -30,10 +29,22 @@ from logging import debug
 #logging.basicConfig(format="dreampie: %(message)s", level=logging.DEBUG)
 
 def find_data_dir():
-    # If there's a "share" directory near the "dreampielib" directory, use it.
-    # Otherwise, use directory relative to the executable.
+    """
+    Find the 'share' directory in which to find files.
+    If we are inside the source directory, build subp zips.
+    """
+    # Scenarios:
+    # * Running from the source directory. 'share' is near 'dreampielib'
+    # * Running from a unix installed executable. The scheme is:
+    #   prefix/bin/executable
+    #   prefix/share/
+    # * Running from py2exe. 'share' is near the executable.
+    #
+    # So, if we find a 'share' near dreampielib, we build zips and return it.
+    # Otherwise, we search for 'share' near the executable. If it doesn't
+    # exist, we search for 'share' one level below the executable.
     from os.path import join, dirname, isdir, pardir, abspath
-    
+
     local_data_dir = join(dirname(__file__), pardir, pardir, 'share')
     if isdir(local_data_dir):
         # We're in the source path. Build zips if needed, and return the right
@@ -44,7 +55,15 @@ def find_data_dir():
         build(src_dir, build_dir)
         return abspath(local_data_dir)
     else:
-        return abspath(join(dirname(sys.argv[0]), pardir, 'share'))
+        py2exe_data_dir = abspath(join(dirname(sys.argv[0]), 'share'))
+        if isdir(py2exe_data_dir):
+            return py2exe_data_dir
+        else:
+            unix_data_dir = abspath(join(dirname(sys.argv[0]), pardir, 'share'))
+            if isdir(unix_data_dir):
+                return unix_data_dir
+            else:
+                raise OSError("Could not find the 'share' directory")
 
 data_dir = find_data_dir()
 gladefile = path.join(data_dir, 'dreampie', 'dreampie.glade')
@@ -89,7 +108,7 @@ from .call_tips import CallTips
 from .subprocess_handler import SubprocessHandler
 from .beep import beep
 from .file_dialogs import save_dialog
-from .tags import (STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND,
+from .tags import (OUTPUT, STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND,
                    COMMAND_DEFS, COMMAND_SEP, MESSAGE, RESULT_IND, RESULT)
 import tags
 
