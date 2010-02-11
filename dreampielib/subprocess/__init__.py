@@ -486,15 +486,15 @@ class Subprocess(object):
         return (u'%s %s on %s\n' % (name, sys.version, sys.platform)
                 +u'Type "copyright", "credits" or "license()" for more information.\n')
 
-    @staticmethod
-    def _find_constructor(class_ob):
+    @classmethod
+    def _find_constructor(cls, class_ob):
         # Given a class object, return a function object used for the
         # constructor (ie, __init__() ) or None if we can't find one.
         try:
             return class_ob.__init__.im_func
         except AttributeError:
             for base in class_ob.__bases__:
-                rc = _find_constructor(base)
+                rc = cls._find_constructor(base)
                 if rc is not None: return rc
         return None
 
@@ -549,7 +549,7 @@ class Subprocess(object):
 # Handle GUI events
 
 class GuiHandler(object):
-    def handle_events(delay):
+    def handle_events(self, delay):
         """
         This method gets the time in which to process GUI events, in seconds.
         If the GUI toolkit is loaded, run it for the specified delay and return
