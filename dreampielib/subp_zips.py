@@ -65,6 +65,7 @@ def build(src_dir, build_dir, log=simple_logger, force=False):
     join = os.path.join
     
     files = ['subprocess/__init__.py',
+             'subprocess/split_to_singles.py',
              'common/__init__.py',
              'common/objectstream.py',
              'common/brine.py',

@@ -38,7 +38,7 @@ try:
     import ast
 except ImportError:
     ast = None
-    import compiler
+    from .split_to_singles import split_to_singles
 import __future__
 
 if sys.platform == 'win32':
@@ -143,6 +143,83 @@ class Subprocess(object):
         finally:
             sock.setblocking(True)
 
+    @staticmethod
+    def update_features(cur_flags, co_flags):
+        """
+        Get an int with current __future__ flags, return it updated with
+        co_flags from a code object.
+        """
+        for feature in _features:
+            if co_flags & feature.compiler_flag:
+                cur_flags |= feature.compiler_flag
+        return cur_flags
+    
+    def compile_ast(self, source):
+        """
+        Compile source into a list of code objects, updating linecache, self.gid
+        and self.flags.
+        Return True, codeob on success.
+        Return False, reason on syntax error.
+        This version uses the ast module available in Python 2.6 and Jython 2.5.
+        This version always returns a list with one item.
+        """
+        filename = '<pyshell#%d>' % self.gid
+        lines = source.split("\n")
+        try:
+            a = compile(source, filename, 'exec',
+                        ast.PyCF_ONLY_AST | self.flags)
+            b = ast.Interactive(a.body)
+            codeob = compile(b, filename, 'single', self.flags)
+        except SyntaxError, e:
+            return False, (unicode(e.msg), e.lineno-1, e.offset-1)
+            
+        # Update gid, linecache, flags
+        self.gid += 1
+        linecache.cache[filename] = len(source)+1, None, lines, filename
+        self.flags = self.update_features(self.flags, codeob.co_flags)
+        
+        return True, [codeob]
+    
+    def compile_no_ast(self, source):
+        """
+        This function does the same thing as compile_ast, but it works without
+        the ast module.
+        """
+        split_source = split_to_singles(source)
+        # This added newline is because sometimes the CommandCompiler wants
+        # more if there isn't a newline at the end
+        split_source[-1] += '\n'
+        line_count = 0
+        # Compile to check for syntax errors
+        cur_flags = self.flags
+        for src in split_source:
+            try:
+                c = compile(src, '<pyshell>', 'single', cur_flags)
+            except SyntaxError, e:
+                return False, (unicode(e.msg), e.lineno-1+line_count, e.offset-1)
+            else:
+                if c is None:
+                    return False, None
+                    return
+                else:
+                    line_count += src.count('\n')
+                    cur_flags = self.update_features(cur_flags, c.co_flags)
+
+        # If compilation was successful...
+        codeobs = []
+        for src in split_source:
+            # We compile again, so as not to put into linecache code
+            # which had no effect
+            filename = '<pyshell#%d>' % self.gid
+            self.gid += 1
+            lines = src.split("\n")
+            linecache.cache[filename] = len(src)+1, None, lines, filename
+            codeob = compile(src, filename, 'single', self.flags)
+            self.flags = self.update_features(self.flags, codeob.co_flags)
+            codeobs.append(codeob)
+        
+        return True, codeobs
+    
     @rpc_func
     def execute(self, source):
         """
@@ -158,34 +235,21 @@ class Subprocess(object):
         exception_string - description of the exception, or None if is_success.
         rem_stdin - data that was sent into stdin and wasn't consumed.
         """
-        filename = '<pyshell#%d>' % self.gid
-        self.gid += 1
-        lines = source.split("\n")
-        linecache.cache[filename] = len(source)+1, None, lines, filename
-        try:
-            if ast:
-                a = compile(source, filename, 'exec',
-                            ast.PyCF_ONLY_AST | self.flags)
-                b = ast.Interactive(a.body)
-                codeob = compile(b, filename, 'single', self.flags)
-            else:
-                # We use compiler.compile instead of plain compile, because
-                # compiler.compile does what you'd want when it gets multiple
-                # statements, while plain compile complains about a syntax error.
-                # FIXME: This doesn't handle compilation flags
-                codeob = compiler.compile(source, filename, 'single')
-        except SyntaxError, e:
-            yield False, (unicode(e.msg), e.lineno-1, e.offset-1)
+        if ast:
+            success, r = self.compile_ast(source)
+        else:
+            success, r = self.compile_no_ast(source)
+        if not success:
+            yield False, r
             return
-        yield True, None
+        else:
+            yield True, None
+        codeobs = r
             
-        for feature in _features:
-            if codeob.co_flags & feature.compiler_flag:
-                self.flags |= feature.compiler_flag
-
         self.last_res = None
         try:
-            exec codeob in self.locs
+            for codeob in codeobs:
+                exec codeob in self.locs
         except (Exception, KeyboardInterrupt), e:
             sys.stdout.flush()
             linecache.checkcache()
