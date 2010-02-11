@@ -3,8 +3,9 @@ Name DreamPie
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
 !define VERSION 0.9.2
+VIProductVersion 0.9.2.0
 !define COMPANY DreamPie
-!define URL https://launchpad.net/dreampie
+!define URL http://dreampie.sourceforge.net/
 
 # MUI Symbol Definitions
 !define MUI_ICON dreampie.ico
@@ -36,7 +37,6 @@ InstallDir $PROGRAMFILES\DreamPie
 CRCCheck on
 XPStyle on
 ShowInstDetails hide
-VIProductVersion 0.1.0.0
 VIAddVersionKey ProductName DreamPie
 VIAddVersionKey ProductVersion "${VERSION}"
 VIAddVersionKey CompanyName "${COMPANY}"
