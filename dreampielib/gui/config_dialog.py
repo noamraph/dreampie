@@ -171,7 +171,7 @@ class ConfigDialog(SimpleGladeApp):
         from .tags import (STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, MESSAGE,
                            FOLD_MESSAGE, RESULT_IND, RESULT,
                            KEYWORD, BUILTIN, STRING, NUMBER, COMMENT)
-        tv = self.textview; tb = self.textbuffer
+        tb = self.textbuffer
         tags.add_tags(tb)
         def w(s, *tags):
             tb.insert_with_tags_by_name(tb.get_end_iter(), s, *tags)
@@ -224,14 +224,14 @@ class ConfigDialog(SimpleGladeApp):
         tags.apply_theme_source(self.sourcebuffer, theme)
 
         el = self.elements_list
-        for i, (tag, desc) in enumerate(tags.tag_desc):
+        for i, (tag, _desc) in enumerate(tags.tag_desc):
             el[i][2] = tags.get_actual_color(theme, tag, FG)
             el[i][3] = tags.get_actual_color(theme, tag, BG)
         
         self.update_color_sel_widgets()
 
     def on_elements_trv_cursor_changed(self, widget):
-        (row,), col = self.elements_trv.get_cursor()
+        (row,), _col = self.elements_trv.get_cursor()
         self.cur_tag = tags.tag_desc[row][0]
         self.update_color_sel_widgets()
 
@@ -281,7 +281,7 @@ class ConfigDialog(SimpleGladeApp):
             tag_index = 0 # Default
         else:
             tag_name = it_tags[-1].props.name
-            for i, (tag, desc) in enumerate(tags.tag_desc):
+            for i, (tag, _desc) in enumerate(tags.tag_desc):
                 if tag == tag_name:
                     tag_index = i
                     break
@@ -321,14 +321,14 @@ class ConfigDialog(SimpleGladeApp):
         if self.is_initializing:
             return
         ttv = self.themes_trv; tl = self.themes_list
-        path, col = ttv.get_cursor()
+        path, _col = ttv.get_cursor()
         cur_name = tl[path][0]
         self.cur_theme = self.themes[cur_name]
         self.theme_changed()                
 
     def on_copy_theme_btn_clicked(self, widget):
         ttv = self.themes_trv; tl = self.themes_list
-        path, col = ttv.get_cursor()
+        path, _col = ttv.get_cursor()
         cur_name = tl[path][0]
         i = 2
         while True:
@@ -357,7 +357,7 @@ class ConfigDialog(SimpleGladeApp):
     def delete_theme(self):
         ttv = self.themes_trv; tl = self.themes_list
         assert len(tl) > 1
-        path, col = ttv.get_cursor()
+        path, _col = ttv.get_cursor()
         cur_name = tl[path][0]
         del self.themes[cur_name]
         del tl[path]
@@ -368,7 +368,7 @@ class ConfigDialog(SimpleGladeApp):
             self.del_theme_btn.props.sensitive = False
 
     def on_theme_renamed(self, widget, path, new_name):
-        ttv = self.themes_trv; tl = self.themes_list
+        tl = self.themes_list
         if new_name == tl[path][0]:
             # The name wasn't changed
             return

@@ -17,12 +17,7 @@
 
 __all__ = ['Autocomplete']
 
-import os
-from os import path
 import string
-from logging import debug
-
-from gtk import gdk
 
 from .hyper_parser import HyperParser
 from .autocomplete_window import AutocompleteWindow, find_prefix_range
@@ -30,9 +25,6 @@ from .beep import beep
 
 # This string includes all chars that may be in an identifier
 ID_CHARS = string.ascii_letters + string.digits + "_"
-
-from os.path import sep
-#sep = '\\'
 
 class Autocomplete(object):
     def __init__(self, sourceview, complete_attributes, complete_filenames,

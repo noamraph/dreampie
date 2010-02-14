@@ -153,7 +153,7 @@ def get_theme(config, theme_name):
     if not config.get_bool('is-active', section):
         raise ValueError("Theme %s is not active" % theme_name)
     theme = {}
-    for tag, desc in tag_desc:
+    for tag, _desc in tag_desc:
         theme[tag, FG, COLOR] = config.get('%s-fg' % tag, section)
         theme[tag, BG, COLOR] = config.get('%s-bg' % tag, section)
         if tag != DEFAULT:
@@ -169,10 +169,10 @@ def set_theme(config, theme_name, theme):
     if not config.has_section(section):
         config.add_section(section)
     config.set_bool('is-active', True, section)
-    for tag, desc in tag_desc:
+    for tag, _desc in tag_desc:
         config.set('%s-fg' % tag, theme[tag, FG, COLOR], section)
         config.set('%s-bg' % tag, theme[tag, BG, COLOR], section)
-    for tag, desc in tag_desc:
+    for tag, _desc in tag_desc:
         if tag != DEFAULT:
             config.set_bool('%s-fg-set' % tag, theme[tag, FG, ISSET], section)
             config.set_bool('%s-bg-set' % tag, theme[tag, BG, ISSET], section)
@@ -203,7 +203,7 @@ def add_tags(textbuffer):
     """
     Add the needed tags to a textbuffer
     """
-    for tag, desc in tag_desc:
+    for tag, _desc in tag_desc:
         if tag != DEFAULT:
             textbuffer.create_tag(tag)
     textbuffer.create_tag(OUTPUT)
@@ -219,7 +219,7 @@ def apply_theme_text(textview, textbuffer, theme):
     Apply the theme to the textbuffer. add_tags should have been called
     previously.
     """
-    for tag, desc in tag_desc:
+    for tag, _desc in tag_desc:
         if tag == DEFAULT:
             textview.modify_base(0, gdk.color_parse(theme[tag, BG, COLOR]))
             textview.modify_text(0, gdk.color_parse(theme[tag, FG, COLOR]))

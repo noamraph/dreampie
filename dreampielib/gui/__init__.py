@@ -539,7 +539,7 @@ class DreamPie(SimpleGladeApp):
                 msg = gtk.MessageDialog(self.window_main, gtk.DIALOG_MODAL,
                                         gtk.MESSAGE_WARNING, gtk.BUTTONS_CLOSE,
                                         warning)
-                response = msg.run()
+                _response = msg.run()
                 msg.destroy()
             else:
                 self.set_is_executing(True)
@@ -953,7 +953,7 @@ def main():
             _("DreamPie must be given the file name of a Python interpreter. "
               "Please create a shortcut to something like 'dreampie.exe "
               "c:\\python26\\python.exe'."))
-        response = msg.run()
+        _response = msg.run()
         msg.destroy()
         sys.exit(1)
     else:
@@ -965,5 +965,5 @@ def main():
         hide_console_window()
 
     gtk.widget_set_default_direction(gtk.TEXT_DIR_LTR)
-    dp = DreamPie(pyexec)
+    _dp = DreamPie(pyexec)
     gtk.main()

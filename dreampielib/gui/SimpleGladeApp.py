@@ -25,6 +25,7 @@ import re
 
 import tokenize
 import gtk
+_ = gtk; del _ # Make pydev quiet
 import gtk.glade
 import weakref
 import inspect
@@ -198,7 +199,7 @@ class SimpleGladeApp:
                         prefix_action(widget)
 
     def custom_handler(self,
-            glade, function_name, widget_name,
+            _glade, function_name, _widget_name,
             str1, str2, int1, int2):
         """
         Generic handler for creating custom widgets, internally used to
@@ -220,7 +221,7 @@ class SimpleGladeApp:
         except AttributeError:
             return None
 
-    def gtk_widget_show(self, widget, *args):
+    def gtk_widget_show(self, widget, *_args):
         """
         Predefined callback.
         The widget is showed.
@@ -228,7 +229,7 @@ class SimpleGladeApp:
         """
         widget.show()
 
-    def gtk_widget_hide(self, widget, *args):
+    def gtk_widget_hide(self, widget, *_args):
         """
         Predefined callback.
         The widget is hidden.
@@ -236,7 +237,7 @@ class SimpleGladeApp:
         """
         widget.hide()
 
-    def gtk_widget_grab_focus(self, widget, *args):
+    def gtk_widget_grab_focus(self, widget, *_args):
         """
         Predefined callback.
         The widget grabs the focus.
@@ -244,7 +245,7 @@ class SimpleGladeApp:
         """
         widget.grab_focus()
 
-    def gtk_widget_destroy(self, widget, *args):
+    def gtk_widget_destroy(self, widget, *_args):
         """
         Predefined callback.
         The widget is destroyed.
@@ -252,7 +253,7 @@ class SimpleGladeApp:
         """
         widget.destroy()
 
-    def gtk_window_activate_default(self, window, *args):
+    def gtk_window_activate_default(self, widget, *_args):
         """
         Predefined callback.
         The default widget of the window is activated.
@@ -260,7 +261,7 @@ class SimpleGladeApp:
         """
         widget.activate_default()
 
-    def gtk_true(self, *args):
+    def gtk_true(self, *_args):
         """
         Predefined callback.
         Equivalent to return True in a callback.
@@ -268,14 +269,14 @@ class SimpleGladeApp:
         """
         return True
 
-    def gtk_false(self, *args):
+    def gtk_false(self, *_args):
         """
         Predefined callback.
         Equivalent to return False in a callback.
         """
         return False
 
-    def gtk_main_quit(self, *args):
+    def gtk_main_quit(self, *_args):
         """
         Predefined callback.
         Equivalent to self.quit()
@@ -332,7 +333,7 @@ class SimpleGladeApp:
         gtk.glade.set_custom_handler(custom_handler)
 
     def create_glade(self, glade_path, root, domain):
-        return gtk.glade.XML(self.glade_path, root, domain)
+        return gtk.glade.XML(glade_path, root, domain)
 
     def get_widget(self, widget_name):
         return self.glade.get_widget(widget_name)

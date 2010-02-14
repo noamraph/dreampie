@@ -55,7 +55,7 @@ def parse_keypress_event(event):
     if r is None:
         # This seems to be the case when pressing CapsLock on win32
         return (None, None)
-    keyval, group, level, consumed_mods = r
+    keyval, _group, _level, consumed_mods = r
     state = event.state & ~consumed_mods & handled_mods
     keyval_name = gdk.keyval_name(keyval)
     if keyval_name == 'KP_Enter':

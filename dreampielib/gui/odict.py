@@ -511,12 +511,9 @@ class OrderedDict(dict):
         """
         return self._sequence[:]
 
-    def values(self, values=None):
+    def values(self):
         """
         Return a list of all the values in the OrderedDict.
-        
-        Optionally you can pass in a list of values, which will replace the
-        current list. The value list must be the same len as the OrderedDict.
         
         >>> d = OrderedDict(((1, 3), (3, 2), (2, 1)))
         >>> d.values()
@@ -1106,7 +1103,7 @@ class Values(object):
             keys = self._main._sequence[index]
             if len(keys) != len(value):
                 raise ValueError('attempt to assign sequence of size %s '
-                    'to slice of size %s' % (len(name), len(keys)))
+                    'to slice of size %s' % (len(value), len(keys)))
             # FIXME: efficiency?  Would be better to calculate the indexes
             #   directly from the slice object
             # NOTE: the new keys can collide with existing keys (or even

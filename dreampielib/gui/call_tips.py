@@ -17,8 +17,6 @@
 
 __all__ = ['CallTips']
 
-from logging import debug
-
 import gtk
 from gtk import gdk
 

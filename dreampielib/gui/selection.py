@@ -42,12 +42,12 @@ class Selection(object):
         self.sourcebuffer.connect('mark-set', self.on_mark_set)
         self.clipboard = gtk.Clipboard()
 
-    def on_selection_changed(self, clipboard, event):
+    def on_selection_changed(self, _clipboard, _event):
         is_something_selected = (self.textbuffer.get_has_selection()
                                  or self.sourcebuffer.get_has_selection())
         self.on_is_something_selected_changed(is_something_selected)
 
-    def on_mark_set(self, widget, it, mark):
+    def on_mark_set(self, _widget, _it, _mark):
         is_something_selected = (self.textbuffer.get_has_selection()
                                  or self.sourcebuffer.get_has_selection())
         if self.is_something_selected is None \

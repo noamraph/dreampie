@@ -176,7 +176,7 @@ class Parser(object):
         # but don't try too often; pos will be left None, or
         # bumped to a legitimate synch point.
         limit = len(str)
-        for tries in range(5):
+        for _tries in range(5):
             i = str.rfind(":\n", 0, limit)
             if i < 0:
                 break
@@ -389,7 +389,7 @@ class Parser(object):
             # p is the index of the stmt at line number goodlines[i].
             # Move p back to the stmt at line number goodlines[i-1].
             q = p
-            for nothing in range(goodlines[i-1], goodlines[i]):
+            for _nothing in range(goodlines[i-1], goodlines[i]):
                 # tricky: sets p to 0 if no preceding newline
                 p = str.rfind('\n', 0, p-1) + 1
             # The stmt str[p:q] isn't a continuation, but may be blank

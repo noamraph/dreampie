@@ -43,11 +43,15 @@ def load_pygtk(data_dir):
         pygtk.require('2.0')
         import gobject
         import gtk
+        _ = gtk
         import gtk.glade
         import pango
         import gtksourceview2
+        # Make pydev quiet
+        _ = gobject, gtk, gtk.glade, pango, gtksourceview2
         try:
             import glib
+            _ = glib
         except ImportError:
             # glib is only from 2.14, I think.
             pass

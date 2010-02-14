@@ -128,7 +128,7 @@ body {
     
     tt = tb.get_tag_table()
     all_tags = []
-    tt.foreach(lambda tag, data: all_tags.append(tag))
+    tt.foreach(lambda tag, _data: all_tags.append(tag))
     all_tags.sort(key=lambda tag: -tag.get_priority())
     
     for tag in all_tags:
@@ -161,7 +161,7 @@ body {
         while (len(cur_tags) > shared_prefix and len(new_tags) > shared_prefix
                and cur_tags[shared_prefix] is new_tags[shared_prefix]):
             shared_prefix += 1
-        for i in range(len(cur_tags) - shared_prefix):
+        for _i in range(len(cur_tags) - shared_prefix):
             f.write('</span>')
         for tag in new_tags[shared_prefix:]:
             f.write('<span class="%s">' % tag.props.name)

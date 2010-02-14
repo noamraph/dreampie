@@ -67,7 +67,7 @@ class StatusBar(object):
             source_remove(self.timeout_handle)
             self.timeout_handle = None
     
-    def on_sourcebuffer_changed(self, widget):
+    def on_sourcebuffer_changed(self, _widget):
         self.clear_status()
         return False
     

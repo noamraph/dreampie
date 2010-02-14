@@ -80,6 +80,10 @@ class Output(object):
             return
         
         if self.added_newline:
+            if onnewline:
+                # If we added a newline, it means that the section didn't end
+                # with a newline, so we need to add one.
+                data = '\n' + data
             it = tb.get_iter_at_mark(self.mark)
             it2 = it.copy()
             it2.backward_char()
@@ -106,7 +110,7 @@ class Output(object):
             output_start = it.copy()
             output_start.backward_to_tag_toggle(OUTPUT)
             assert output_start.begins_tag(OUTPUT)
-            before_newline, after_newline = it.backward_search(
+            _before_newline, after_newline = it.backward_search(
                 '\n', 0, output_start)
             tb.delete(after_newline, it)
 

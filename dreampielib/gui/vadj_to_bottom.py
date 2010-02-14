@@ -63,14 +63,14 @@ class VAdjToBottom(object):
             # Avoid future calls
             return False
 
-    def on_changed(self, widget):
+    def on_changed(self, _widget):
         if (not self.is_scroll_scheduled
             and self.user_wants_bottom
             and not self.is_at_bottom()):
             idle_add(self.scroll_to_bottom)
             self.is_scroll_scheduled = True
 
-    def on_value_changed(self, widget):
+    def on_value_changed(self, _widget):
         is_at_bottom = self.is_at_bottom()
         if is_at_bottom:
             self.user_wants_bottom = True

@@ -32,7 +32,7 @@ class History(object):
         self.changed_handler_id = self.sourcebuffer.connect(
             'changed', self._on_sourcebuffer_changed)
 
-    def _on_sourcebuffer_changed(self, widget):
+    def _on_sourcebuffer_changed(self, _widget):
         self.sb_changed = True
         self.sourcebuffer.disconnect(self.changed_handler_id)
         self.changed_handler_id = None

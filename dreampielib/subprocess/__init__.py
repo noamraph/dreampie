@@ -250,7 +250,7 @@ class Subprocess(object):
         try:
             for codeob in codeobs:
                 exec codeob in self.locs
-        except (Exception, KeyboardInterrupt), e:
+        except (Exception, KeyboardInterrupt):
             sys.stdout.flush()
             linecache.checkcache()
             efile = StringIO()
@@ -407,7 +407,7 @@ class Subprocess(object):
                 else:
                     all_set = None
                 public, private = self.split_list(ids, all_set)
-            except Exception, e:
+            except Exception:
                 public = private = []
 
         return public, private
@@ -505,7 +505,7 @@ class Subprocess(object):
         # Beni Cherniavsky.
         try:
             entity = eval(expr, self.locs)
-        except Exception, e:
+        except Exception:
             return None
         arg_text = u""
         arg_offset = 0
@@ -646,4 +646,4 @@ class TkHandler(GuiHandler):
         return True
 
 def main(port):
-    subp = Subprocess(port)
+    _subp = Subprocess(port)

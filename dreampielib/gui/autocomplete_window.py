@@ -17,12 +17,9 @@
 
 __all__ = ['AutocompleteWindow', 'find_prefix_range']
 
-from logging import debug
-
 import gobject
 import gtk
 from gtk import gdk
-import pango
 
 from .keyhandler import make_keyhandler_decorator, handle_keypress
 from .beep import beep

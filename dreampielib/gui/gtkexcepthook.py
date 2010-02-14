@@ -7,7 +7,7 @@
 # Message-ID: <1062087716.1196.5.camel@emperor.homelinux.net>
 #     "The license is whatever you want."
 
-import inspect, linecache, sys, traceback
+import inspect, linecache, sys
 from repr import repr as safe_repr
 from cStringIO import StringIO
 from gettext import gettext as _
@@ -47,7 +47,7 @@ def analyse (exctyp, value, tb):
     nlines = 3
     frecs = inspect.getinnerframes (tb, nlines)
     trace.write ('Traceback (most recent call last):\n')
-    for frame, fname, lineno, funcname, context, cindex in frecs:
+    for frame, fname, lineno, funcname, context, _cindex in frecs:
         trace.write ('  File "%s", line %d, ' % (fname, lineno))
         args, varargs, varkw, lcls = inspect.getargvalues (frame)
 
@@ -56,7 +56,7 @@ def analyse (exctyp, value, tb):
             try: return linecache.getline (fname, lno[0])
             finally: lno[0] += 1
         all, prev, name, scope = {}, None, '', None
-        for ttype, tstr, stup, etup, line in tokenize.generate_tokens (readline):
+        for ttype, tstr, _stup, _etup, _line in tokenize.generate_tokens (readline):
             if ttype == tokenize.NAME and tstr not in keyword.kwlist:
                 if name:
                     if name[-1] == '.':
@@ -199,6 +199,6 @@ if __name__ == '__main__':
     w = ' e'
     #feedback = 'developer@bigcorp.comp'
     #smtphost = 'mx.bigcorp.comp'
-    1, x.z.y, f, w
+    1, x.z.y, w
     raise Exception (x.z.y + w)
 

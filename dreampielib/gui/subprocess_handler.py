@@ -96,7 +96,7 @@ class SubprocessHandler(object):
                        env=env)
         #debug("Waiting for the subprocess to connect")
         s.listen(1)
-        self._sock, addr = s.accept()
+        self._sock, _addr = s.accept()
         #debug("Connected to addr %r." % (addr,))
         s.close()
         self._popen = popen

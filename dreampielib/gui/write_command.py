@@ -100,7 +100,7 @@ def get_defs_lines(lines):
     is True, because it's a part of a function or class definitions.
     """
     # return value
-    defs_lines = [False for line in lines]
+    defs_lines = [False for _line in lines]
     # Last line with a 'def' or 'class' NAME
     last_def_line = -2
     # Indentation depth - when reaches 0, we are back in a non-filtered area.
@@ -109,7 +109,7 @@ def get_defs_lines(lines):
     first_filtered_line = None
     
     tok_iter = tokenize.generate_tokens(iter(lines).next)
-    for typ, token, (sline, scol), (eline, ecol), line in tok_iter:
+    for typ, token, (sline, _scol), (_eline, _ecol), _line in tok_iter:
         if cur_depth > 0:
             if typ == tokenize.INDENT:
                 cur_depth += 1
