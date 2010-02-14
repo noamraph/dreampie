@@ -47,7 +47,8 @@ class Folding(object):
         Get an iterator of the sourcebuffer. Return a tuple:
         (typ, is_folded, start_it)
         typ: one of tags.OUTPUT, tags.COMMAND
-        is_folded: boolean (is folded)
+        is_folded: boolean (is folded), or None if not folded but too short
+                   to fold (1 line or less).
         start_it: An iterator pointing to the beginning of the section.
         
         If it isn't in an OUTPUT or COMMAND section, return None.
@@ -81,8 +82,13 @@ class Folding(object):
                 return None
             if not it.ends_tag(tag):
                 it.forward_to_tag_toggle(tag)
-            is_folded = it.has_tag(self.fold_message_tag)
+            end_it = it.copy()
+            is_folded = end_it.has_tag(self.fold_message_tag)
             it.backward_to_tag_toggle(tag)
+            if not is_folded:
+                n_lines = self._count_lines(it, end_it)
+                if n_lines <= 1:
+                    is_folded = None
             return (typ, is_folded, it)
     
     def _count_lines(self, start_it, end_it):
@@ -93,7 +99,6 @@ class Folding(object):
         """
         Get an iterator pointing to the beginning of an unfolded OUTPUT/COMMAND
         section. Fold it.
-        Return True if folded (will not fold if only 1 line)
         """
         tb = self.textbuffer
         
@@ -101,10 +106,6 @@ class Folding(object):
         end_it = start_it.copy()
         end_it.forward_to_tag_toggle(self.tags[typ])
         n_lines = self._count_lines(start_it, end_it)
-        
-        if n_lines == 1:
-            # No point in hiding nothing
-            return False
         
         # Move 'it' to the end of the first line (this is where we start hiding)
         it = start_it.copy()
@@ -122,8 +123,6 @@ class Folding(object):
             end_it,
             _("[About %d more lines. Double-click to unfold]\n") % (n_lines-1),
             FOLD_MESSAGE)
-        
-        return True
     
     def unfold(self, typ, start_it):
         """
@@ -197,10 +196,8 @@ class Folding(object):
             if not it.begins_tag(self.output_tag):
                 continue
             typ, is_folded, start_it = self.get_section_status(it)
-            if not is_folded:
-                r = self.fold(typ, start_it)
-                if r:
-                    return
+            if is_folded is not None and not is_folded:
+                self.fold(typ, start_it)
 
     def unfold_last(self):
         """

@@ -714,7 +714,10 @@ class DreamPie(SimpleGladeApp):
         
         if widget is self.fold_unfold_section_menu:
             # Fold/Unfold
-            if not is_folded:
+            if is_folded is None:
+                # No point in folding.
+                beep()
+            elif not is_folded:
                 self.folding.fold(typ, start_it)
             else:
                 self.folding.unfold(typ, start_it)
@@ -912,6 +915,8 @@ class DreamPie(SimpleGladeApp):
                     typ_s = _('Output Section')
                 else:
                     typ_s = _('Code Section')
+                self.fold_unfold_section_menu.props.visible = (
+                    is_folded is not None)
                 self.fold_unfold_section_menu.child.props.label = (
                     _('Unfold %s') if is_folded else _('Fold %s')) % typ_s
                 self.copy_section_menu.child.props.label = _('Copy %s') % typ_s
