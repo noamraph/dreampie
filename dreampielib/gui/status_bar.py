@@ -20,7 +20,7 @@ __all__ = ['StatusBar']
 try:
     from glib import timeout_add_seconds, source_remove
 except ImportError:
-    timetout_add_seconds = None
+    timeout_add_seconds = None
     # In PyGObject 2.14, it's in gobject.
     from gobject import timeout_add, source_remove
 

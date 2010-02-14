@@ -131,9 +131,11 @@ def create_shortcut(ws, dp_folder, ver_name, pyexec):
     shortcut_fn = join(dp_folder, shortcut_name)
     shortcut = ws.CreateShortcut(shortcut_fn).QueryInterface(IWshRuntimeLibrary.IWshShortcut)
     shortcut.TargetPath = abspath(join(dirname(sys.executable), "dreampie.exe"))
+    args = ['--hide-console-window']
     if pyexec: 
-        shortcut.Arguments = pyexec
+        args.append(pyexec)
         shortcut.WorkingDirectory = dirname(pyexec)
+    shortcut.Arguments = ' '.join(args)
     shortcut.Save()
 
 def create_shortcuts(dp_folder):

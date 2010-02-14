@@ -723,6 +723,8 @@ class DreamPie(SimpleGladeApp):
                 self.folding.unfold(typ, start_it)
         else:
             text = self.folding.get_text(typ, start_it)
+            if sys.platform == 'win32':
+                text = text.replace('\n', '\r\n')
             if widget is self.copy_section_menu:
                 # Copy
                 self.selection.clipboard.set_text(text)
@@ -734,6 +736,7 @@ class DreamPie(SimpleGladeApp):
                 viewer = eval(self.config.get('viewer'))
                 self.spawn_and_forget('%s %s' % (viewer, fn))
             elif widget is self.save_section_menu:
+                # Save
                 def func(filename):
                     f = open(filename, 'wb')
                     f.write(text)
@@ -936,9 +939,9 @@ def main():
     version = 'DreamPie %s' % __version__
     parser = OptionParser(usage=usage, version=version)
     if sys.platform == 'win32':
-        parser.add_option("--dont-hide-console-window", action="store_true",
-                          dest="dont_hide_console",
-                          help="Don't hide the console window")
+        parser.add_option("--hide-console-window", action="store_true",
+                          dest="hide_console",
+                          help="Hide the console window")
 
     opts, args = parser.parse_args()
     
@@ -960,7 +963,7 @@ def main():
         pyexec = sys.executable
         
     
-    if sys.platform == 'win32' and not opts.dont_hide_console:
+    if sys.platform == 'win32' and opts.hide_console:
         from .hide_console_window import hide_console_window
         hide_console_window()
 

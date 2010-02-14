@@ -186,18 +186,19 @@ class Folding(object):
         """
         tb = self.textbuffer
         it = tb.get_end_iter()
-        
+
         while True:
             r = it.backward_to_tag_toggle(self.output_tag)
             if not r:
                 # Didn't find something to fold
                 beep()
-                return
-            if not it.begins_tag(self.output_tag):
-                continue
-            typ, is_folded, start_it = self.get_section_status(it)
-            if is_folded is not None and not is_folded:
-                self.fold(typ, start_it)
+                break
+            if it.begins_tag(self.output_tag):
+                typ, is_folded, start_it = self.get_section_status(it)
+                if is_folded is not None and not is_folded:
+                    self.fold(typ, start_it)
+                    break
+                
 
     def unfold_last(self):
         """
