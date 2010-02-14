@@ -24,20 +24,21 @@
 # and runs dreampielib.subprocess.main(port).
 
 import sys
+if sys.platform == 'cli':
+    # IronPython doesn't have built-in zipimport.
+    import py_zipimport
 from os.path import abspath, join, dirname
-from types import ModuleType
 
 def main():
     port = int(sys.argv[1])
 
     py_ver = sys.version_info[0]
-    dp_dir = abspath(join(dirname(__file__), 'subp-py%d.zip' % py_ver))
-
-    dreampielib = ModuleType('dreampielib')
-    dreampielib.__path__ = [dp_dir]
-    sys.modules['dreampielib'] = dreampielib
-
+    zip_name = abspath(join(dirname(__file__), 'subp-py%d.zip' % py_ver))
+    
+    sys.path.insert(0, zip_name)
     from dreampielib.subprocess import main as subprocess_main
+    del sys.path[0]
+    
     subprocess_main(port)
 
 if __name__ == '__main__':

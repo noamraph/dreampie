@@ -64,7 +64,8 @@ simple_logger = SimpleLogger()
 def build(src_dir, build_dir, log=simple_logger, force=False):
     join = os.path.join
     
-    files = ['subprocess/__init__.py',
+    files = ['__init__.py',
+             'subprocess/__init__.py',
              'subprocess/split_to_singles.py',
              'common/__init__.py',
              'common/objectstream.py',
@@ -90,13 +91,13 @@ def build(src_dir, build_dir, log=simple_logger, force=False):
                 src = f.read()
                 f.close()
                 dst = str(rt.refactor_string(src+'\n', fn))[:-1]
-                zf.writestr(fn, dst)
+                zf.writestr(join('dreampielib', fn), dst)
         else:
             for fn in files:
                 log.info("Archiving %s..." % fn)
                 f = open(join(src_dir, fn), 'rb')
                 src = f.read()
                 f.close()
-                zf.writestr(fn, src)
+                zf.writestr(join('dreampielib', fn), src)
         zf.close()
         log.info("Finished building %s." % zip_fn)

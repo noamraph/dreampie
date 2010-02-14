@@ -272,13 +272,12 @@ class Subprocess(object):
             typ, val, tb = excinfo = sys.exc_info()
             sys.last_type, sys.last_value, sys.last_traceback = excinfo
             tbe = traceback.extract_tb(tb)
-            my_filename = sys._getframe().f_code.co_filename
-            if tbe[-1][0] != my_filename:
+            if tbe[-1][0] != __file__:
                 # If the last entry is from this file, don't remove
                 # anything. Otherwise, remove lines before the current
                 # frame.
                 for i in xrange(len(tbe)-2, -1, -1):
-                    if tbe[i][0] == my_filename:
+                    if tbe[i][0] == __file__:
                         tbe = tbe[i+1:]
                         break
             print>>efile, 'Traceback (most recent call last):'
@@ -497,8 +496,15 @@ class Subprocess(object):
     
     @rpc_func
     def get_welcome(self):
-        name = 'Python' if not sys.platform.startswith('java') else 'Jython'
-        return (u'%s %s on %s\n' % (name, sys.version, sys.platform)
+        if 'IronPython' in sys.version:
+            first_line = sys.version[sys.version.find('(')+1:sys.version.rfind(')')]
+        else:
+            if sys.platform.startswith('java'):
+                name = 'Jython'
+            else:
+                name = 'Python'
+            first_line = u'%s %s on %s' % (name, sys.version, sys.platform)
+        return (first_line+'\n'
                 +u'Type "copyright", "credits" or "license()" for more information.\n')
 
     @classmethod
