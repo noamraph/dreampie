@@ -1,0 +1,8 @@
+This directory includes some stuff which helped in DreamPie development.
+
+It is here because it might be useful, but isn't needed to run DreamPie.
+
+subdebug.py may be used to launch a subprocess and communicate with it
+without a DreamPie gui.
+
+
