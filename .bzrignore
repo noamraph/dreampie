@@ -8,3 +8,7 @@ debian/*
 .pydevproject
 dist
 MANIFEST
+dreampie-*-setup.exe
+gtk-runtime
+pygtk-2.5
+pygtk-2.6
