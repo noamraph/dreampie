@@ -221,16 +221,16 @@ class DreamPie(SimpleGladeApp):
         self.view_section_menu = xml.get_widget('view_section_menu')
         self.save_section_menu = xml.get_widget('save_section_menu')
 
-    def on_cut(self, widget):
+    def on_cut(self, _widget):
         return self.selection.cut()
 
-    def on_copy(self, widget):
+    def on_copy(self, _widget):
         return self.selection.copy()
 
-    def on_copy_commands_only(self, widget):
+    def on_copy_commands_only(self, _widget):
         return self.selection.copy_commands_only()
 
-    def on_paste(self, widget):
+    def on_paste(self, _widget):
         return self.selection.paste()
 
     def on_is_something_selected_changed(self, is_something_selected):
@@ -281,13 +281,13 @@ class DreamPie(SimpleGladeApp):
     def sv_scroll_cursor_onscreen(self):
         self.sourceview.scroll_mark_onscreen(self.sourcebuffer.get_insert())
 
-    def on_textview_focus_in(self, widget, event):
+    def on_textview_focus_in(self, _widget, _event):
         # Clear the selection of the sourcebuffer
         self.sourcebuffer.move_mark(self.sourcebuffer.get_selection_bound(),
                                     self.sourcebuffer.get_iter_at_mark(
                                         self.sourcebuffer.get_insert()))
 
-    def on_sourceview_focus_in(self, widget, event):
+    def on_sourceview_focus_in(self, _widget, _event):
         # Clear the selection of the textbuffer
         self.textbuffer.move_mark(self.textbuffer.get_selection_bound(),
                                   self.textbuffer.get_iter_at_mark(
@@ -365,7 +365,7 @@ class DreamPie(SimpleGladeApp):
 
         # If we are on the first line, and it doesn't end with a ' ':
         #   * If we are not executing, try to execute (if failed, continue
-        #     with normal behaviour)
+        #     with normal behavior)
         #   * If we are executing, send the line as stdin.
         insert_iter = sb.get_iter_at_mark(sb.get_insert())
         if (insert_iter.equal(sb.get_end_iter())
@@ -485,20 +485,20 @@ class DreamPie(SimpleGladeApp):
     def on_sourceview_parenleft(self):
         idle_add(self.call_tips.show, True)
 
-    def on_sourceview_keypress(self, widget, event):
+    def on_sourceview_keypress(self, _widget, event):
         return handle_keypress(self, event, sourceview_keyhandlers)
 
     # History
 
-    def on_textview_keypress(self, widget, event):
+    def on_textview_keypress(self, _widget, event):
         keyval_name, state = parse_keypress_event(event)
         if (keyval_name, state) == ('Return', 0):
             return self.history.copy_to_sourceview()
 
-    def on_history_up(self, widget):
+    def on_history_up(self, _widget):
         self.history.history_up()
 
-    def on_history_down(self, widget):
+    def on_history_down(self, _widget):
         self.history.history_down()
 
     # Subprocess
@@ -559,7 +559,7 @@ class DreamPie(SimpleGladeApp):
         self.configure_subp()
         self.run_init_code()
 
-    def on_restart_subprocess(self, widget):
+    def on_restart_subprocess(self, _widget):
         self.subp.kill()
 
     def on_stdout_recv(self, data):
@@ -627,7 +627,7 @@ class DreamPie(SimpleGladeApp):
                 it2.backward_to_tag_toggle(stdin)
                 assert it2.ends_tag(stdin)
 
-    def on_execute_command(self, widget):
+    def on_execute_command(self, _widget):
         if self.is_executing:
             self.send_stdin()
         elif self.sourcebuffer.get_char_count() == 0:
@@ -636,7 +636,7 @@ class DreamPie(SimpleGladeApp):
             self.execute_source()
         return True
 
-    def on_interrupt(self, widget):
+    def on_interrupt(self, _widget):
         if self.is_executing:
             self.subp.interrupt()
         else:
@@ -646,13 +646,13 @@ class DreamPie(SimpleGladeApp):
 
     # History persistence
     
-    def on_save_history(self, widget):
+    def on_save_history(self, _widget):
         self.histpersist.save()
     
-    def on_save_history_as(self, widget):
+    def on_save_history_as(self, _widget):
         self.histpersist.save_as()
     
-    def on_load_history(self, widget):
+    def on_load_history(self, _widget):
         self.histpersist.load()
     
     # Discard history
@@ -671,7 +671,7 @@ class DreamPie(SimpleGladeApp):
             it.backward_to_tag_toggle(tag)
         tb.delete(tb.get_start_iter(), it)
 
-    def on_discard_history(self, widget):
+    def on_discard_history(self, _widget):
         xml = glade.XML(gladefile, 'discard_hist_dialog')
         d = xml.get_widget('discard_hist_dialog')
         d.set_transient_for(self.window_main)
@@ -779,15 +779,15 @@ class DreamPie(SimpleGladeApp):
                 self.folding.unfold(typ, start_it)
                 return True
     
-    def on_fold_last(self, widget):
+    def on_fold_last(self, _widget):
         self.folding.fold_last()
     
-    def on_unfold_last(self, widget):
+    def on_unfold_last(self, _widget):
         self.folding.unfold_last()
 
     # Other events
 
-    def on_show_completions(self, widget):
+    def on_show_completions(self, _widget):
         self.autocomplete.show_completions(is_auto=False, complete=False)
 
     def complete_attributes(self, expr):
@@ -800,7 +800,7 @@ class DreamPie(SimpleGladeApp):
             return None
         return self.call_subp(u'complete_filenames', str_prefix, text, str_char)
 
-    def on_show_calltip(self, widget):
+    def on_show_calltip(self, _widget):
         self.call_tips.show(is_auto=False)
 
     def get_arg_text(self, expr):
@@ -831,7 +831,7 @@ class DreamPie(SimpleGladeApp):
         command_defs = self.textbuffer.get_tag_table().lookup(COMMAND_DEFS)
         command_defs.props.invisible = config.get_bool('hide-defs')
 
-    def on_preferences(self, widget):
+    def on_preferences(self, _widget):
         cd = ConfigDialog(self.config, gladefile, self.window_main)
         r = cd.run()
         if r == gtk.RESPONSE_OK:
@@ -839,15 +839,15 @@ class DreamPie(SimpleGladeApp):
             self.configure_subp()
         cd.destroy()
 
-    def on_clear_reshist(self, widget):
+    def on_clear_reshist(self, _widget):
         self.call_subp(u'clear_reshist')
         self.status_bar.set_status(_("Result history cleared."))
 
-    def on_close(self, widget, event):
+    def on_close(self, _widget, _event):
         self.quit()
         return True
 
-    def on_quit(self, widget):
+    def on_quit(self, _widget):
         self.quit()
 
     def quit(self):
@@ -862,7 +862,7 @@ class DreamPie(SimpleGladeApp):
             self.subp.kill()
             gtk.main_quit()
 
-    def on_about(self, widget):
+    def on_about(self, _widget):
         d = get_widget('about_dialog')
         d.set_transient_for(self.window_main)
         d.set_version(__version__)
@@ -871,13 +871,13 @@ class DreamPie(SimpleGladeApp):
         d.run()
         d.destroy()
     
-    def on_report_bug(self, widget):
+    def on_report_bug(self, _widget):
         webbrowser.open('https://bugs.launchpad.net/dreampie/+filebug')
     
-    def on_homepage(self, widget):
+    def on_homepage(self, _widget):
         webbrowser.open('http://dreampie.sourceforge.net/')
     
-    def on_getting_started(self, widget):
+    def on_getting_started(self, _widget):
         self.show_getting_started_dialog()
     
     def show_getting_started_dialog(self):
@@ -886,7 +886,7 @@ class DreamPie(SimpleGladeApp):
         d.run()
         d.destroy()
     
-    def on_textview_button_press_event(self, widget, event):
+    def on_textview_button_press_event(self, _widget, event):
         if event.button == 3:
             self.show_popup_menu(event)
             return True
