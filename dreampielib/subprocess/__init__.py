@@ -30,6 +30,7 @@ import __builtin__
 import inspect
 from repr import repr as safe_repr
 import pprint
+import codeop
 try:
     # Executing multiple statements in 'single' mode (print results) is done
     # with the ast module. Python 2.5 doesn't have it, so we use the compiler
@@ -143,6 +144,20 @@ class Subprocess(object):
         finally:
             sock.setblocking(True)
 
+    @rpc_func
+    def is_incomplete(self, source):
+        """
+        Get a string of code. Return True if it's incomplete and False
+        otherwise (if it's complete or if there's a syntax error.)
+        This is used to run single-line statements without need for
+        ctrl+enter.
+        """
+        try:
+            r = codeop.compile_command(source)
+        except (SyntaxError, OverflowError, ValueError):
+            return False
+        return (r is None)
+    
     @staticmethod
     def update_features(cur_flags, co_flags):
         """

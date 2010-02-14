@@ -311,32 +311,29 @@ class DreamPie(SimpleGladeApp):
         self.menuitem_execute.child.props.label = label
         self.menuitem_discard_hist.props.sensitive = not is_executing
 
-    def execute_source(self, warn):
+    def execute_source(self):
         """Execute the source in the source buffer.
-        Return True if successful (No syntax error).
-        If warn is True, show the syntax error in the status bar.
         """
         sb = self.sourcebuffer
         source = self.sb_get_text(sb.get_start_iter(), sb.get_end_iter())
         source = source.rstrip()
         is_ok, syntax_error_info = self.call_subp(u'execute', source)
         if not is_ok:
-            if warn:
-                if syntax_error_info:
-                    msg, lineno, offset = syntax_error_info
-                    status_msg = _("Syntax error: %s (at line %d col %d)") % (
-                        msg, lineno+1, offset+1)
-                    # Work around a bug: offset may be wrong, which will cause
-                    # gtk to crash if using sb.get_iter_at_line_offset.
-                    iter = sb.get_iter_at_line(lineno)
-                    iter.forward_chars(offset)
-                    sb.place_cursor(iter)
-                else:
-                    # Incomplete
-                    status_msg = _("Command is incomplete")
-                    sb.place_cursor(sb.get_end_iter())
-                self.status_bar.set_status(status_msg)
-                beep()
+            if syntax_error_info:
+                msg, lineno, offset = syntax_error_info
+                status_msg = _("Syntax error: %s (at line %d col %d)") % (
+                    msg, lineno+1, offset+1)
+                # Work around a bug: offset may be wrong, which will cause
+                # gtk to crash if using sb.get_iter_at_line_offset.
+                iter = sb.get_iter_at_line(lineno)
+                iter.forward_chars(offset+1)
+                sb.place_cursor(iter)
+            else:
+                # Incomplete
+                status_msg = _("Command is incomplete")
+                sb.place_cursor(sb.get_end_iter())
+            self.status_bar.set_status(status_msg)
+            beep()
         else:
             write_command(self.write, source.strip())
             self.output.start_new_section()
@@ -344,7 +341,6 @@ class DreamPie(SimpleGladeApp):
                 sb.delete(sb.get_start_iter(), sb.get_end_iter())
             self.vadj_to_bottom.scroll_to_bottom()
             self.set_is_executing(True)
-        return is_ok
 
     def send_stdin(self):
         """Send the contents of the sourcebuffer as stdin."""
@@ -379,8 +375,12 @@ class DreamPie(SimpleGladeApp):
                                      insert_iter).endswith(' ')):
 
             if not self.is_executing:
-                is_ok = self.execute_source(warn=False)
-                if is_ok:
+                source = self.sb_get_text(sb.get_start_iter(),
+                                          sb.get_end_iter())
+                source = source.rstrip()
+                is_incomplete = self.call_subp(u'is_incomplete', source)
+                if not is_incomplete:
+                    self.execute_source()
                     return True
             else:
                 # is_executing
@@ -633,7 +633,7 @@ class DreamPie(SimpleGladeApp):
         elif self.sourcebuffer.get_char_count() == 0:
             beep()
         else:
-            self.execute_source(True)
+            self.execute_source()
         return True
 
     def on_interrupt(self, widget):
