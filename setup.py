@@ -143,6 +143,7 @@ setup_args = dict(
                 ('share/pixmaps', ['share/pixmaps/dreampie.svg',
                                    'share/pixmaps/dreampie.png']),
                 ('share/dreampie', ['share/dreampie/subp_main.py',
+                                    'share/dreampie/py_zipimport.py',
                                     'share/dreampie/dreampie.glade']
                                     +additional_py2exe_data_files),
                ],

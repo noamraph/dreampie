@@ -954,8 +954,9 @@ def main():
         msg = gtk.MessageDialog(
             None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_CLOSE,
             _("DreamPie must be given the file name of a Python interpreter. "
-              "Please create a shortcut to something like 'dreampie.exe "
-              "c:\\python26\\python.exe'."))
+              "Please create a shortcut to something like '%s "
+              "--hide-console-window c:\\python26\\python.exe'.")
+            % os.path.abspath(sys.argv[0]))
         _response = msg.run()
         msg.destroy()
         sys.exit(1)

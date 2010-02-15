@@ -2,10 +2,13 @@ Name DreamPie
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 0.9.2
-VIProductVersion 0.9.2.0
+!define VERSION 0.9.3
+VIProductVersion 0.9.3.0
 !define COMPANY DreamPie
 !define URL http://dreampie.sourceforge.net/
+
+SetCompressor /FINAL /SOLID lzma
+SetCompressorDictSize 64
 
 # MUI Symbol Definitions
 !define MUI_ICON dreampie.ico
