@@ -57,8 +57,12 @@ def split_to_singles(source):
     cur_indent_level = 0
     last_was_newline = False
     
-    # We split after NEWLINE on level 0 which isn't followed by an INDENT,
-    # and after a NEWLINE on level 1 which is followed by a DEDENT.
+    # What this does is pretty simple: We split on every NEWLINE token which
+    # is on indentation level 0 and is not followed by "except" or "finally"
+    # (in that case it should be kept with the previous "single").
+    # Since we get the tokens one by one, and INDENT and DEDENT tokens come
+    # *after* the NEWLINE token, we need a bit of care, so we wait for tokens
+    # after the NEWLINE token to decide what to do.
     
     tokens_iter = tokenize.generate_tokens(readline)
     try:
