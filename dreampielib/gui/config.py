@@ -17,6 +17,7 @@
 
 __all__ = ['Config']
 
+import sys
 import os
 from ConfigParser import SafeConfigParser
 from StringIO import StringIO
@@ -186,6 +187,20 @@ bracket-match-bg-set = True
 
 """
 
+def get_config_fn():
+    if sys.platform != 'win32':
+        return os.path.expanduser('~/.dreampie')
+    else:
+        # On win32, expanduser doesn't work when the path includes unicode
+        # chars.
+        import ctypes
+        MAX_PATH = 255
+        nFolder = 26 # CSIDL_APPDATA
+        flags = 0
+        buf = ctypes.create_unicode_buffer(MAX_PATH)
+        ctypes.windll.shell32.SHGetFolderPathW(None, nFolder, None, flags, buf)
+        return os.path.join(buf.value, 'DreamPie')
+
 class Config(object):
     """
     Manage configuration - a simple wrapper around SafeConfigParser.
@@ -193,7 +208,7 @@ class Config(object):
     config.save() will save the current state.
     """
     def __init__(self):
-        self.filename = os.path.join(os.path.expanduser('~'), '.dreampie')
+        self.filename = get_config_fn()
         try:
             self.parser = SafeConfigParser(dict_type=OrderedDict)
         except TypeError:
