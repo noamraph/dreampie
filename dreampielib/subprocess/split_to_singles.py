@@ -55,29 +55,36 @@ def split_to_singles(source):
     readline = ReadLiner(source)
     first_lines = [0] # Indices, 0-based, of the rows which start a new single.
     cur_indent_level = 0
-    last_typ = None
+    last_was_newline = False
     
     # We split after NEWLINE on level 0 which isn't followed by an INDENT,
     # and after a NEWLINE on level 1 which is followed by a DEDENT.
     
     tokens_iter = tokenize.generate_tokens(readline)
     try:
-        for typ, s, (srow, scol), (erow, rcol), line in tokens_iter:
+        for typ, s, (srow, _scol), (_erow, _rcol), line in tokens_iter:
             if typ == tokenize.COMMENT or typ == tokenize.NL:
                 continue
             
-            if last_typ == tokenize.NEWLINE:
+            if last_was_newline:
                 if cur_indent_level == 0 and typ != tokenize.INDENT:
                     first_lines.append(srow-1)
                 elif cur_indent_level == 1 and typ == tokenize.DEDENT:
                     first_lines.append(srow-1)
+                    last_was_newline = False
                     
+            # Don't start a new block on except and finally.
+            if (typ == tokenize.NAME
+                and s in ('except', 'finally')
+                and first_lines[-1] == srow-1):
+                first_lines.pop()
+            
             if typ == tokenize.INDENT:
                 cur_indent_level += 1
             elif typ == tokenize.DEDENT:
                 cur_indent_level -= 1
-
-            last_typ = typ
+            else:
+                last_was_newline = (typ == tokenize.NEWLINE)
     except tokenize.TokenError:
         # EOF in the middle, it's a syntax error anyway.
         pass
