@@ -51,7 +51,7 @@ def open_dialog(func, title, parent, filter_name, filter_pattern):
         r = d.run()
         if r != gtk.RESPONSE_OK:
             break
-        filename = abspath(d.get_filename())
+        filename = abspath(d.get_filename().decode('utf8'))
         try:
             func(filename)
         except IOError, e:
@@ -93,7 +93,7 @@ def save_dialog(func, title, parent, filter_name, filter_pattern,
         r = d.run()
         if r != gtk.RESPONSE_OK:
             break
-        filename = abspath(d.get_filename())
+        filename = abspath(d.get_filename()).decode('utf8')
         if exists(filename):
             m = gtk.MessageDialog(d, gtk.DIALOG_MODAL, gtk.MESSAGE_QUESTION)
             m.props.text = _('A file named "%s" already exists.  Do '

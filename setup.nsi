@@ -10,6 +10,16 @@ VIProductVersion 0.9.3.0
 SetCompressor /FINAL /SOLID lzma
 SetCompressorDictSize 64
 
+# MultiUser Symbol Definitions
+!define MULTIUSER_EXECUTIONLEVEL Highest
+!define MULTIUSER_MUI
+!define MULTIUSER_INSTALLMODE_DEFAULT_REGISTRY_KEY "${REGKEY}"
+!define MULTIUSER_INSTALLMODE_DEFAULT_REGISTRY_VALUENAME MultiUserInstallMode
+!define MULTIUSER_INSTALLMODE_COMMANDLINE
+!define MULTIUSER_INSTALLMODE_INSTDIR DreamPie
+!define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_KEY "${REGKEY}"
+!define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_VALUE "Path"
+
 # MUI Symbol Definitions
 !define MUI_ICON dreampie.ico
 !define MUI_FINISHPAGE_NOAUTOCLOSE
@@ -17,6 +27,7 @@ SetCompressorDictSize 64
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 
 # Included files
+!include MultiUser.nsh
 !include Sections.nsh
 !include MUI2.nsh
 
@@ -25,6 +36,7 @@ Var StartMenuGroup
 
 # Installer pages
 !insertmacro MUI_PAGE_WELCOME
+!insertmacro MULTIUSER_PAGE_INSTALLMODE
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
@@ -36,7 +48,7 @@ Var StartMenuGroup
 
 # Installer attributes
 OutFile dreampie-${VERSION}-setup.exe
-InstallDir $PROGRAMFILES\DreamPie
+InstallDir DreamPie
 CRCCheck on
 XPStyle on
 ShowInstDetails hide
@@ -60,7 +72,6 @@ Section -Main SEC0000
     WriteRegStr HKLM "${REGKEY}\Components" Main 1
     # Create shortcuts
     ExecWait '"$INSTDIR\create-shortcuts.exe" "$SMPROGRAMS\$StartMenuGroup"'
-    Delete /REBOOTOK $INSTDIR\create-shortcuts.exe
 SectionEnd
 
 Section -post SEC0001
@@ -101,8 +112,8 @@ SectionEnd
 
 Section -un.post UNSEC0001
     DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)"
-#    Delete /REBOOTOK "$SMPROGRAMS\$StartMenuGroup\Uninstall $(^Name).lnk"
     Delete /REBOOTOK $INSTDIR\uninstall.exe
+#    DeleteRegValue HKLM "${REGKEY}" StartMenuGroup
     DeleteRegValue HKLM "${REGKEY}" Path
     DeleteRegKey /IfEmpty HKLM "${REGKEY}\Components"
     DeleteRegKey /IfEmpty HKLM "${REGKEY}"
@@ -114,12 +125,13 @@ SectionEnd
 Function .onInit
     InitPluginsDir
     StrCpy $StartMenuGroup DreamPie
+    !insertmacro MULTIUSER_INIT
 FunctionEnd
 
 # Uninstaller functions
 Function un.onInit
-    ReadRegStr $INSTDIR HKLM "${REGKEY}" Path
     StrCpy $StartMenuGroup DreamPie
+    !insertmacro MULTIUSER_UNINIT
     !insertmacro SELECT_UNSECTION Main ${UNSEC0000}
 FunctionEnd
 
