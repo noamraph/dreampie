@@ -1201,7 +1201,7 @@ Tip: If you want a non-gui viewer, use something like "xterm -e less"</property>
     <property name="type_hint">normal</property>
     <property name="has_separator">False</property>
     <property name="program_name">DreamPie</property>
-    <property name="copyright" translatable="yes">Copyright &#xA9; 2009 Noam Yorav-Raphael</property>
+    <property name="copyright" translatable="yes">Copyright &#xA9; 2010 Noam Yorav-Raphael</property>
     <property name="comments" translatable="yes">The Python shell you've always dreamed about!</property>
     <property name="license" translatable="yes">DreamPie is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
 
