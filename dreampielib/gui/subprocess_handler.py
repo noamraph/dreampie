@@ -159,9 +159,9 @@ class SubprocessHandler(object):
         if self._popen is None:
             raise ValueError("Subprocess not living")
         if sys.platform != 'win32':
-            # Send SIGABRT, and if the process didn't terminate within 1 second,
+            # Send SIGTERM, and if the process didn't terminate within 1 second,
             # send SIGKILL.
-            os.kill(self._popen.pid, signal.SIGABRT)
+            os.kill(self._popen.pid, signal.SIGTERM)
             killtime = time.time()
             while True:
                 rc = self._popen.poll()
