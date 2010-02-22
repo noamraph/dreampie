@@ -39,6 +39,10 @@ def main():
     from dreampielib.subprocess import main as subprocess_main
     del sys.path[0]
     
+    if sys.version_info[:2] == (3, 0):
+        sys.stderr.write("Warning: DreamPie doesn't support Python 3.0. \n"
+                         "Please upgrade to Python 3.1.\n")
+    
     subprocess_main(port)
 
 if __name__ == '__main__':
