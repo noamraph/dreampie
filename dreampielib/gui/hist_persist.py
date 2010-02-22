@@ -51,7 +51,8 @@ class HistPersist(object):
     def save(self):
         if self.filename is None:
             self.save_as()
-        self._save_func(self.filename)
+        else:
+            self._save_func(self.filename)
     
     def save_as(self):
         if self.filename:
