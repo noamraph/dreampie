@@ -186,7 +186,10 @@ class Subprocess(object):
             b = ast.Interactive(a.body)
             codeob = compile(b, filename, 'single', self.flags)
         except SyntaxError, e:
-            return False, (unicode(e.msg), e.lineno-1, e.offset-1)
+            # Sometimes lineno or offset are not defined. Zero them in that case.
+            lineno = e.lineno if e.lineno is not None else 1
+            offset = e.offset if e.offset is not None else 1
+            return False, (unicode(e.msg), lineno-1, offset-1)
             
         # Update gid, linecache, flags
         self.gid += 1
@@ -211,7 +214,11 @@ class Subprocess(object):
             try:
                 c = compile(src, '<pyshell>', 'single', cur_flags)
             except SyntaxError, e:
-                return False, (unicode(e.msg), e.lineno-1+line_count, e.offset-1)
+                # Sometimes lineno or offset are not defined. Zero them in that
+                # case.
+                lineno = e.lineno if e.lineno is not None else 1
+                offset = e.offset if e.offset is not None else 1
+                return False, (unicode(e.msg), lineno-1+line_count, offset-1)
             else:
                 if c is None:
                     return False, None
