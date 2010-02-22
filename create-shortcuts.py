@@ -133,7 +133,7 @@ def create_shortcut(ws, dp_folder, ver_name, pyexec):
     shortcut.TargetPath = abspath(join(dirname(sys.executable), "dreampie.exe"))
     args = ['--hide-console-window']
     if pyexec: 
-        args.append(pyexec)
+        args.append('"%s"' % pyexec)
         shortcut.WorkingDirectory = dirname(pyexec)
     shortcut.Arguments = ' '.join(args)
     shortcut.Save()
