@@ -60,6 +60,8 @@ class ConfigDialog(SimpleGladeApp):
         
         self.hide_defs_chk.props.active = config.get_bool('hide-defs')
         
+        self.ask_on_quit_chk.props.active = config.get_bool('ask-on-quit')
+    
         self.themes = dict((name, tags.get_theme(config, name))
                            for name in tags.get_theme_names(config))
         self.cur_theme = self.themes[config.get('current-theme')]
@@ -117,6 +119,8 @@ class ConfigDialog(SimpleGladeApp):
         config.set_bool('leave-code', self.leave_code_chk.props.active)
         
         config.set_bool('hide-defs', self.hide_defs_chk.props.active)
+        
+        config.set_bool('ask-on-quit', self.ask_on_quit_chk.props.active)
         
         sb = self.sourcebuffer
         init_code = sb.get_text(sb.get_start_iter(),

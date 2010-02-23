@@ -854,12 +854,15 @@ class DreamPie(SimpleGladeApp):
         self.quit()
 
     def quit(self):
-        msg = gtk.MessageDialog(self.window_main, gtk.DIALOG_MODAL,
-                                gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO,
-                                _("Are you sure you want to quit?"))
-        response = msg.run()
-        msg.destroy()
-        if response == gtk.RESPONSE_YES:
+        if self.config.get_bool('ask-on-quit'):
+            msg = gtk.MessageDialog(self.window_main, gtk.DIALOG_MODAL,
+                                    gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO,
+                                    _("Are you sure you want to quit?"))
+            quit = msg.run() == gtk.RESPONSE_YES
+            msg.destroy()
+        else:
+            quit = True
+        if quit:
             self.is_terminating = True
             self.window_main.destroy()
             self.subp.kill()

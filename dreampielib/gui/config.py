@@ -36,6 +36,7 @@ autofold = True
 autofold-numlines = 30
 viewer = ''
 init-code = ''
+ask-on-quit = True
 
 recall-1-char-commands = False
 hide-defs = False
