@@ -37,7 +37,7 @@ class History(object):
         self.sourcebuffer.disconnect(self.changed_handler_id)
         self.changed_handler_id = None
 
-    def _iter_get_command(self, it, only_first_line=False):
+    def iter_get_command(self, it, only_first_line=False):
         """Get a textiter placed inside (or at the end of) a COMMAND tag.
         Return the text of the tag which doesn't have the PROMPT tag.
         """
@@ -62,7 +62,7 @@ class History(object):
             if it2.compare(it_end) >= 0:
                 it2 = it.copy()
                 it2.forward_to_tag_toggle(command)
-                r.append(tb.get_text(it, it2))
+                r.append(tb.get_text(it, it2).decode('utf8'))
                 break
             r.append(tb.get_text(it, it2))
             if only_first_line:
@@ -71,7 +71,7 @@ class History(object):
             it.forward_to_tag_toggle(prompt)
             if it.compare(it_end) >= 0:
                 break
-        return ''.join(r).strip()
+        return ''.join(r)
 
     def copy_to_sourceview(self):
         # Copy the current command to the sourceview
@@ -82,7 +82,7 @@ class History(object):
         if not it.has_tag(command) and not it.ends_tag(command):
             beep()
             return True
-        s = self._iter_get_command(it)
+        s = self.iter_get_command(it).strip()
         if not s:
             beep()
             return True
@@ -127,12 +127,12 @@ class History(object):
                 if not it.begins_tag(command):
                     beep()
                     break
-                first_line = self._iter_get_command(it, only_first_line=True)
+                first_line = self.iter_get_command(it, only_first_line=True).strip()
                 if (first_line
                     and first_line.startswith(self.hist_prefix)
                     and (len(first_line) > 2 or self.recall_1_char_commands)):
                     
-                    command = self._iter_get_command(it)
+                    command = self.iter_get_command(it).strip()
                     sb.set_text(command)
                     sb.place_cursor(sb.get_end_iter())
                     self._track_change()
@@ -178,12 +178,12 @@ class History(object):
                     # it's like the user did it and hist_prefix is not longer
                     # meaningful.
                     break
-                first_line = self._iter_get_command(it, only_first_line=True)
+                first_line = self.iter_get_command(it, only_first_line=True).strip()
                 if (first_line
                     and first_line.startswith(self.hist_prefix)
                     and (len(first_line) > 2 or self.recall_1_char_commands)):
                     
-                    command = self._iter_get_command(it)
+                    command = self.iter_get_command(it).strip()
                     sb.set_text(command)
                     sb.place_cursor(sb.get_end_iter())
                     self._track_change()

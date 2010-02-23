@@ -171,14 +171,9 @@ class Folding(object):
                 if n_lines >= numlines:
                     self.fold(typ, start_it)
     
-    def get_text(self, typ, start_it):
-        """
-        Get an iterator pointing to the beginning of a section. Return its text.
-        """
-        tb = self.textbuffer
-        it = start_it.copy()
-        it.forward_to_tag_toggle(self.tags[typ])
-        return tb.get_text(start_it, it).decode('utf8')
+    def get_tag(self, typ):
+        """Return the gtk.TextTag for a specific typ string."""
+        return self.tags[typ]
     
     def fold_last(self):
         """

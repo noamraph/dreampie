@@ -725,7 +725,12 @@ class DreamPie(SimpleGladeApp):
             else:
                 self.folding.unfold(typ, start_it)
         else:
-            text = self.folding.get_text(typ, start_it)
+            if typ == COMMAND:
+                text = self.history.iter_get_command(start_it)
+            else:
+                end_it = start_it.copy()
+                end_it.forward_to_tag_toggle(self.folding.get_tag(typ))
+                text = tb.get_text(start_it, end_it).decode('utf8')
             if sys.platform == 'win32':
                 text = text.replace('\n', '\r\n')
             if widget is self.copy_section_menu:
