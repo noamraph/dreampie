@@ -59,7 +59,7 @@ class ConfigDialog(SimpleGladeApp):
         self.leave_code_chk.props.active = config.get_bool('leave-code')
         
         self.hide_defs_chk.props.active = config.get_bool('hide-defs')
-    
+        
         self.themes = dict((name, tags.get_theme(config, name))
                            for name in tags.get_theme_names(config))
         self.cur_theme = self.themes[config.get('current-theme')]
@@ -197,7 +197,7 @@ class ConfigDialog(SimpleGladeApp):
         w('Traceback (most recent call last):\n', EXCEPTION)
         w('[About 4 more lines.]', FOLD_MESSAGE)
 
-    def on_textview_realize(self, widget):
+    def on_textview_realize(self, _widget):
         win = self.textview.get_window(gtk.TEXT_WINDOW_TEXT)
         win.set_cursor(None)
     
@@ -230,7 +230,7 @@ class ConfigDialog(SimpleGladeApp):
         
         self.update_color_sel_widgets()
 
-    def on_elements_trv_cursor_changed(self, widget):
+    def on_elements_trv_cursor_changed(self, _widget):
         (row,), _col = self.elements_trv.get_cursor()
         self.cur_tag = tags.tag_desc[row][0]
         self.update_color_sel_widgets()
@@ -262,13 +262,13 @@ class ConfigDialog(SimpleGladeApp):
         
         self.cur_tag = tag
 
-    def on_viewer_button_clicked(self, widget):
+    def on_viewer_button_clicked(self, _widget):
         def f(filename):
             self.viewer_entry.props.text = filename
         open_dialog(f, _('Choose the viewer program'), self.config_dialog,
                     _('Executables'), '*')
     
-    def on_textview_button_press_event(self, widget, event):
+    def on_textview_button_press_event(self, _widget, event):
         tv = self.textview
         if tv.get_window(gtk.TEXT_WINDOW_TEXT) is not event.window:
             # Probably a click on the border or something
@@ -289,7 +289,7 @@ class ConfigDialog(SimpleGladeApp):
                 tag_index = 0
         self.elements_trv.set_cursor((tag_index,))
 
-    def on_fg_special_rad_toggled(self, widget):
+    def on_fg_special_rad_toggled(self, _widget):
         is_special = self.fg_special_rad.props.active
         self.fg_cbut.props.sensitive = is_special
         
@@ -297,13 +297,13 @@ class ConfigDialog(SimpleGladeApp):
             self.cur_theme[self.cur_tag, FG, ISSET] = is_special
             self.theme_changed()
 
-    def on_fg_cbut_color_set(self, widget):
+    def on_fg_cbut_color_set(self, _widget):
         if self.cur_tag:
             color = str(self.fg_cbut.props.color)
             self.cur_theme[self.cur_tag, FG, COLOR] = color
             self.theme_changed()
 
-    def on_bg_special_rad_toggled(self, widget):
+    def on_bg_special_rad_toggled(self, _widget):
         is_special = self.bg_special_rad.props.active
         self.bg_cbut.props.sensitive = is_special
         
@@ -311,13 +311,13 @@ class ConfigDialog(SimpleGladeApp):
             self.cur_theme[self.cur_tag, BG, ISSET] = is_special
             self.theme_changed()
 
-    def on_bg_cbut_color_set(self, widget):
+    def on_bg_cbut_color_set(self, _widget):
         if self.cur_tag:
             color = str(self.bg_cbut.props.color)
             self.cur_theme[self.cur_tag, BG, COLOR] = color
             self.theme_changed()
 
-    def on_themes_trv_cursor_changed(self, widget):
+    def on_themes_trv_cursor_changed(self, _widget):
         if self.is_initializing:
             return
         ttv = self.themes_trv; tl = self.themes_list
@@ -326,7 +326,7 @@ class ConfigDialog(SimpleGladeApp):
         self.cur_theme = self.themes[cur_name]
         self.theme_changed()                
 
-    def on_copy_theme_btn_clicked(self, widget):
+    def on_copy_theme_btn_clicked(self, _widget):
         ttv = self.themes_trv; tl = self.themes_list
         path, _col = ttv.get_cursor()
         cur_name = tl[path][0]
@@ -344,10 +344,10 @@ class ConfigDialog(SimpleGladeApp):
         ttv.set_cursor(cur_index, ttv.get_column(0), start_editing=True)
         self.theme_changed()
 
-    def on_del_theme_btn_clicked(self, widget):
+    def on_del_theme_btn_clicked(self, _widget):
         self.delete_theme()
 
-    def on_themes_trv_key_press_event(self, widget, event):
+    def on_themes_trv_key_press_event(self, _widget, event):
         if gdk.keyval_name(event.keyval) == 'Delete':
             if len(self.themes_list) < 2:
                 beep()
@@ -367,7 +367,7 @@ class ConfigDialog(SimpleGladeApp):
         if len(tl) < 2:
             self.del_theme_btn.props.sensitive = False
 
-    def on_theme_renamed(self, widget, path, new_name):
+    def on_theme_renamed(self, _widget, path, new_name):
         tl = self.themes_list
         if new_name == tl[path][0]:
             # The name wasn't changed
@@ -380,17 +380,17 @@ class ConfigDialog(SimpleGladeApp):
         self.themes[new_name] = theme
         tl[path][0] = new_name
 
-    def on_notebook_switch_page(self, widget, page, page_num):
+    def on_notebook_switch_page(self, _widget, _page, _page_num):
         # This should have been on the FontSelection signal, but there isn't
         # one.
         if self.cur_font != self.fontsel.props.font_name:
             self.cur_font = self.fontsel.props.font_name
             self.font_changed()
 
-    def on_reshist_chk_toggled(self, widget):
+    def on_reshist_chk_toggled(self, _widget):
         self.reshist_spin.props.sensitive = self.reshist_chk.props.active
     
-    def on_autofold_chk_toggled(self, widget):
+    def on_autofold_chk_toggled(self, _widget):
         self.autofold_spin.props.sensitive = self.autofold_chk.props.active
 
 
