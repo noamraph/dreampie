@@ -37,6 +37,7 @@ autofold-numlines = 30
 viewer = ''
 init-code = ''
 ask-on-quit = True
+matplotlib-ia-warn = True
 
 recall-1-char-commands = False
 hide-defs = False

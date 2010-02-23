@@ -521,6 +521,9 @@ class DreamPie(SimpleGladeApp):
         
         self.call_subp(u'set_pprint', config.get_bool('pprint'))
         
+        self.call_subp(u'set_matplotlib_ia_warn',
+                       config.get_bool('matplotlib-ia-warn'))
+        
     def run_init_code(self):
         """
         Runs the init code.

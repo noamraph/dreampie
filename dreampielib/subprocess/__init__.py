@@ -93,7 +93,11 @@ class Subprocess(object):
         
         # Config
         self.is_pprint = False
+        self.is_matplotlib_ia_warn = False
         self.reshist_size = 0
+        
+        # Did we already warn about matplotlib non-interactive mode?
+        self.matplotlib_ia_warned = False
         
         # The result history index of the next value to enter the history
         self.reshist_counter = 0
@@ -329,12 +333,19 @@ class Subprocess(object):
             pass
 
         rem_stdin = u''.join(rem_stdin)
+        
+        # Check if matplotlib in non-interactive mode was imported
+        self.check_matplotlib_ia()
 
         yield is_success, res_no, res_str, exception_string, rem_stdin
 
     @rpc_func
     def set_pprint(self, is_pprint):
         self.is_pprint = is_pprint
+    
+    @rpc_func
+    def set_matplotlib_ia_warn(self, is_matplotlib_ia_warn):
+        self.is_matplotlib_ia_warn = is_matplotlib_ia_warn
 
     @rpc_func
     def set_reshist_size(self, new_reshist_size):
@@ -572,6 +583,32 @@ class Subprocess(object):
                 arg_text += "\n"
             arg_text += doc[:pos]
         return arg_text
+    
+    def check_matplotlib_ia(self):
+        """Warn if matplotlib is in non-interactive mode"""
+        if not self.is_matplotlib_ia_warn:
+            return
+        if self.matplotlib_ia_warned:
+            return
+        if 'matplotlib' not in sys.modules:
+            return
+        self.matplotlib_ia_warned = True
+        # From here we do this only once.
+        matplotlib = sys.modules['matplotlib']
+        if not hasattr(matplotlib, 'rcParams'):
+            return
+        rcParams = matplotlib.rcParams
+        if not isinstance(rcParams, dict):
+            return
+        if 'interactive' not in rcParams:
+            return
+        if not rcParams['interactive']:
+            sys.stderr.write(
+                "Warning: matplotlib in non-interactive mode detected.\n"
+                "This will mean plots will appear only after you run show().\n"
+                "To fix this, set \"interactive : True\" in your matplotlibrc file.\n"
+                "To suppress this warning, disable the matplotlib warning in the\n"
+                "configuration window.\n")
 
 
 # Handle GUI events

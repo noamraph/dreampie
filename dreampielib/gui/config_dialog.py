@@ -60,6 +60,8 @@ class ConfigDialog(SimpleGladeApp):
         
         self.hide_defs_chk.props.active = config.get_bool('hide-defs')
         
+        self.matplotlib_ia_warn_chk.props.active = config.get_bool('matplotlib-ia-warn')
+    
         self.ask_on_quit_chk.props.active = config.get_bool('ask-on-quit')
     
         self.themes = dict((name, tags.get_theme(config, name))
@@ -119,6 +121,8 @@ class ConfigDialog(SimpleGladeApp):
         config.set_bool('leave-code', self.leave_code_chk.props.active)
         
         config.set_bool('hide-defs', self.hide_defs_chk.props.active)
+        
+        config.set_bool('matplotlib-ia-warn', self.matplotlib_ia_warn_chk.props.active)
         
         config.set_bool('ask-on-quit', self.ask_on_quit_chk.props.active)
         
