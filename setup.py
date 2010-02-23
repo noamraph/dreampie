@@ -44,7 +44,7 @@ class build_subp_zips(Command):
 
     def finalize_options(self):
         self.set_undefined_options('build',
-                                   ('build_lib', 'build_dir'),
+                                   ('build_base', 'build_dir'),
                                    ('force', 'force'),
                                    )
 
@@ -82,7 +82,7 @@ class install_subp_zips (Command):
         self.outfiles = []
 
     def finalize_options (self):
-        self.set_undefined_options('build', ('build_lib', 'build_dir'))
+        self.set_undefined_options('build', ('build_base', 'build_dir'))
         self.set_undefined_options('install',
                                    ('install_data', 'install_dir'),
                                    ('force', 'force'),
@@ -123,8 +123,8 @@ setup_args = dict(
     description="DreamPie - The interactive Python shell you've always dreamed about!",
     author='Noam Yorav-Raphael',
     author_email='noamraph@gmail.com',
-    url='https://launchpad.net/dreampie',
-    license='GPL v3',
+    url='http://dreampie.sourceforge.net/',
+    license='GPL v3+',
     scripts=['dreampie'],
     console=[{'script': 'dreampie.py',
               'icon_resources': [(1, 'dreampie.ico')]}],
@@ -133,10 +133,6 @@ setup_args = dict(
     packages=['dreampielib',
               'dreampielib.common', 'dreampielib.gui', 'dreampielib.subprocess',
               ],
-    package_data={'dreampielib.gui':
-                  ['dreampie.glade', 'dreampie.svg', 'dreampie.png'],
-                  'dreampielib': ['py3k.zip'],
-                  },
     data_files=[
                 ('share/applications', ['share/applications/dreampie.desktop']),
                 ('share/man/man1', ['share/man/man1/dreampie.1']),

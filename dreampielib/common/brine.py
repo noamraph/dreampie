@@ -1,4 +1,37 @@
 # This file is based on brine.py from RPyC.
+# See http://rpyc.wikidot.com/
+# and http://sebulbasvn.googlecode.com/svn/tags/rpyc/3.0.6/core/brine.py
+# Modified by Noam Yorav-Raphael for DreamPie use.
+
+# Copyright 2010 Noam Yorav-Raphael
+#
+# This file is part of DreamPie.
+# 
+# DreamPie is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# DreamPie is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with DreamPie.  If not, see <http://www.gnu.org/licenses/>.
+
+# Copyright (c) 2005-2009
+# Tomer Filiba (tomerfiliba@gmail.com)
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 """
 brine - a simple, fast and secure object serializer,
 optimized for small integers [-48..160), suitable for Python 2/3k communication.
@@ -81,15 +114,15 @@ def register(coll, key):
 # dumping
 #===============================================================================
 @register(_dump_registry, type(None))
-def _dump_none(obj, stream):
+def _dump_none(_obj, stream):
     stream.append(TAG_NONE)
 
 @register(_dump_registry, type(NotImplemented))
-def _dump_notimplemeted(obj, stream):
+def _dump_notimplemeted(_obj, stream):
     stream.append(TAG_NOT_IMPLEMENTED)
 
 @register(_dump_registry, type(Ellipsis))
-def _dump_ellipsis(obj, stream):
+def _dump_ellipsis(_obj, stream):
     stream.append(TAG_ELLIPSIS)
 
 @register(_dump_registry, bool)
@@ -202,28 +235,28 @@ def _dump(obj, stream):
 # loading
 #===============================================================================
 @register(_load_registry, TAG_NONE)
-def _load_none(stream):
+def _load_none(_stream):
     return None
 @register(_load_registry, TAG_NOT_IMPLEMENTED)
-def _load_nonimp(stream):
+def _load_nonimp(_stream):
     return NotImplemented
 @register(_load_registry, TAG_ELLIPSIS)
-def _load_elipsis(stream):
+def _load_elipsis(_stream):
     return Ellipsis
 @register(_load_registry, TAG_TRUE)
-def _load_true(stream):
+def _load_true(_stream):
     return True
 @register(_load_registry, TAG_FALSE)
-def _load_false(stream):
+def _load_false(_stream):
     return False
 @register(_load_registry, TAG_EMPTY_TUPLE)
-def _load_empty_tuple(stream):
+def _load_empty_tuple(_stream):
     return ()
 @register(_load_registry, TAG_EMPTY_LIST)
-def _load_empty_list(stream):
+def _load_empty_list(_stream):
     return []
 @register(_load_registry, TAG_EMPTY_STR)
-def _load_empty_str(stream):
+def _load_empty_str(_stream):
     return u""
 #@register(_load_registry, TAG_UNICODE)
 #def _load_unicode(stream):

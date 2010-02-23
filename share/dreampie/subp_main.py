@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright 2009 Noam Yorav-Raphael
 #
 # This file is part of DreamPie.

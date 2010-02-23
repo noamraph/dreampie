@@ -1,5 +1,6 @@
 # This module is based on a code by Josiah Carlson,
 # http://code.activestate.com/recipes/440554/
+# Licensed under the PSF license.
 
 import os
 import subprocess
