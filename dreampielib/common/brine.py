@@ -3,6 +3,19 @@
 # and http://sebulbasvn.googlecode.com/svn/tags/rpyc/3.0.6/core/brine.py
 # Modified by Noam Yorav-Raphael for DreamPie use.
 
+# Copyright (c) 2005-2009
+# Tomer Filiba (tomerfiliba@gmail.com)
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+
 # Copyright 2010 Noam Yorav-Raphael
 #
 # This file is part of DreamPie.
@@ -20,18 +33,6 @@
 # You should have received a copy of the GNU General Public License
 # along with DreamPie.  If not, see <http://www.gnu.org/licenses/>.
 
-# Copyright (c) 2005-2009
-# Tomer Filiba (tomerfiliba@gmail.com)
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-# 
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
 """
 brine - a simple, fast and secure object serializer,
 optimized for small integers [-48..160), suitable for Python 2/3k communication.
