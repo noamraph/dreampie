@@ -222,7 +222,10 @@ class Subprocess(object):
                 # case.
                 lineno = e.lineno if e.lineno is not None else 1
                 offset = e.offset if e.offset is not None else 1
-                return False, (unicode(e.msg), lineno-1+line_count, offset-1)
+                msg = e.msg
+                if not isinstance(msg, unicode):
+                    msg = msg.decode('utf8', 'replace')
+                return False, (msg, lineno-1+line_count, offset-1)
             else:
                 if c is None:
                     return False, None
