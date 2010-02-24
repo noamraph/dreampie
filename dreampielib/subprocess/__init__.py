@@ -319,7 +319,11 @@ class Subprocess(object):
         rem_stdin = []
         if sys.platform == 'linux2':
             while select([sys.stdin], [], [], 0)[0]:
-                rem_stdin.append(os.read(sys.stdin.fileno(), 8192))
+                r = os.read(sys.stdin.fileno(), 8192)
+                if not r:
+                    # File may be in error state
+                    break
+                rem_stdin.append(r)
         elif sys.platform == 'win32':
             fd = sys.stdin.fileno()
             handle = get_osfhandle(fd)
