@@ -130,8 +130,18 @@ class SubprocessHandler(object):
         
         # Read from socket
         if select([self._sock], [], [], 0)[0]:
-            obj = recv_object(self._sock)
-            self._on_object_recv(obj)
+            try:
+                obj = recv_object(self._sock)
+            except IOError:
+                # Could happen when subprocess exits. See bug #525358.
+                # We give the subprocess a second. If it shuts down, we ignore
+                # the exception, since on the next round we will handle that.
+                # Otherwise, the exception remains unexplained so we re-raise.
+                time.sleep(1)
+                if popen.poll() is None:
+                    raise
+            else:
+                self._on_object_recv(obj)
 
         return True
 
