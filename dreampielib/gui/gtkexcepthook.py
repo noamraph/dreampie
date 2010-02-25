@@ -7,7 +7,7 @@
 # Message-ID: <1062087716.1196.5.camel@emperor.homelinux.net>
 #     "The license is whatever you want."
 
-import inspect, linecache, sys
+import inspect, linecache, sys, traceback
 from repr import repr as safe_repr
 from cStringIO import StringIO
 from gettext import gettext as _
@@ -22,7 +22,7 @@ feedback = None
 #def analyse (exctyp, value, tb):
 #    trace = StringIO()
 #    traceback.print_exception (exctyp, value, tb, None, trace)
-#    return trace
+#    return trace.getvalue()
 
 def lookup (name, frame, lcls):
     '''Find the value for a given name in the given frame'''
@@ -44,10 +44,10 @@ def analyse (exctyp, value, tb):
     import tokenize, keyword
 
     trace = StringIO()
-    nlines = 3
+    nlines = 1
     frecs = inspect.getinnerframes (tb, nlines)
-    trace.write ('Traceback (most recent call last):\n')
-    for frame, fname, lineno, funcname, context, _cindex in frecs:
+    trace.write ('Variables:\n')
+    for frame, fname, lineno, funcname, _context, _cindex in frecs:
         trace.write ('  File "%s", line %d, ' % (fname, lineno))
         args, varargs, varkw, lcls = inspect.getargvalues (frame)
 
@@ -70,7 +70,7 @@ def analyse (exctyp, value, tb):
                     assert not name and not scope
                     scope, val = lookup (tstr, frame, lcls)
                     name = tstr
-                if val:
+                if val is not None:
                     prev = val
                 #print '  found', scope, 'name', name, 'val', val, 'in', prev, 'for token', tstr
             elif tstr == '.':
@@ -78,20 +78,20 @@ def analyse (exctyp, value, tb):
                     name += '.'
             else:
                 if name:
-                    all[name] = (scope, prev)
+                    all[name] = prev
                 prev, name, scope = None, '', None
                 if ttype == tokenize.NEWLINE:
                     break
 
         trace.write (funcname +
           inspect.formatargvalues (args, varargs, varkw, lcls, formatvalue=lambda v: '=' + safe_repr (v)) + '\n')
-        if context:
-            trace.write (''.join ('    ' + x.replace ('\t', '  ') for x in context if x.strip()))
         if len (all):
-            trace.write ('  variables: %s\n' % str (all))
+            trace.write ('    %s\n' % str (all))
 
-    trace.write ('%s: %s' % (exctyp.__name__, value))
-    return trace
+    trace.write('\n')
+    traceback.print_exception (exctyp, value, tb, None, trace)
+    
+    return trace.getvalue()
 
 def _info (exctyp, value, tb):
     try:
@@ -108,8 +108,10 @@ def _info (exctyp, value, tb):
     if gtk.check_version (2, 4, 0) is not None:
         dialog.set_has_separator (False)
 
-    primary = _("<big><b>A programming error has been detected during the execution of this program.</b></big>")
-    secondary = _("It probably isn't fatal, but should be reported to the developers nonetheless.")
+    primary = _("<big><b>A programming error has been detected.</b></big>")
+    secondary = _("Please report it by copying the information that appears "
+                  "when you click the \"Details\" button and submitting a bug "
+                  "report by choosing Help->Report a Problem. Thanks!")
 
     dialog.set_markup (primary)
     dialog.format_secondary_text (secondary)
@@ -165,17 +167,12 @@ def _info (exctyp, value, tb):
             sw.add (textview)
             details.vbox.add (sw)
             textbuffer = textview.get_buffer()
-            textbuffer.set_text (trace.getvalue())
+            textbuffer.set_text (trace)
 
             monitor = gtk.gdk.screen_get_default ().get_monitor_at_window (dialog.window)
             area = gtk.gdk.screen_get_default ().get_monitor_geometry (monitor)
-            try:
-                w = area.width // 1.6
-                h = area.height // 1.6
-            except SyntaxError:
-                # python < 2.2
-                w = area.width / 1.6
-                h = area.height / 1.6
+            w = area.width // 1.6
+            h = area.height // 1.6
             details.set_default_size (int (w), int (h))
 
             details.run()
