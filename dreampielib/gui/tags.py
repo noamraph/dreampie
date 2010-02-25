@@ -48,8 +48,8 @@ MESSAGE = 'message'
 KEYWORD = 'keyword'; BUILTIN = 'builtin'; STRING = 'string'
 NUMBER = 'number'; COMMENT = 'comment'; BRACKET_MATCH = 'bracket-match'
 
-# Constants to retrieve data from a theme. A theme is just a dict which holds
-# tuples, and is used like this: 
+# Constants to retrieve data from a theme. A theme is just a dict which maps
+# tuples to strings, and is used like this: 
 # theme[KEYWORD, FG, COLOR], theme[COMMENT, BG, ISSET]
 FG = 'fg'; BG = 'bg'
 COLOR = 'color'; ISSET = 'isset'
