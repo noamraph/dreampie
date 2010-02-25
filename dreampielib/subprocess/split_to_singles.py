@@ -77,9 +77,9 @@ def split_to_singles(source):
                     first_lines.append(srow-1)
                     last_was_newline = False
                     
-            # Don't start a new block on except and finally.
+            # Don't start a new block on else, except and finally.
             if (typ == tokenize.NAME
-                and s in ('except', 'finally')
+                and s in ('else', 'except', 'finally')
                 and first_lines[-1] == srow-1):
                 first_lines.pop()
             
