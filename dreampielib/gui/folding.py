@@ -140,8 +140,8 @@ class Folding(object):
         tb.remove_tag_by_name(FOLDED, start_it, it)
         
         it2 = it.copy()
-        it.forward_to_tag_toggle(self.fold_message_tag)
-        assert it.ends_tag(self.fold_message_tag)
+        it2.forward_to_tag_toggle(self.fold_message_tag)
+        assert it2.ends_tag(self.fold_message_tag)
         tb.delete(it, it2)
         
     def autofold(self, it, numlines):
