@@ -297,6 +297,10 @@ class ConfigDialog(SimpleGladeApp):
                 tag_index = 0
         self.elements_trv.set_cursor((tag_index,))
 
+    @staticmethod
+    def _format_color(color):
+        return '#%04x%04x%04x' % (color.red, color.green, color.blue)
+    
     def on_fg_special_rad_toggled(self, _widget):
         is_special = self.fg_special_rad.props.active
         self.fg_cbut.props.sensitive = is_special
@@ -307,7 +311,7 @@ class ConfigDialog(SimpleGladeApp):
 
     def on_fg_cbut_color_set(self, _widget):
         if self.cur_tag:
-            color = str(self.fg_cbut.props.color)
+            color = self._format_color(self.fg_cbut.props.color)
             self.cur_theme[self.cur_tag, FG, COLOR] = color
             self.theme_changed()
 
@@ -321,7 +325,7 @@ class ConfigDialog(SimpleGladeApp):
 
     def on_bg_cbut_color_set(self, _widget):
         if self.cur_tag:
-            color = str(self.bg_cbut.props.color)
+            color = self._format_color(self.bg_cbut.props.color)
             self.cur_theme[self.cur_tag, BG, COLOR] = color
             self.theme_changed()
 
