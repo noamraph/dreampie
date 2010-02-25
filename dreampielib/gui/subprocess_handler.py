@@ -91,7 +91,7 @@ class SubprocessHandler(object):
         env['PYTHONUNBUFFERED'] = '1'
         env['PYTHONIOENCODING'] = 'UTF-8'
         script = os.path.join(self._data_dir, 'dreampie', 'subp_main.py')
-        popen = Popen([self._pyexec, script, str(port)],
+        popen = Popen([self._pyexec, '-S', script, str(port)],
                        stdin=PIPE, stdout=PIPE, stderr=PIPE,
                        env=env)
         #debug("Waiting for the subprocess to connect")

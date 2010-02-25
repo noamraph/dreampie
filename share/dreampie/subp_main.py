@@ -21,7 +21,15 @@
 # (which are expected to be in the directory of __file__),
 # and runs dreampielib.subprocess.main(port).
 
+# This is a hack to solve bug #527630. Python2.5 ignores the PYTHONIOENCODING
+# environment variable, but we want to set the output encoding to utf-8 so that
+# unicode chars will be printed. So we disable automatic loading of site.py with
+# the -S flag, and call sys.setdefaultencoding before site.py has a chance of
+# doing anything else.
 import sys
+sys.setdefaultencoding('UTF-8')
+import site
+
 if sys.platform == 'cli':
     # IronPython doesn't have built-in zipimport.
     import py_zipimport
