@@ -22,6 +22,7 @@ from StringIO import StringIO
 
 from .tags import OUTPUT
 
+# This RE is used to remove chars that won't be displayed from the data string.
 remove_cr_re = re.compile(r'\n[^\n]*\r')
 # Match ANSI escapes. See http://en.wikipedia.org/wiki/ANSI_escape_code
 ansi_escape_re = re.compile(r'\x1b\[[^@-~]*?[@-~]')
@@ -49,8 +50,8 @@ class Output(object):
         self.added_newline = False
         # Was something written at all in this section?
         self.was_something_written = False
-        # Does the output end with a cr? (If it does, the last line may be
-        # deleted)
+        # Does the output end with a cr? (If it does, the last line will be
+        # deleted unless the next output starts with a lf)
         self.is_cr = False
 
     def start_new_section(self):
@@ -100,7 +101,14 @@ class Output(object):
         has_trailing_cr = data.endswith('\r')
         if has_trailing_cr:
             data = data[:-1]
+        
+        if data.startswith('\n'):
+            # Don't delete the last line if it ended with a cr but this data
+            # starts with a lf.
+            self.is_cr = False
             
+        # Remove chars that will not be displayed from data. No crs will be left
+        # after the first lf.
         data = remove_cr_re.sub('\n', data)
 
         cr_pos = data.rfind('\r')
@@ -108,15 +116,20 @@ class Output(object):
             # Delete last written line
             it = tb.get_iter_at_mark(self.mark)
             output_start = it.copy()
-            output_start.backward_to_tag_toggle(OUTPUT)
-            assert output_start.begins_tag(OUTPUT)
-            _before_newline, after_newline = it.backward_search(
-                '\n', 0, output_start)
+            output_tag = tb.get_tag_table().lookup(OUTPUT)
+            output_start.backward_to_tag_toggle(output_tag)
+            assert output_start.begins_tag(output_tag)
+            r = it.backward_search('\n', 0, output_start)
+            if r is not None:
+                _before_newline, after_newline = r
+            else:
+                # Didn't find a newline - delete from beginning of output
+                after_newline = output_start
             tb.delete(after_newline, it)
 
-            # Remove data up to \r.
-            if cr_pos != -1:
-                data = data[cr_pos+1:]
+        # Remove data up to \r.
+        if cr_pos != -1:
+            data = data[cr_pos+1:]
 
         if addbreaks:
             # We DO use \r characters as linebreaks after BREAK_LEN chars, which
