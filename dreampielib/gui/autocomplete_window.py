@@ -145,6 +145,10 @@ class AutocompleteWindow(object):
         # Return True if something is shown.
         # Otherwise, calls hide(), and returns False.
         # if return_false is True, always return False.
+        if not self.is_shown:
+            # Could be a result of a callback after the list was alrady hidden.
+            # See bug #529939.
+            return False
         sb = self.sourcebuffer
         prefix = sb.get_text(
             sb.get_iter_at_mark(self.mark),
