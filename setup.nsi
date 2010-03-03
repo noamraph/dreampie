@@ -2,8 +2,8 @@ Name DreamPie
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 1.0.1
-VIProductVersion 1.0.1.0
+!define VERSION 1.0.2
+VIProductVersion 1.0.2.0
 !define COMPANY DreamPie
 !define URL http://dreampie.sourceforge.net/
 
