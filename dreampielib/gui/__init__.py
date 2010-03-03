@@ -46,7 +46,7 @@ def find_data_dir():
     from os.path import join, dirname, isdir, pardir, abspath
 
     local_data_dir = join(dirname(__file__), pardir, pardir, 'share')
-    if isdir(local_data_dir):
+    if isdir(join(local_data_dir, 'dreampie')):
         # We're in the source path. Build zips if needed, and return the right
         # dir.
         from ..subp_zips import build
@@ -56,11 +56,11 @@ def find_data_dir():
         return abspath(local_data_dir)
     else:
         py2exe_data_dir = abspath(join(dirname(sys.argv[0]), 'share'))
-        if isdir(py2exe_data_dir):
+        if isdir(join(py2exe_data_dir, 'dreampie')):
             return py2exe_data_dir
         else:
             unix_data_dir = abspath(join(dirname(sys.argv[0]), pardir, 'share'))
-            if isdir(unix_data_dir):
+            if isdir(join(unix_data_dir, 'dreampie')):
                 return unix_data_dir
             else:
                 raise OSError("Could not find the 'share' directory")
