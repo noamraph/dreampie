@@ -27,7 +27,7 @@
 # the -S flag, and call sys.setdefaultencoding before site.py has a chance of
 # doing anything else.
 import sys
-sys.setdefaultencoding('UTF-8')
+sys.setdefaultencoding('utf-8')
 import site
 
 if sys.platform == 'cli':
