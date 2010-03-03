@@ -201,13 +201,13 @@ class AutocompleteWindow(object):
             else:
                 idle_add(self.update_list, True)
 
-    def on_insert_text(self, sb, it, text, length):
+    def on_insert_text(self, sb, it, _text, _length):
         if it.compare(sb.get_iter_at_mark(self.mark)) < 0:
             self.hide()
         else:
             idle_add(self.update_list, True)
 
-    def on_delete_range(self, sb, start, end):
+    def on_delete_range(self, sb, start, _end):
         if start.compare(sb.get_iter_at_mark(self.mark)) < 0:
             self.hide()
         else:
@@ -296,15 +296,15 @@ class AutocompleteWindow(object):
         self.on_complete()
         return True
 
-    def on_keypress(self, widget, event):
+    def on_keypress(self, _widget, event):
         return handle_keypress(self, event, keyhandlers)
 
-    def on_tv_button_press(self, widget, event):
+    def on_tv_button_press(self, _widget, event):
         if event.type == gdk._2BUTTON_PRESS:
             self.complete()
             return True
 
-    def on_focus_out(self, widget, event):
+    def on_focus_out(self, _widget, _event):
         self.hide()
 
     def hide(self):
