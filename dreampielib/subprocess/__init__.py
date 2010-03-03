@@ -86,6 +86,9 @@ class Subprocess(object):
         sys.modules['__main__'] = mainmodule
         self.locs = mainmodule.__dict__
 
+        # Remove __builtin__.exit, which only confuses users
+        del __builtin__.exit
+        
         self.gui_handlers = [GtkHandler(), Qt4Handler(), TkHandler()]
 
         self.gid = 0
@@ -277,8 +280,18 @@ class Subprocess(object):
             
         self.last_res = None
         try:
+            # Execute
             for codeob in codeobs:
                 exec codeob in self.locs
+            # Convert the result to a string. This is here because exceptions
+            # may be raised here.
+            if self.last_res is not None:
+                if self.is_pprint:
+                    res_str = unicode(pprint.pformat(self.last_res))
+                else:
+                    res_str = unicode(repr(self.last_res))
+            else:
+                res_str = None
         except (Exception, KeyboardInterrupt):
             sys.stdout.flush()
             linecache.checkcache()
@@ -308,13 +321,8 @@ class Subprocess(object):
             exception_string = None
             if self.last_res is not None:
                 res_no = self.store_in_reshist(self.last_res)
-                if self.is_pprint:
-                    res_str = unicode(pprint.pformat(self.last_res))
-                else:
-                    res_str = unicode(repr(self.last_res))
             else:
                 res_no = None
-                res_str = None
         # Discard the reference to the result
         self.last_res = None
             
