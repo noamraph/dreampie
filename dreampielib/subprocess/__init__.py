@@ -186,7 +186,6 @@ class Subprocess(object):
         This version always returns a list with one item.
         """
         filename = '<pyshell#%d>' % self.gid
-        lines = source.split("\n")
         try:
             a = compile(source, filename, 'exec',
                         ast.PyCF_ONLY_AST | self.flags)
@@ -200,6 +199,7 @@ class Subprocess(object):
             
         # Update gid, linecache, flags
         self.gid += 1
+        lines = [x+'\n' for x in source.split("\n")]
         linecache.cache[filename] = len(source)+1, None, lines, filename
         self.flags = self.update_features(self.flags, codeob.co_flags)
         
