@@ -311,16 +311,20 @@ class DreamPie(SimpleGladeApp):
         self.menuitem_execute.child.props.label = label
         self.menuitem_discard_hist.props.sensitive = not is_executing
 
+    @staticmethod
+    def replace_gtk_quotes(source):
+        # Work around GTK+ bug https://bugzilla.gnome.org/show_bug.cgi?id=610928
+        # in order to fix bug #525469 - replace fancy quotes with regular
+        # quotes.
+        return source.replace(u'\xa8', '"').replace(u'\xb4', "'")
+    
     def execute_source(self):
         """Execute the source in the source buffer.
         """
         sb = self.sourcebuffer
         source = self.sb_get_text(sb.get_start_iter(), sb.get_end_iter())
         source = source.rstrip()
-        # Work around GTK+ bug https://bugzilla.gnome.org/show_bug.cgi?id=610928
-        # in order to fix bug #525469 - replace fancy quotes with regular
-        # quotes.
-        source = source.replace(u'\xa8', '"').replace(u'\xb4', "'")
+        source = self.replace_gtk_quotes(source)
         is_ok, syntax_error_info = self.call_subp(u'execute', source)
         if not is_ok:
             if syntax_error_info:
@@ -382,6 +386,7 @@ class DreamPie(SimpleGladeApp):
                 source = self.sb_get_text(sb.get_start_iter(),
                                           sb.get_end_iter())
                 source = source.rstrip()
+                source = self.replace_gtk_quotes(source)
                 is_incomplete = self.call_subp(u'is_incomplete', source)
                 if not is_incomplete:
                     self.execute_source()
