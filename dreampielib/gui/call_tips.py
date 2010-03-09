@@ -110,6 +110,10 @@ class CallTips(object):
         self.is_shown = True
 
     def place_window(self):
+        if self.window is None:
+            # Was called as a callback, and window was already closed.
+            return False
+            
         sv = self.sourceview
         sb = self.sourcebuffer
 
