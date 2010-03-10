@@ -95,8 +95,12 @@ class Output(object):
         # Keep lines if after the cr there was no data before the lf.
         # Since that's the normal Windows newline, it's very important.
         data = data.replace('\r\n', '\n')
-        # But remove chars before cr if something follows.
+        
+        # Remove ANSI escapes
         data = ansi_escape_re.sub('', data)
+        
+        # Remove NULL chars
+        data = data.replace('\0', '')
         
         has_trailing_cr = data.endswith('\r')
         if has_trailing_cr:
