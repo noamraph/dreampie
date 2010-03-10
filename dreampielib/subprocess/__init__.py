@@ -85,6 +85,9 @@ class Subprocess(object):
         mainmodule = types.ModuleType('__main__')
         sys.modules['__main__'] = mainmodule
         self.locs = mainmodule.__dict__
+        
+        # Add '' to sys.path, to be like the regular Python interpreter
+        sys.path.insert(0, '')
 
         # Remove __builtin__.exit, which only confuses users
         del __builtin__.exit
