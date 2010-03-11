@@ -316,7 +316,9 @@ class Subprocess(object):
             for line in lines:
                 print>>efile, line,
             is_success = False
-            exception_string = unicode(efile.getvalue())
+            exception_string = efile.getvalue()
+            if not isinstance(exception_string, unicode):
+                exception_string = exception_string.decode('utf8', 'replace')
             res_no = None
             res_str = None
         else:
