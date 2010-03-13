@@ -56,10 +56,11 @@ def split_to_singles(source):
     first_lines = [0] # Indices, 0-based, of the rows which start a new single.
     cur_indent_level = 0
     last_was_newline = False
+    last_was_dedent = False
     
     # What this does is pretty simple: We split on every NEWLINE token which
-    # is on indentation level 0 and is not followed by "except" or "finally"
-    # (in that case it should be kept with the previous "single").
+    # is on indentation level 0 and is not followed by "else", "except" or
+    # "finally" (in that case it should be kept with the previous "single").
     # Since we get the tokens one by one, and INDENT and DEDENT tokens come
     # *after* the NEWLINE token, we need a bit of care, so we wait for tokens
     # after the NEWLINE token to decide what to do.
@@ -78,7 +79,8 @@ def split_to_singles(source):
                     last_was_newline = False
                     
             # Don't start a new block on else, except and finally.
-            if (typ == tokenize.NAME
+            if (last_was_dedent
+                and typ == tokenize.NAME
                 and s in ('else', 'except', 'finally')
                 and first_lines[-1] == srow-1):
                 first_lines.pop()
@@ -89,6 +91,7 @@ def split_to_singles(source):
                 cur_indent_level -= 1
             else:
                 last_was_newline = (typ == tokenize.NEWLINE)
+            last_was_dedent = (typ == tokenize.DEDENT)
     except tokenize.TokenError:
         # EOF in the middle, it's a syntax error anyway.
         pass
