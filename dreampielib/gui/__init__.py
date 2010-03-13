@@ -35,10 +35,11 @@ def find_data_dir():
     """
     # Scenarios:
     # * Running from the source directory. 'share' is near 'dreampielib'
-    # * Running from a unix installed executable. The scheme is:
+    # * Running from a distutils installed executable. The scheme is:
     #   prefix/bin/executable
     #   prefix/share/
     # * Running from py2exe. 'share' is near the executable.
+    # * Running from /usr/bin/X11/dreampie on Debian. Just check '/usr/share'.
     #
     # So, if we find a 'share' near dreampielib, we build zips and return it.
     # Otherwise, we search for 'share' near the executable. If it doesn't
@@ -55,15 +56,17 @@ def find_data_dir():
         build(src_dir, build_dir)
         return abspath(local_data_dir)
     else:
-        py2exe_data_dir = abspath(join(dirname(sys.argv[0]), 'share'))
-        if isdir(join(py2exe_data_dir, 'dreampie')):
-            return py2exe_data_dir
+        alternatives = [
+            join(dirname(sys.argv[0]), 'share'), # py2exe
+            join(dirname(sys.argv[0]), pardir, 'share'), # distutils
+            '/usr/share', # debian
+            ]
+        for dir in alternatives:
+            absdir = abspath(dir)
+            if isdir(join(absdir, 'dreampie')):
+                return absdir
         else:
-            unix_data_dir = abspath(join(dirname(sys.argv[0]), pardir, 'share'))
-            if isdir(join(unix_data_dir, 'dreampie')):
-                return unix_data_dir
-            else:
-                raise OSError("Could not find the 'share' directory")
+            raise OSError("Could not find the 'share' directory")
 
 data_dir = find_data_dir()
 gladefile = path.join(data_dir, 'dreampie', 'dreampie.glade')
