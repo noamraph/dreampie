@@ -286,6 +286,10 @@ class Subprocess(object):
             # Execute
             for codeob in codeobs:
                 exec codeob in self.locs
+            # Work around http://bugs.python.org/issue8213 - stdout buffered
+            # in Python 3.
+            sys.stdout.flush()
+            sys.stderr.flush()
             # Convert the result to a string. This is here because exceptions
             # may be raised here.
             if self.last_res is not None:
