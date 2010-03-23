@@ -18,6 +18,7 @@
 __all__ = ['split_to_singles']
 
 import tokenize
+import itertools
 
 class ReadLiner(object):
     """
@@ -45,6 +46,21 @@ class ReadLiner(object):
             line_offsets.append(next_offset+1)
             return s[line_offsets[-2]:line_offsets[-1]]
 
+class TeeIter(object):
+    """Wrap an iterable to add a tee() method which tees."""
+    def __init__(self, iterable):
+        self._it = iterable
+    
+    def __iter__(self):
+        return self
+    
+    def next(self):
+        return self._it.next()
+    
+    def tee(self):
+        self._it, r = itertools.tee(self._it)
+        return r
+
 def split_to_singles(source):
     """Get a source string, and split it into several strings,
     each one a "single block" which can be compiled in the "single" mode.
@@ -55,43 +71,37 @@ def split_to_singles(source):
     readline = ReadLiner(source)
     first_lines = [0] # Indices, 0-based, of the rows which start a new single.
     cur_indent_level = 0
-    last_was_newline = False
-    last_was_dedent = False
     
     # What this does is pretty simple: We split on every NEWLINE token which
     # is on indentation level 0 and is not followed by "else", "except" or
     # "finally" (in that case it should be kept with the previous "single").
     # Since we get the tokens one by one, and INDENT and DEDENT tokens come
-    # *after* the NEWLINE token, we need a bit of care, so we wait for tokens
+    # *after* the NEWLINE token, we need a bit of care, so we peek at tokens
     # after the NEWLINE token to decide what to do.
     
-    tokens_iter = tokenize.generate_tokens(readline)
+    tokens_iter = TeeIter(
+        itertools.ifilter(lambda x: x[0] not in (tokenize.COMMENT, tokenize.NL),
+                          tokenize.generate_tokens(readline)))
     try:
-        for typ, s, (srow, _scol), (_erow, _rcol), line in tokens_iter:
-            if typ == tokenize.COMMENT or typ == tokenize.NL:
-                continue
-            
-            if last_was_newline:
-                if cur_indent_level == 0 and typ != tokenize.INDENT:
-                    first_lines.append(srow-1)
-                elif cur_indent_level == 1 and typ == tokenize.DEDENT:
-                    first_lines.append(srow-1)
-                    last_was_newline = False
-                    
-            # Don't start a new block on else, except and finally.
-            if (last_was_dedent
-                and typ == tokenize.NAME
-                and s in ('else', 'except', 'finally')
-                and first_lines[-1] == srow-1):
-                first_lines.pop()
-            
-            if typ == tokenize.INDENT:
-                cur_indent_level += 1
-            elif typ == tokenize.DEDENT:
-                cur_indent_level -= 1
-            else:
-                last_was_newline = (typ == tokenize.NEWLINE)
-            last_was_dedent = (typ == tokenize.DEDENT)
+        for typ, _s, (srow, _scol), (_erow, _rcol), line in tokens_iter:
+            if typ == tokenize.NEWLINE:
+                for typ2, s2, (_srow2, _scol2), (_erow2, _rcol2), _line2 \
+                    in tokens_iter.tee():
+                    if typ2 == tokenize.INDENT:
+                        cur_indent_level += 1
+                    elif typ2 == tokenize.DEDENT:
+                        cur_indent_level -= 1
+                    else:
+                        break
+                else:
+                    raise AssertionError("Should have received an ENDMARKER")
+                # Now we have the first token after INDENT/DEDENT ones.
+                if (cur_indent_level == 0
+                    and (typ2 != tokenize.ENDMARKER
+                         and not (typ2 == tokenize.NAME
+                                  and s2 in ('else', 'except', 'finally')))):
+                    first_lines.append(srow)
+                        
     except tokenize.TokenError:
         # EOF in the middle, it's a syntax error anyway.
         pass
@@ -104,3 +114,67 @@ def split_to_singles(source):
         else:
             r.append(source[line_offsets[line]:])
     return r
+
+tests = [
+"""
+a = 3
+""","""
+a = 3
+b = 5
+""","""
+if 1:
+    1
+""","""
+if 1:
+    2
+else:
+    3
+""","""
+if 1:
+    1
+if 1:
+    2
+else:
+    3
+# comment
+""","""
+try:
+    1/0
+except:
+    print 'oops'
+""","""
+def f():
+    a = 3
+    def g():
+        a = 4
+f()
+""","""
+def f():
+    a = 3
+    def g():
+        a = 4
+f()
+# comment
+""","""
+try:
+    1
+finally:
+    2
+""","""
+a=3
+if 1:
+# comment
+    2
+    # comment
+# comment
+else:
+    3
+"""]
+
+def test():
+    # This should raise a SyntaxError if splitting wasn't right.
+    for t in tests:
+        singles = split_to_singles(t)
+        for s in singles:
+            compile(s, "fn", "single")
+    print "Test was successful"
