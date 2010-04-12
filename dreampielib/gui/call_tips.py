@@ -19,6 +19,7 @@ __all__ = ['CallTips']
 
 import gtk
 from gtk import gdk
+from gobject import TYPE_NONE
 
 try:
     from glib import idle_add
@@ -95,8 +96,11 @@ class CallTips(object):
         self.label = gtk.Label(arg_text)
         self.label.props.xpad = 2
         self.label.props.ypad = 2
+        style = gtk.rc_get_style_by_paths(
+            self.label.get_settings(), 'gtk-tooltip', 'gtk-tooltip', TYPE_NONE)
+        self.label.modify_fg(gtk.STATE_NORMAL, style.fg[gtk.STATE_NORMAL])
         self.window = gtk.Window(gtk.WINDOW_POPUP)
-        self.window.modify_bg(0, gdk.color_parse('#ffffe0'))
+        self.window.modify_bg(gtk.STATE_NORMAL, style.bg[gtk.STATE_NORMAL])
         self.window.add(self.label)
         self.place_window()
 
