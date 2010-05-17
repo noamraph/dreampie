@@ -71,6 +71,10 @@ _features = [getattr(__future__, fname)
 
 case_insen_filenames = (os.path.normcase('A') == 'a')
 
+def unicodify(s):
+    """Fault-tolerant conversion to unicode"""
+    return s if isinstance(s, unicode) else s.decode('utf8', 'replace')
+
 class Subprocess(object):
     def __init__(self, port):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -231,9 +235,7 @@ class Subprocess(object):
                 # case.
                 lineno = e.lineno if e.lineno is not None else 1
                 offset = e.offset if e.offset is not None else 1
-                msg = e.msg
-                if not isinstance(msg, unicode):
-                    msg = msg.decode('utf8', 'replace')
+                msg = unicodify(e.msg)
                 return False, (msg, lineno-1+line_count, offset-1)
             except ValueError, e:
                 # Compiling "\x%" raises a ValueError
@@ -326,9 +328,10 @@ class Subprocess(object):
             for line in lines:
                 print>>efile, line,
             is_success = False
-            exception_string = efile.getvalue()
-            if not isinstance(exception_string, unicode):
-                exception_string = exception_string.decode('utf8', 'replace')
+            # The following line replaces efile.getvalue(), because if it
+            # includes both unicode strings and byte string with non-ascii
+            # chars, it fails.
+            exception_string = u''.join(unicodify(s) for s in efile.buflist)
             res_no = None
             res_str = None
         else:
