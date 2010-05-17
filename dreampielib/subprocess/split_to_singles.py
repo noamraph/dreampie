@@ -71,6 +71,7 @@ def split_to_singles(source):
     readline = ReadLiner(source)
     first_lines = [0] # Indices, 0-based, of the rows which start a new single.
     cur_indent_level = 0
+    had_decorator = False
     
     # What this does is pretty simple: We split on every NEWLINE token which
     # is on indentation level 0 and is not followed by "else", "except" or
@@ -83,7 +84,7 @@ def split_to_singles(source):
         itertools.ifilter(lambda x: x[0] not in (tokenize.COMMENT, tokenize.NL),
                           tokenize.generate_tokens(readline)))
     try:
-        for typ, _s, (srow, _scol), (_erow, _rcol), line in tokens_iter:
+        for typ, s, (srow, _scol), (_erow, _rcol), line in tokens_iter:
             if typ == tokenize.NEWLINE:
                 for typ2, s2, (_srow2, _scol2), (_erow2, _rcol2), _line2 \
                     in tokens_iter.tee():
@@ -100,7 +101,15 @@ def split_to_singles(source):
                     and (typ2 != tokenize.ENDMARKER
                          and not (typ2 == tokenize.NAME
                                   and s2 in ('else', 'except', 'finally')))):
-                    first_lines.append(srow)
+                    if not had_decorator:
+                        first_lines.append(srow)
+                    else:
+                        had_decorator = False
+
+            elif s == '@' and cur_indent_level == 0:
+                # Skip next first-line
+                had_decorator = True
+                        
                         
     except tokenize.TokenError:
         # EOF in the middle, it's a syntax error anyway.
@@ -169,7 +178,29 @@ if 1:
 # comment
 else:
     3
-"""]
+""","""
+@dec
+
+def f():
+    pass
+""","""
+if 1:
+    pass
+    
+@dec
+
+def f():
+    pass
+""","""
+class Class:
+    @dec
+    def method():
+        pass
+
+def f():
+    pass
+"""
+]
 
 def test():
     # This should raise a SyntaxError if splitting wasn't right.
