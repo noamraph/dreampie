@@ -8,27 +8,27 @@ from distutils.command.install import install
 from distutils.core import Command
 from distutils import log
 
-from dreampielib import __version__, subp_zips
+from dreampielib import __version__, subp_lib
 
 try:
     import py2exe
 except ImportError:
     py2exe = None
 
-# This file is non-standard because we want to build the subprocess zips
-# (subp-py2.zip, subp-py3.zip) and put them in share/dreampie.
+# This file is non-standard because we want to build the subprocess library
+# (subp-py2, subp-py3) and put them in share/dreampie.
 # When run from the source directory, these files are automatically
-# created in the locals share/dreampie.
+# created in the local share/dreampie.
 # We don't want to always do that in the setup script because the debian 
 # packaging doesn't expect to find new files outside the build directory.
 # So we build them in the build directory and have a special install command
 # which copies them to the right place.
 # However, py2exe doesn't run custom install commands. So it py2exe is
-# available, the build_subp_zips commands puts them in the local share/dreampie
+# available, the build_subp_lib commands puts them in the local share/dreampie
 # dir, and they are added to the data_files list. 
 
-class build_subp_zips(Command):
-    description = 'Build the subprocess zips, which include the needed modules.'
+class build_subp_lib(Command):
+    description = 'Build the subprocess lib, which include the needed modules.'
 
     user_options = [
         ('build-dir=', 'd', "directory to build to"),
@@ -50,21 +50,21 @@ class build_subp_zips(Command):
 
     def run(self):
         my_dir = os.path.dirname(__file__)
-        src_dir = os.path.join(my_dir, 'dreampielib')
+        src_dir = my_dir
         if py2exe is None:
             dst_dir = self.build_dir
         else:
             dst_dir = os.path.join(my_dir, 'share', 'dreampie')
-        subp_zips.build(src_dir, dst_dir, log, self.force)
+        subp_lib.build(src_dir, dst_dir, log, self.force)
 
-build.sub_commands.append(('build_subp_zips', None))
+build.sub_commands.append(('build_subp_lib', None))
 
-class install_subp_zips (Command):
+class install_subp_lib (Command):
 
-    description = "install the subprocess zips"
+    description = "install the subprocess lib"
 
     user_options = [
-        ('install-dir=', 'd', "directory to install zips to"),
+        ('install-dir=', 'd', "directory to install lib to"),
         ('build-dir=','b', "build directory (where to install from)"),
         ('force', 'f', "force installation (overwrite existing files)"),
         ('skip-build', None, "skip the build steps"),
@@ -78,7 +78,6 @@ class install_subp_zips (Command):
         self.force = 0
         self.build_dir = None
         self.skip_build = None
-        self.infiles = []
         self.outfiles = []
 
     def finalize_options (self):
@@ -93,27 +92,29 @@ class install_subp_zips (Command):
         join = os.path.join
 
         if not self.skip_build:
-            self.run_command('build_subp_zips')
+            self.run_command('build_subp_lib')
         
-        for ver in subp_zips.zip_vers:
-            src = join(self.build_dir, subp_zips.zip_fns[ver])
-            dst = join(self.install_dir, 'share', 'dreampie', subp_zips.zip_fns[ver])
-            self.copy_file(src, dst)
-            self.infiles.append(src)
-            self.outfiles.append(dst)
-
-    def get_inputs (self):
-        return self.infiles
+        for ver in subp_lib.lib_vers:
+            src = join(self.build_dir, subp_lib.lib_fns[ver])
+            dst = join(self.install_dir, 'share', 'dreampie', subp_lib.lib_fns[ver])
+            self.outfiles.append(self.copy_tree(src, dst))
 
     def get_outputs(self):
         return self.outfiles
 
-install.sub_commands.append(('install_subp_zips', None))
+if py2exe is None:
+    install.sub_commands.append(('install_subp_lib', None))
 
 if py2exe is not None:
-    additional_py2exe_data_files = [
-        os.path.join('share/dreampie', subp_zips.zip_fns[v])
-        for v in subp_zips.zip_vers]
+    d = {}
+    for v in subp_lib.lib_vers:
+        for fn in subp_lib.files:
+            dst_dir = os.path.join('share/dreampie',
+                                   subp_lib.lib_fns[v],
+                                   os.path.dirname(fn))
+            src_fn = os.path.join('share/dreampie', subp_lib.lib_fns[v], fn)
+            d.setdefault(dst_dir, []).append(src_fn)
+    additional_py2exe_data_files = d.items()
 else:
     additional_py2exe_data_files = []
 
@@ -139,12 +140,10 @@ setup_args = dict(
                 ('share/pixmaps', ['share/pixmaps/dreampie.svg',
                                    'share/pixmaps/dreampie.png']),
                 ('share/dreampie', ['share/dreampie/subp_main.py',
-                                    'share/dreampie/py_zipimport.py',
-                                    'share/dreampie/dreampie.glade']
-                                    +additional_py2exe_data_files),
-               ],
-    cmdclass={'build_subp_zips': build_subp_zips,
-              'install_subp_zips': install_subp_zips},
+                                    'share/dreampie/dreampie.glade']),
+               ] + additional_py2exe_data_files,
+    cmdclass={'build_subp_lib': build_subp_lib,
+              'install_subp_lib': install_subp_lib},
     options={'py2exe':
              {'ignores':['_scproxy', 'glib', 'gobject', 'gtk',
                          'gtk.gdk', 'gtk.glade', 'gtksourceview2',

@@ -50,8 +50,8 @@ def find_data_dir():
     if isdir(join(local_data_dir, 'dreampie')):
         # We're in the source path. Build zips if needed, and return the right
         # dir.
-        from ..subp_zips import build
-        src_dir = join(dirname(__file__), pardir)
+        from ..subp_lib import build
+        src_dir = join(dirname(__file__), pardir, pardir)
         build_dir = join(local_data_dir, 'dreampie')
         build(src_dir, build_dir)
         return abspath(local_data_dir)

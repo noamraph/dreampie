@@ -30,18 +30,15 @@ import sys
 sys.setdefaultencoding('utf-8')
 import site
 
-if sys.platform == 'cli':
-    # IronPython doesn't have built-in zipimport.
-    import py_zipimport
 from os.path import abspath, join, dirname
 
 def main():
     port = int(sys.argv[1])
 
     py_ver = sys.version_info[0]
-    zip_name = abspath(join(dirname(__file__), 'subp-py%d.zip' % py_ver))
+    lib_name = abspath(join(dirname(__file__), 'subp-py%d' % py_ver))
     
-    sys.path.insert(0, zip_name)
+    sys.path.insert(0, lib_name)
     from dreampielib.subprocess import main as subprocess_main
     del sys.path[0]
     
