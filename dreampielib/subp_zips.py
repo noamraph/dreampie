@@ -67,6 +67,7 @@ def build(src_dir, build_dir, log=simple_logger, force=False):
     files = ['__init__.py',
              'subprocess/__init__.py',
              'subprocess/split_to_singles.py',
+             'subprocess/trunc_traceback.py',
              'common/__init__.py',
              'common/objectstream.py',
              'common/brine.py',

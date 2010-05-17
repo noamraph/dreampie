@@ -47,7 +47,8 @@ if sys.platform == 'win32':
     from ctypes import byref, c_ulong, windll
     PeekNamedPipe = windll.kernel32.PeekNamedPipe
 
-from dreampielib.common.objectstream import send_object, recv_object
+from .trunc_traceback import trunc_traceback
+from ..common.objectstream import send_object, recv_object
 
 #import rpdb2; rpdb2.start_embedded_debugger('a')
 
@@ -309,29 +310,10 @@ class Subprocess(object):
                 res_str = None
         except (Exception, KeyboardInterrupt):
             sys.stdout.flush()
-            linecache.checkcache()
-            efile = StringIO()
-            typ, val, tb = excinfo = sys.exc_info()
+            excinfo = sys.exc_info()
             sys.last_type, sys.last_value, sys.last_traceback = excinfo
-            tbe = traceback.extract_tb(tb)
-            if tbe[-1][0] != __file__:
-                # If the last entry is from this file, don't remove
-                # anything. Otherwise, remove lines before the current
-                # frame.
-                for i in xrange(len(tbe)-2, -1, -1):
-                    if tbe[i][0] == __file__:
-                        tbe = tbe[i+1:]
-                        break
-            print>>efile, 'Traceback (most recent call last):'
-            traceback.print_list(tbe, file=efile)
-            lines = traceback.format_exception_only(typ, val)
-            for line in lines:
-                print>>efile, line,
+            exception_string = trunc_traceback(excinfo, __file__)
             is_success = False
-            # The following line replaces efile.getvalue(), because if it
-            # includes both unicode strings and byte string with non-ascii
-            # chars, it fails.
-            exception_string = u''.join(unicodify(s) for s in efile.buflist)
             res_no = None
             res_str = None
         else:
