@@ -93,6 +93,10 @@ class Subprocess(object):
         
         # Add '' to sys.path, to be like the regular Python interpreter
         sys.path.insert(0, '')
+        
+        # Set sys.argv to [''], to be like the regular Python interpreter
+        # (Otherwise multiprocessing on win32 starts running subp_main.py)
+        sys.argv = ['']
 
         # Remove __builtin__.exit, which only confuses users
         del __builtin__.exit
