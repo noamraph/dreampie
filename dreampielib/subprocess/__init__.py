@@ -199,6 +199,9 @@ class Subprocess(object):
             lineno = e.lineno if e.lineno is not None else 1
             offset = e.offset if e.offset is not None else 1
             return False, (unicode(e.msg), lineno-1, offset-1)
+        except ValueError, e:
+            # Compiling "\x%" raises a ValueError
+            return False, (unicode(e), 0, 0)
             
         # Update gid, linecache, flags
         self.gid += 1
@@ -232,6 +235,9 @@ class Subprocess(object):
                 if not isinstance(msg, unicode):
                     msg = msg.decode('utf8', 'replace')
                 return False, (msg, lineno-1+line_count, offset-1)
+            except ValueError, e:
+                # Compiling "\x%" raises a ValueError
+                return False, (unicode(e), 0, 0)
             else:
                 if c is None:
                     return False, None
