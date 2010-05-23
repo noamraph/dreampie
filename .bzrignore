@@ -1,7 +1,5 @@
 *.class
 build
-share/dreampie/subp-py2.zip
-share/dreampie/subp-py3.zip
 misc/*
 debian/*
 .project
@@ -13,3 +11,6 @@ gtk-runtime
 pygtk-2.5
 pygtk-2.6
 dreampie-*-setup.exe.asc
+.settings
+share/dreampie/subp-py2
+share/dreampie/subp-py3
