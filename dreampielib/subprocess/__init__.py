@@ -48,7 +48,8 @@ if sys.platform == 'win32':
     PeekNamedPipe = windll.kernel32.PeekNamedPipe
 
 from .trunc_traceback import trunc_traceback
-from ..common.objectstream import send_object, recv_object
+# We don't use relative import because of a Jython 2.5.1 bug.
+from dreampielib.common.objectstream import send_object, recv_object
 
 #import rpdb2; rpdb2.start_embedded_debugger('a')
 
