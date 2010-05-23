@@ -62,6 +62,18 @@ def _iter_chain(exc, custom_tb=None, seen=None):
 #######################################################################
 
 
+def canonical_fn(fn):
+    """
+    Return something that will be equal for both source file and the cached
+    compile file.
+    """
+    # If the file contains a '$', remove from it (Jython uses it). Otherwise,
+    # remove from a '.'.
+    if '$' in fn:
+        return fn.rsplit('$', 1)[0]
+    else:
+        return fn.rsplit('.', 1)[0]
+
 def trunc_traceback((_typ, value, tb), source_file):
     """
     Format a traceback where entried before a frame from source_file are
@@ -79,18 +91,22 @@ def trunc_traceback((_typ, value, tb), source_file):
     else:
         values = [(value, tb)]
     
+    # The source_file and filename may differ in extension (pyc/py), so we
+    # ignore the extension
+    source_file = canonical_fn(source_file)
+    
     for value, tb in values:
         if isinstance(value, basestring):
             efile.write(value+'\n')
             continue
     
         tbe = traceback.extract_tb(tb)
-        if tbe[-1][0] != source_file:
+        if canonical_fn(tbe[-1][0]) != source_file:
             # If the last entry is from this file, don't remove
             # anything. Otherwise, remove lines before the current
             # frame.
             for i in xrange(len(tbe)-2, -1, -1):
-                if tbe[i][0] == source_file:
+                if canonical_fn(tbe[i][0]) == source_file:
                     tbe = tbe[i+1:]
                     break
                 
