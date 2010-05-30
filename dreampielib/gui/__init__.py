@@ -878,7 +878,8 @@ class DreamPie(SimpleGladeApp):
             msg = gtk.MessageDialog(self.window_main, gtk.DIALOG_MODAL,
                                     gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO,
                                     _("Are you sure you want to quit?"))
-            quit = msg.run() == gtk.RESPONSE_YES
+            msg.set_default_response(gtk.RESPONSE_YES)
+            quit = (msg.run() == gtk.RESPONSE_YES)
             msg.destroy()
         else:
             quit = True
