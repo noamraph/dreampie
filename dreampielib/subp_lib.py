@@ -94,7 +94,7 @@ def build(src_dir, build_dir, log=simple_logger, force=False):
         for fn in files:
             src_fn = join(src_dir, fn)
             dst_fn = join(lib_fn, fn)
-            if not newer(src_fn, dst_fn):
+            if not force and not newer(src_fn, dst_fn):
                 continue
             
             if ver == 3:
@@ -110,7 +110,13 @@ def build(src_dir, build_dir, log=simple_logger, force=False):
                 dst = str(rt.refactor_string(src+'\n', fn))[:-1]
             else:
                 dst = src
-                
+            
+            dst = """\
+# This file was automatically generated from a file in the source DreamPie dir.
+# DO NOT EDIT IT, as your changes will be gone when the file is created again.
+
+""" + dst
+            
             f = open(dst_fn, 'wb')
             f.write(dst)
             f.close()
