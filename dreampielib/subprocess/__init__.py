@@ -479,6 +479,12 @@ class Subprocess(object):
             return
         if comp_what == '':
             comp_what = '.'
+        if comp_what.startswith('//'):
+            # This may be an XPath expression. Calling listdir on win32 will
+            # interpret this as UNC and search the network, which may take
+            # a long time or even stall. You can still use r'\\...' if you
+            # want completion from UNC paths.
+            return
 
         try:
             dirlist = os.listdir(comp_what)
