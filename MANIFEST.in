@@ -1,4 +1,9 @@
-recursive-include share *.png *.svg *.desktop *.py *.glade *.1
+include share/applications/dreampie.desktop
+include share/dreampie/dreampie.glade
+include share/dreampie/subp_main.py
+include share/man/man1/dreampie.1
+include share/pixmaps/dreampie.svg
+include share/pixmaps/dreampie.png
 include COPYING LICENSE-PSF
 
 
