@@ -25,7 +25,9 @@ import sys
 py3k = (sys.version_info[0] == 3)
 import struct
 
-from . import brine
+# This was "from . import brine", but a bug in 2to3 in Python 2.6.5
+# converted it to "from .. import brine", so I changed that.
+from ..common import brine
 
 if not py3k:
     empty_bytes = ''
