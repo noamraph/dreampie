@@ -28,7 +28,7 @@ import types
 import keyword
 import __builtin__
 import inspect
-from repr import repr as safe_repr
+import pydoc
 import pprint
 import codeop
 try:
@@ -76,6 +76,12 @@ case_insen_filenames = (os.path.normcase('A') == 'a')
 def unicodify(s):
     """Fault-tolerant conversion to unicode"""
     return s if isinstance(s, unicode) else s.decode('utf8', 'replace')
+
+class PlainTextDoc(pydoc.TextDoc):
+    """pydoc.TextDoc returns strange bold text, so we disable it."""
+    def bold(self, text):
+        return text
+textdoc = PlainTextDoc()
 
 class Subprocess(object):
     def __init__(self, port):
@@ -564,51 +570,20 @@ class Subprocess(object):
         return None
 
     @rpc_func
-    def get_arg_text(self, expr):
+    def get_func_doc(self, expr):
         """Get a string describing the arguments for the given object"""
-        # This is based on Python's idlelib/CallTips.py, and the work of
-        # Beni Cherniavsky.
         try:
-            entity = eval(expr, self.locs)
+            obj = eval(expr, self.locs)
         except Exception:
             return None
-        arg_text = u""
-        arg_offset = 0
-        if type(entity) is types.ClassType:
-            # Look for the highest __init__ in the class chain.
-            fob = self._find_constructor(entity)
-            if fob is None:
-                fob = lambda: None
-            else:
-                arg_offset = 1
-        elif type(entity) is types.MethodType:
-            # bit of a hack for methods - turn it into a function
-            # but we drop the "self" param.
-            fob = entity.im_func
-            arg_offset = 1
+        try:
+            source = inspect.getsource(obj)
+        except (TypeError, IOError):
+            return unicodify(textdoc.document(obj).strip())
         else:
-            fob = entity
-        # Try and build one for Python defined functions
-        if type(fob) in [types.FunctionType, types.LambdaType]:
-            try:
-                args, varargs, varkw, defaults = inspect.getargspec(fob)
-                def formatvalue(obj):
-                    return u"=" + safe_repr(obj)
-                arg_text = unicode(inspect.formatargspec(
-                    args[arg_offset:], varargs, varkw, defaults, formatvalue=formatvalue))
-            except Exception:
-                pass
-        # See if we can use the docstring
-        doc = unicode(inspect.getdoc(entity))
-        if doc:
-            doc = doc.lstrip()
-            pos = doc.find("\n")
-            if pos < 0 or pos > 70:
-                pos = 70
-            if arg_text:
-                arg_text += "\n"
-            arg_text += doc[:pos]
-        return arg_text
+            # cleandoc removes extra indentation.
+            # We add a newline because it ignores indentation of first line...
+            return unicodify(inspect.cleandoc('\n'+source))
     
     def check_matplotlib_ia(self):
         """Warn if matplotlib is in non-interactive mode"""

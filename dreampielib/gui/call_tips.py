@@ -19,7 +19,6 @@ __all__ = ['CallTips']
 
 import gtk
 from gtk import gdk
-from gobject import TYPE_NONE
 
 try:
     from glib import idle_add
@@ -27,17 +26,17 @@ except ImportError:
     from gobject import idle_add
 
 from .hyper_parser import HyperParser
+from .call_tip_window import CallTipWindow
 from .beep import beep
 
 class CallTips(object):
-    def __init__(self, sourceview, get_arg_text, INDENT_WIDTH):
+    def __init__(self, sourceview, get_func_doc, INDENT_WIDTH):
         self.sourceview = sourceview
         self.sourcebuffer = sb = sourceview.get_buffer()
-        self.get_arg_text = get_arg_text
+        self.get_func_doc = get_func_doc
         self.INDENT_WIDTH = INDENT_WIDTH
 
-        self.label = None
-        self.window = None
+        self.ctwindow = CallTipWindow()
 
         self.start_mark = sb.create_mark(None, sb.get_start_iter(),
                                          left_gravity=True)
@@ -83,7 +82,7 @@ class CallTips(object):
         expr = hp.get_expression()
         if not expr or (is_auto and expr.find('(') != -1):
             return and_maybe_beep()
-        arg_text = self.get_arg_text(expr)
+        arg_text = self.get_func_doc(expr)
 
         if not arg_text:
             return and_maybe_beep()
@@ -93,16 +92,8 @@ class CallTips(object):
 
         self.hide()
 
-        self.label = gtk.Label(arg_text)
-        self.label.props.xpad = 2
-        self.label.props.ypad = 2
-        style = gtk.rc_get_style_by_paths(
-            self.label.get_settings(), 'gtk-tooltip', 'gtk-tooltip', TYPE_NONE)
-        self.label.modify_fg(gtk.STATE_NORMAL, style.fg[gtk.STATE_NORMAL])
-        self.window = gtk.Window(gtk.WINDOW_POPUP)
-        self.window.modify_bg(gtk.STATE_NORMAL, style.bg[gtk.STATE_NORMAL])
-        self.window.add(self.label)
-        self.place_window()
+        x, y = self.get_position()
+        self.ctwindow.show(arg_text, x, y)
 
         self.connect(sb, 'mark-set', self.on_mark_set)
         self.connect(sb, 'insert-text', self.on_insert_text)
@@ -110,14 +101,9 @@ class CallTips(object):
         self.connect(self.sourceview, 'key-press-event', self.on_keypress)
         self.connect(self.sourceview, 'focus-out-event', self.on_focus_out)
 
-        self.window.show_all()
         self.is_shown = True
 
-    def place_window(self):
-        if self.window is None:
-            # Was called as a callback, and window was already closed.
-            return False
-            
+    def get_position(self):
         sv = self.sourceview
         sb = self.sourcebuffer
 
@@ -136,9 +122,18 @@ class CallTips(object):
         y = max(y, 0)
         sv_x, sv_y = sv.get_window(gtk.TEXT_WINDOW_WIDGET).get_origin()
         x += sv_x; y += sv_y
-        self.window.move(x, y)
 
-        # If called by idle_add, don't call again.
+        return x, y
+    
+    def place_window(self):
+        if not self.is_shown:
+            # Was called as a callback, and window was already closed.
+            return False
+            
+        x, y = self.get_position()
+        self.ctwindow.move_perhaps(x, y)
+
+        # Called by idle_add, don't call again.
         return False
 
     def on_mark_set(self, sb, it, mark):
@@ -149,7 +144,7 @@ class CallTips(object):
             else:
                 idle_add(self.place_window)
 
-    def on_insert_text(self, sb, it, text, length):
+    def on_insert_text(self, sb, it, text, _length):
         if ('(' in text
             or ')' in text
             or it.compare(sb.get_iter_at_mark(self.start_mark)) < 0
@@ -168,12 +163,12 @@ class CallTips(object):
         else:
             idle_add(self.place_window)
 
-    def on_keypress(self, widget, event):
+    def on_keypress(self, _widget, event):
         keyval_name = gdk.keyval_name(event.keyval)
         if keyval_name == 'Escape':
             self.hide()
 
-    def on_focus_out(self, widget, event):
+    def on_focus_out(self, _widget, _event):
         self.hide()
 
     def hide(self):
@@ -181,9 +176,6 @@ class CallTips(object):
             return
         
         self.disconnect_all()
-        self.window.destroy()
-        self.window = None
-        self.label = None
-
+        self.ctwindow.hide()
         self.is_shown = False
 

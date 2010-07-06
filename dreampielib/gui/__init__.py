@@ -181,7 +181,7 @@ class DreamPie(SimpleGladeApp):
         # priority than the key-press event of autocomplete, when active.
         self.sourceview.connect('key-press-event', self.on_sourceview_keypress)
 
-        self.call_tips = CallTips(self.sourceview, self.get_arg_text,
+        self.call_tips = CallTips(self.sourceview, self.get_func_doc,
                                   INDENT_WIDTH)
 
         self.subp = SubprocessHandler(
@@ -826,10 +826,10 @@ class DreamPie(SimpleGladeApp):
     def on_show_calltip(self, _widget):
         self.call_tips.show(is_auto=False)
 
-    def get_arg_text(self, expr):
+    def get_func_doc(self, expr):
         if self.is_executing:
             return None
-        return self.call_subp(u'get_arg_text', expr)
+        return self.call_subp(u'get_func_doc', expr)
 
     def configure(self):
         """
