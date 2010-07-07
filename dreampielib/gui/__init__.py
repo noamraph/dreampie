@@ -108,7 +108,7 @@ from .history import History
 from .hist_persist import HistPersist
 from .autocomplete import Autocomplete
 from .call_tips import CallTips
-from .subprocess_handler import SubprocessHandler
+from .subprocess_handler import SubprocessHandler, StartError
 from .beep import beep
 from .file_dialogs import save_dialog
 from .tags import (OUTPUT, STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND,
@@ -188,7 +188,16 @@ class DreamPie(SimpleGladeApp):
             pyexec, data_dir,
             self.on_stdout_recv, self.on_stderr_recv, self.on_object_recv,
             self.on_subp_terminated)
-        self.subp.start()
+        try:
+            self.subp.start()
+        except StartError, e:
+            msg = gtk.MessageDialog(
+                None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_CLOSE,
+                _("Couldn't start subprocess: %s") % e)
+            _response = msg.run()
+            msg.destroy()
+            print >> sys.stderr, e
+            sys.exit(1)
 
         # Is the subprocess executing a command
         self.is_executing = False
@@ -564,6 +573,8 @@ class DreamPie(SimpleGladeApp):
     def on_subp_terminated(self):
         if self.is_terminating:
             return
+        # This may raise an exception if subprocess couldn't be started,
+        # but hopefully if it was started once it will be started again.
         self.subp.start()
         self.set_is_executing(False)
         self.write('\n')

@@ -34,6 +34,35 @@ import gobject
 
 from ..common.objectstream import send_object, recv_object
 
+_ = lambda s: s
+
+START_TIMEOUT = 10 # seconds
+
+class StartError(IOError):
+    """Error when starting subprocess"""
+    pass
+
+class StartOutputError(StartError):
+    """Start subprocess failed because it produced output."""
+    def __init__(self, output):
+        self.output = output
+    def __str__(self):
+        return _("Subprocess wrote unexpected output:\n%s") % self.output
+
+class StartTerminatedError(StartError):
+    """Start subprocess failed because process terminated."""
+    def __init__(self, rc):
+        self.rc = rc
+    def __str__(self):
+        return _("Subprocess terminated with return code %d.") % self.rc
+
+class StartTimeoutError(StartError):
+    """Start subprocess failed because timeout elapsed."""
+    def __init__(self, timeout):
+        self.timeout = timeout
+    def __str__(self):
+        return _("Subprocess didn't call back in %s seconds.") % self.timeout
+
 class SubprocessHandler(object):
     """
     Manage interaction with the subprocess.
@@ -101,7 +130,29 @@ class SubprocessHandler(object):
                        env=env)
         #debug("Waiting for the subprocess to connect")
         s.listen(1)
-        self._sock, _addr = s.accept()
+        # We wait for the client to connect, but we also poll stdout and stderr,
+        # and if it writes something then we report an error.
+        s.settimeout(0.1)
+        start_time = time.time()
+        while True:
+            try:
+                self._sock, _addr = s.accept()
+            except socket.timeout:
+                pass
+            else:
+                break
+            
+            out = (popen.recv() or '') + (popen.recv_err() or '')
+            if out:
+                raise StartOutputError(out)
+            
+            rc = popen.poll()
+            if rc is not None:
+                raise StartTerminatedError(rc)
+            
+            if time.time() - start_time > START_TIMEOUT:
+                raise StartTimeoutError(START_TIMEOUT)
+            
         #debug("Connected to addr %r." % (addr,))
         s.close()
         self._popen = popen
