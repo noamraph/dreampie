@@ -83,6 +83,17 @@ class PlainTextDoc(pydoc.TextDoc):
         return text
 textdoc = PlainTextDoc()
 
+# A mapping from id of types to boolean: is the type callable only.
+# We use ids instead of weakrefs because old classes aren't weakrefable,
+# and because we don't want to rely on weakref. This will fail if a type
+# was deleted and another was created at the same memory address, but this
+# seems unlikely.
+is_callable_cache = {}
+# magic methods for objects with defined operators
+operator_methods = ['__%s__' % s for s in
+                    'add sub mul div floordiv truediv mod divmod pow lshift '
+                    'rshift and xor or'.split()]
+
 class Subprocess(object):
     def __init__(self, port):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -471,7 +482,7 @@ class Subprocess(object):
         return public, private
 
     @rpc_func
-    def complete_filenames(self, str_prefix, text, str_char):
+    def complete_filenames(self, str_prefix, text, str_char, add_quote):
         is_raw = 'r' in str_prefix.lower()
         is_unicode = 'u' in str_prefix.lower()
         try:
@@ -526,7 +537,8 @@ class Subprocess(object):
             is_dir = os.path.isdir(os.path.join(comp_what, orig_name))
 
             if not is_dir:
-                name += str_char
+                if add_quote:
+                    name += str_char
             else:
                 if '/' in text or os.path.sep == '/':
                     # Prefer forward slash
@@ -584,6 +596,36 @@ class Subprocess(object):
             # cleandoc removes extra indentation.
             # We add a newline because it ignores indentation of first line...
             return unicodify(inspect.cleandoc('\n'+source))
+    
+    @rpc_func
+    def is_callable_only(self, what):
+        """
+        Checks whether an object is callable, and doesn't expect operators
+        (so there's no point in typing space after its name, unless to add
+        parens).
+        Also checks whether obj.__expects_str__ is True, which means that
+        the expected argument is a string so quotes will be added.
+        Returns (is_callable_only, expects_str)
+        """
+        try:
+            obj = eval(what, self.locs)
+        except Exception:
+            return False, False
+        typ = type(obj)
+        
+        expects_str = bool(getattr(obj, '__expects_str__', False))
+        
+        # Check cache
+        try:
+            return is_callable_cache[id(typ)], expects_str
+        except KeyError:
+            pass
+        
+        r = (callable(obj)
+             and not any(hasattr(obj, att) for att in operator_methods))
+        
+        is_callable_cache[id(typ)] = r
+        return r, expects_str
     
     def check_matplotlib_ia(self):
         """Warn if matplotlib is in non-interactive mode"""

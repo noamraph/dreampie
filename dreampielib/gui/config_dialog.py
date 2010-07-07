@@ -17,6 +17,8 @@
 
 __all__ = ['ConfigDialog']
 
+import re
+
 import gobject
 import gtk
 from gtk import gdk
@@ -55,6 +57,8 @@ class ConfigDialog(SimpleGladeApp):
         self.autofold_spin.props.value = config.get_int('autofold-numlines')
         
         self.viewer_entry.props.text = eval(config.get('viewer'))
+        
+        self.expects_str_entry.props.text = eval(config.get('expects-str'))
         
         self.leave_code_chk.props.active = config.get_bool('leave-code')
         
@@ -100,9 +104,25 @@ class ConfigDialog(SimpleGladeApp):
         self.is_initializing = False
 
     def run(self):
-        r = self.config_dialog.run()
-        if r != gtk.RESPONSE_OK:
-            return r
+        while True:
+            r = self.config_dialog.run()
+            if r != gtk.RESPONSE_OK:
+                return r
+            expects_str = self.expects_str_entry.props.text.decode('utf8').strip()
+            is_ident = lambda s: re.match(r'[A-Za-z_][A-Za-z0-9_]*$', s)
+            if not all(is_ident(s) for s in expects_str.split()):
+                warning = _("All names in the auto-quote list must be legal "
+                            "Python identifiers and be separated by spaces.")
+                msg = gtk.MessageDialog(self.config_dialog, gtk.DIALOG_MODAL,
+                                        gtk.MESSAGE_WARNING, gtk.BUTTONS_CLOSE,
+                                        warning)
+                _response = msg.run()
+                msg.destroy()
+                self.expects_str_entry.grab_focus()
+                continue
+            
+            # r == gtk.RESPONSE_OK and everything is ok.
+            break
         
         config = self.config
 
@@ -117,6 +137,8 @@ class ConfigDialog(SimpleGladeApp):
         config.set_int('autofold-numlines', self.autofold_spin.props.value)
         
         config.set('viewer', repr(self.viewer_entry.props.text.decode('utf8').strip()))
+        
+        config.set('expects-str', repr(expects_str))
         
         config.set_bool('leave-code', self.leave_code_chk.props.active)
         

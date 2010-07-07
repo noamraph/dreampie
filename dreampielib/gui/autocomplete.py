@@ -132,6 +132,10 @@ class Autocomplete(object):
         Return (comp_prefix, public, private) - a string and two lists.
         If shouldn't complete - return None.
         """
+        # Check whether autocompletion is really appropriate
+        if is_auto and text[index-1] not in '\\/':
+            return
+        
         str_start = hp.bracketing[hp.indexbracket][0] + 1
         # Analyze string a bit
         pos = str_start - 1
@@ -167,8 +171,10 @@ class Autocomplete(object):
 
         comp_prefix = text[comp_prefix_index:index]
         
+        add_quote = not (len(text) > index and text[index] == str_char)
+        
         res = self.complete_filenames(
-            str_prefix, text[str_start:comp_prefix_index], str_char)
+            str_prefix, text[str_start:comp_prefix_index], str_char, add_quote)
         if res is None:
             return
         public, private, is_case_insen = res

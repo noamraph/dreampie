@@ -36,6 +36,7 @@ autofold = True
 autofold-numlines = 30
 viewer = ''
 init-code = ''
+expects-str = 'execfile chdir open run runeval'
 ask-on-quit = True
 matplotlib-ia-warn = True
 

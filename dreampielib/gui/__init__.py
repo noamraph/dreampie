@@ -23,6 +23,8 @@ import tempfile
 from optparse import OptionParser
 import subprocess
 import webbrowser
+import re
+from keyword import iskeyword
 
 import logging
 from logging import debug
@@ -152,6 +154,9 @@ class DreamPie(SimpleGladeApp):
                                          left_gravity=True)
 
         self.init_sourcebufferview()
+        
+        # List of function names which expect a string argument
+        self.expects_str = []
         
         self.configure()
 
@@ -471,6 +476,43 @@ class DreamPie(SimpleGladeApp):
 
         return False
 
+    @sourceview_keyhandler('space', 0)
+    def on_sourceview_space(self):
+        """
+        If a space was hit after a callable-only object, add parentheses.
+        """
+        if self.is_executing:
+            return False
+        
+        sb = self.sourcebuffer
+        insert = sb.get_iter_at_mark(sb.get_insert())
+        insert_linestart = sb.get_iter_at_line(insert.get_line())
+        line = self.sb_get_text(insert_linestart, insert)
+        # Search for a sequence of identifiers separated by dots at the
+        # end of the line
+        m = re.search(r'[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*$',
+                      line)
+        if not m:
+            return False
+        what = m.group()
+        if iskeyword(what):
+            # This is a common case, no need to ask the subprocess for it.
+            return False
+        
+        is_callable_only, expects_str = self.call_subp(u'is_callable_only', what)
+        if not is_callable_only:
+            return False
+        
+        last_name = what.rsplit('.', 1)[-1]
+        if expects_str or last_name in self.expects_str:
+            sb.insert(insert, '("")')
+            insert.backward_chars(2)
+        else:
+            sb.insert(insert, '()')
+            insert.backward_char()
+        sb.place_cursor(insert)
+        return True
+        
     # The following 3 handlers are for characters which may trigger automatic
     # opening of the completion list. (slash and backslash depend on path.sep)
     # We leave the final decision whether to open the list to the autocompleter.
@@ -829,10 +871,11 @@ class DreamPie(SimpleGladeApp):
             return None
         return self.call_subp(u'complete_attributes', expr)
 
-    def complete_filenames(self, str_prefix, text, str_char):
+    def complete_filenames(self, str_prefix, text, str_char, add_quote):
         if self.is_executing:
             return None
-        return self.call_subp(u'complete_filenames', str_prefix, text, str_char)
+        return self.call_subp(u'complete_filenames', str_prefix, text, str_char,
+                              add_quote)
 
     def on_show_calltip(self, _widget):
         self.call_tips.show(is_auto=False)
@@ -864,6 +907,8 @@ class DreamPie(SimpleGladeApp):
         
         command_defs = self.textbuffer.get_tag_table().lookup(COMMAND_DEFS)
         command_defs.props.invisible = config.get_bool('hide-defs')
+
+        self.expects_str = set(eval(config.get('expects-str')).split())
 
     def on_preferences(self, _widget):
         cd = ConfigDialog(self.config, gladefile, self.window_main)

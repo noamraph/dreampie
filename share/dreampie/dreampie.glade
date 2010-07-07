@@ -8,7 +8,6 @@
     <child>
       <widget class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <child>
           <widget class="GtkMenuBar" id="menubar1">
             <property name="visible">True</property>
@@ -130,8 +129,8 @@
                         <property name="label" translatable="yes">Unfold Last Folded Output</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_unfold_last"/>
-                        <accelerator key="equal" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                         <accelerator key="plus" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <accelerator key="equal" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -346,7 +345,6 @@
           <widget class="GtkVPaned" id="vpaned_main">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="orientation">vertical</property>
             <child>
               <widget class="GtkScrolledWindow" id="scrolledwindow_textview">
                 <property name="visible">True</property>
@@ -443,7 +441,6 @@
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox4">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
           <widget class="GtkNotebook" id="notebook">
@@ -460,7 +457,6 @@
                 <child>
                   <widget class="GtkFontSelection" id="fontsel">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
                     <property name="spacing">12</property>
                     <child>
                       <placeholder/>
@@ -493,7 +489,6 @@
                     <child>
                       <widget class="GtkVBox" id="vbox1">
                         <property name="visible">True</property>
-                        <property name="orientation">vertical</property>
                         <property name="spacing">3</property>
                         <child>
                           <widget class="GtkLabel" id="label4">
@@ -585,7 +580,6 @@
                     <child>
                       <widget class="GtkVSeparator" id="vseparator1">
                         <property name="visible">True</property>
-                        <property name="orientation">vertical</property>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
@@ -595,7 +589,6 @@
                     <child>
                       <widget class="GtkVBox" id="vbox2">
                         <property name="visible">True</property>
-                        <property name="orientation">vertical</property>
                         <property name="spacing">3</property>
                         <child>
                           <widget class="GtkLabel" id="label5">
@@ -664,7 +657,6 @@
                     <child>
                       <widget class="GtkVSeparator" id="vseparator2">
                         <property name="visible">True</property>
-                        <property name="orientation">vertical</property>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
@@ -674,7 +666,6 @@
                     <child>
                       <widget class="GtkVBox" id="vbox3">
                         <property name="visible">True</property>
-                        <property name="orientation">vertical</property>
                         <property name="spacing">3</property>
                         <child>
                           <widget class="GtkFrame" id="frame1">
@@ -688,7 +679,6 @@
                                 <child>
                                   <widget class="GtkVBox" id="vbox5">
                                     <property name="visible">True</property>
-                                    <property name="orientation">vertical</property>
                                     <child>
                                       <widget class="GtkRadioButton" id="fg_default_rad">
                                         <property name="label" translatable="yes">Default</property>
@@ -766,7 +756,6 @@
                                 <child>
                                   <widget class="GtkVBox" id="vbox6">
                                     <property name="visible">True</property>
-                                    <property name="orientation">vertical</property>
                                     <child>
                                       <widget class="GtkRadioButton" id="bg_default_rad">
                                         <property name="label" translatable="yes">Default</property>
@@ -866,7 +855,6 @@
                 <child>
                   <widget class="GtkVBox" id="vbox4">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
                     <property name="spacing">3</property>
                     <child>
                       <widget class="GtkCheckButton" id="pprint_chk">
@@ -1012,7 +1000,6 @@
                 <child>
                   <widget class="GtkVBox" id="vbox8">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
                     <property name="spacing">3</property>
                     <child>
                       <widget class="GtkCheckButton" id="autofold_chk">
@@ -1123,6 +1110,38 @@ Tip: If you want a non-gui viewer, use something like "xterm -e less"</property>
                       </packing>
                     </child>
                     <child>
+                      <widget class="GtkLabel" id="label10">
+                        <property name="visible">True</property>
+                        <property name="xalign">0</property>
+                        <property name="label" translatable="yes">Automatically add quotes for these functions:</property>
+                      </widget>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
+                        <property name="position">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkAlignment" id="alignment12">
+                        <property name="visible">True</property>
+                        <property name="left_padding">22</property>
+                        <child>
+                          <widget class="GtkEntry" id="expects_str_entry">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="tooltip" translatable="yes">A list of function names, separated by spaces, that usually get a string literal as an argument.
+If you type the name of a function of the list and then press the space key, parens and quotes will automatically be added - for example, 'execfile&lt;space&gt;' -&gt; 'execfile("")'.
+You can also set the __expects_str__ attribute of a function to True to achieve the same effect.</property>
+                            <property name="invisible_char">&#x25CF;</property>
+                          </widget>
+                        </child>
+                      </widget>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="position">4</property>
+                      </packing>
+                    </child>
+                    <child>
                       <widget class="GtkCheckButton" id="leave_code_chk">
                         <property name="label" translatable="yes">Leave code in the code box after execution</property>
                         <property name="visible">True</property>
@@ -1132,7 +1151,7 @@ Tip: If you want a non-gui viewer, use something like "xterm -e less"</property>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
-                        <property name="position">3</property>
+                        <property name="position">5</property>
                       </packing>
                     </child>
                     <child>
@@ -1145,7 +1164,7 @@ Tip: If you want a non-gui viewer, use something like "xterm -e less"</property>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
-                        <property name="position">4</property>
+                        <property name="position">6</property>
                       </packing>
                     </child>
                     <child>
@@ -1158,7 +1177,7 @@ Tip: If you want a non-gui viewer, use something like "xterm -e less"</property>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
-                        <property name="position">5</property>
+                        <property name="position">7</property>
                       </packing>
                     </child>
                   </widget>
@@ -1246,7 +1265,6 @@ You should have received a copy of the GNU General Public License along with Dre
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox4">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
           <placeholder/>
@@ -1272,7 +1290,6 @@ You should have received a copy of the GNU General Public License along with Dre
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox6">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
           <widget class="GtkHBox" id="hbox1">
@@ -1293,7 +1310,6 @@ You should have received a copy of the GNU General Public License along with Dre
             <child>
               <widget class="GtkVBox" id="vbox1">
                 <property name="visible">True</property>
-                <property name="orientation">vertical</property>
                 <property name="spacing">3</property>
                 <child>
                   <widget class="GtkLabel" id="label1">
