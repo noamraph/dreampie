@@ -22,8 +22,14 @@ from gtk import gdk
 import pango
 from gobject import TYPE_NONE
 
+from .keyhandler import make_keyhandler_decorator, handle_keypress
+
 N_ROWS = 4
 N_COLS = 80
+
+# A decorator for managing sourceview key handlers
+keyhandlers = {}
+keyhandler = make_keyhandler_decorator(keyhandlers)
 
 class CallTipWindow(object):
     """
@@ -43,7 +49,9 @@ class CallTipWindow(object):
     # standard resize grip doesn't work on a popup window, so we implement it
     # (and dragging) by ourselves.
     
-    def __init__(self):
+    def __init__(self, sourceview):
+        self.sourceview = sourceview
+        
         # Widgets
         self.textview = tv = gtk.TextView()
         self.hscrollbar = hs = gtk.HScrollbar()
@@ -103,10 +111,19 @@ class CallTipWindow(object):
         vb2.pack_end(sb, False, False)
         hb.pack_start(vb1, True, True)
         hb.pack_start(vb2, False, False)
+        win.add(hb)
         
+        # Make all widgets except the window visible, so that a simple "show"
+        # will suffice to show the window
         hb.show_all()
         
-        win.add(hb)
+        # We define this handler here so that it will be defined before
+        # the default key-press handler, and so will have higher priority.
+        self.keypress_handler = self.sourceview.connect(
+            'key-press-event', self.on_keypress)
+        self.sourceview.handler_block(self.keypress_handler)
+        self.keypress_handler_blocked = True
+
 
     @staticmethod
     def get_char_size(textview):
@@ -163,6 +180,37 @@ class CallTipWindow(object):
             self.window.resize(int(width), int(height))
             return True
     
+    @keyhandler('Up', 0)
+    def on_up(self):
+        adj = self.vscrollbar.props.adjustment
+        adj.props.value -= self.char_height
+        return True
+
+    @keyhandler('Down', 0)
+    def on_down(self):
+        adj = self.vscrollbar.props.adjustment
+        adj.props.value = min(adj.props.value + self.char_height, 
+                              adj.props.upper - adj.props.page_size)
+        return True
+
+    @keyhandler('Page_Up', 0)
+    def on_page_up(self):
+        self.textview.emit('move-viewport', gtk.SCROLL_PAGES, -1)
+        return True
+        
+    @keyhandler('Page_Down', 0)
+    def on_page_down(self):
+        self.textview.emit('move-viewport', gtk.SCROLL_PAGES, 1)
+        return True
+
+    @keyhandler('Escape', 0)
+    def on_esc(self):
+        self.hide()
+        # Don't return True - other things may be escaped too.
+
+    def on_keypress(self, _widget, event):
+        return handle_keypress(self, event, keyhandlers)
+
     def show(self, text, x, y):
         """
         Show the window with the given text, its top-left corner at x-y.
@@ -207,6 +255,9 @@ class CallTipWindow(object):
         self.hscrollbar.props.adjustment.props.value = 0
         self.vscrollbar.props.adjustment.props.value = 0
         
+        self.sourceview.handler_unblock(self.keypress_handler)
+        self.keypress_handler_blocked = False
+
         win.show()
         
         # This has to be done after the textview was displayed
@@ -217,6 +268,11 @@ class CallTipWindow(object):
     
     def hide(self):
         self.window.hide()
+
+        if not self.keypress_handler_blocked:
+            self.sourceview.handler_block(self.keypress_handler)
+            self.keypress_handler_blocked = True
+
         self.is_dragging = False
         self.is_resizing = False
         self.was_dragged = False

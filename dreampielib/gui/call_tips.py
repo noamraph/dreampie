@@ -36,7 +36,7 @@ class CallTips(object):
         self.get_func_doc = get_func_doc
         self.INDENT_WIDTH = INDENT_WIDTH
 
-        self.ctwindow = CallTipWindow()
+        self.ctwindow = CallTipWindow(sourceview)
 
         self.start_mark = sb.create_mark(None, sb.get_start_iter(),
                                          left_gravity=True)
@@ -98,7 +98,6 @@ class CallTips(object):
         self.connect(sb, 'mark-set', self.on_mark_set)
         self.connect(sb, 'insert-text', self.on_insert_text)
         self.connect(sb, 'delete-range', self.on_delete_range)
-        self.connect(self.sourceview, 'key-press-event', self.on_keypress)
         self.connect(self.sourceview, 'focus-out-event', self.on_focus_out)
 
         self.is_shown = True
@@ -162,11 +161,6 @@ class CallTips(object):
             self.hide()
         else:
             idle_add(self.place_window)
-
-    def on_keypress(self, _widget, event):
-        keyval_name = gdk.keyval_name(event.keyval)
-        if keyval_name == 'Escape':
-            self.hide()
 
     def on_focus_out(self, _widget, _event):
         self.hide()
