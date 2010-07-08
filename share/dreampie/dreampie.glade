@@ -129,8 +129,8 @@
                         <property name="label" translatable="yes">Unfold Last Folded Output</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_unfold_last"/>
-                        <accelerator key="equal" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                         <accelerator key="plus" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <accelerator key="equal" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -446,6 +446,10 @@
 &lt;/span&gt;&#x2022; Use Ctrl+Up and Ctrl+Down to navigate between code segments you've already executed. You can write a few letters before pressing Ctrl+Up, and DreamPie will only search through code segments starting with those letters.&lt;span size='xx-small'&gt;
 
 &lt;/span&gt;&#x2022; Press Tab or Ctrl+Space to show a list of completions to the current expression. It will also complete file names!&lt;span size='xx-small'&gt;
+
+&lt;/span&gt;&#x2022; Your results are stored in variables named _0, _1, and so on.&lt;span size='xx-small'&gt;
+
+&lt;/span&gt;&#x2022; Type a function name and press the space key and DreamPie will automatically add parentheses for you!&lt;span size='xx-small'&gt;
 
 &lt;/span&gt;&#x2022; These commands, and some neat others, are also available from the menu.&lt;span size='xx-small'&gt;
 
@@ -1493,6 +1497,110 @@ You should have received a copy of the GNU General Public License along with Dre
         <property name="label" translatable="yes">Save Output/Code Section</property>
         <property name="use_underline">True</property>
         <signal name="activate" handler="on_section_menu_activate"/>
+      </widget>
+    </child>
+  </widget>
+  <widget class="GtkDialog" id="quit_dialog">
+    <property name="border_width">12</property>
+    <property name="title" translatable="yes"> </property>
+    <property name="modal">True</property>
+    <property name="type_hint">normal</property>
+    <property name="transient_for">window_main</property>
+    <property name="has_separator">False</property>
+    <child internal-child="vbox">
+      <widget class="GtkVBox" id="dialog-vbox6">
+        <property name="visible">True</property>
+        <property name="spacing">12</property>
+        <child>
+          <widget class="GtkHBox" id="hbox1">
+            <property name="visible">True</property>
+            <property name="spacing">12</property>
+            <child>
+              <widget class="GtkImage" id="image1">
+                <property name="visible">True</property>
+                <property name="stock">gtk-dialog-question</property>
+                <property name="icon-size">6</property>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkLabel" id="label1">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Do you want to quit DreamPie?
+Your history is not saved.</property>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </widget>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="GtkCheckButton" id="dontask_check">
+            <property name="label" translatable="yes">_Don't ask me again next time</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">False</property>
+            <property name="use_underline">True</property>
+            <property name="draw_indicator">True</property>
+          </widget>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">2</property>
+          </packing>
+        </child>
+        <child internal-child="action_area">
+          <widget class="GtkHButtonBox" id="dialog-action_area6">
+            <property name="visible">True</property>
+            <property name="layout_style">end</property>
+            <child>
+              <widget class="GtkButton" id="button1">
+                <property name="label">gtk-cancel</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkButton" id="button2">
+                <property name="label">gtk-quit</property>
+                <property name="response_id">1</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="has_focus">True</property>
+                <property name="is_focus">True</property>
+                <property name="can_default">True</property>
+                <property name="has_default">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </widget>
+          <packing>
+            <property name="expand">False</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
       </widget>
     </child>
   </widget>

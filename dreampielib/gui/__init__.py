@@ -739,8 +739,10 @@ class DreamPie(SimpleGladeApp):
         """Update the menu and self.recent_filenames"""
         rman = self.recent_manager
         recent_items = [it for it in rman.get_items()
-                        if 'dreampie' in it.get_applications()
+                        if it.has_application('dreampie')
                         and it.get_uri().startswith('file://')]
+        recent_items.sort(key=lambda it: it.get_application_info('dreampie')[2],
+                          reverse=True)
         self.menuitem_recentsep.props.visible = (len(recent_items) > 0)
         for i, menuitem in enumerate(self.menuitem_recent):
             if i < len(recent_items):
@@ -964,13 +966,18 @@ class DreamPie(SimpleGladeApp):
         self.quit()
 
     def quit(self):
-        if self.config.get_bool('ask-on-quit'):
-            msg = gtk.MessageDialog(self.window_main, gtk.DIALOG_MODAL,
-                                    gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO,
-                                    _("Are you sure you want to quit?"))
-            msg.set_default_response(gtk.RESPONSE_YES)
-            quit = (msg.run() == gtk.RESPONSE_YES)
-            msg.destroy()
+        if (self.textbuffer.get_modified()
+            and self.config.get_bool('ask-on-quit')):
+            xml = glade.XML(gladefile, 'quit_dialog')
+            d = xml.get_widget('quit_dialog')
+            dontask_check = xml.get_widget('dontask_check')
+            d.set_transient_for(self.window_main)
+            d.set_default_response(1)
+            quit = (d.run() == 1)
+            if quit and dontask_check.props.active:
+                self.config.set_bool('ask-on-quit', False)
+                self.config.save()
+            d.destroy()
         else:
             quit = True
         if quit:

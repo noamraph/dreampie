@@ -38,6 +38,8 @@ class HistPersist(object):
         self.recent_manager = recent_manager
         
         self.filename = None
+        
+        self.textbuffer.connect('modified-changed', self.on_modified_changed)
     
     def save_filename(self, filename):
         """
@@ -49,6 +51,7 @@ class HistPersist(object):
         self.filename = filename
         self.status_bar.set_status(_('History saved.'))
         self.recent_add(filename)
+        self.textbuffer.set_modified(False)
 
     def save(self):
         if self.filename is None:
@@ -91,6 +94,15 @@ class HistPersist(object):
         self.recent_manager.add_full('file://'+filename, {
             'mime_type': 'text/html', 'app_name': 'dreampie',
             'app_exec': 'dreampie'})
+    
+    def on_modified_changed(self, _widget):
+        if self.filename:
+            disp_fn = os.path.basename(self.filename)
+            if self.textbuffer.get_modified():
+                disp_fn += '*'
+            self.window_main.props.title = "%s - DreamPie" % disp_fn
+            
+
 
 def _html_escape(s):
     """
@@ -265,4 +277,3 @@ class Parser(HTMLParser):
         tb = self.textbuffer
         tb.delete_mark(self.leftmark)
         tb.delete_mark(self.rightmark)
-
