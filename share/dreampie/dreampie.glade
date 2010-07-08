@@ -129,14 +129,45 @@
                         <property name="label" translatable="yes">Unfold Last Folded Output</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_unfold_last"/>
-                        <accelerator key="plus" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                         <accelerator key="equal" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <accelerator key="plus" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
                       <widget class="GtkSeparatorMenuItem" id="menuitem17">
                         <property name="visible">True</property>
                       </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem_recent0">
+                        <property name="label" translatable="yes">_0 recent0</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_menuitem_recent"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem_recent1">
+                        <property name="label" translatable="yes">_1 recent1</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_menuitem_recent"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem_recent2">
+                        <property name="label" translatable="yes">_2 recent2</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_menuitem_recent"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem_recent3">
+                        <property name="label" translatable="yes">_3 recent3</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_menuitem_recent"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkSeparatorMenuItem" id="menuitem_recentsep"/>
                     </child>
                     <child>
                       <widget class="GtkImageMenuItem" id="imagemenuitem5">

@@ -30,15 +30,16 @@ class HistPersist(object):
     Provide actions for storing and loading history.
     """
     
-    def __init__(self, window_main, textview, status_bar):
+    def __init__(self, window_main, textview, status_bar, recent_manager):
         self.window_main = window_main
         self.textview = textview
         self.textbuffer = textview.get_buffer()
         self.status_bar = status_bar
+        self.recent_manager = recent_manager
         
         self.filename = None
     
-    def _save_func(self, filename):
+    def save_filename(self, filename):
         """
         Save history to a file.
         """
@@ -47,12 +48,13 @@ class HistPersist(object):
         f.close()
         self.filename = filename
         self.status_bar.set_status(_('History saved.'))
+        self.recent_add(filename)
 
     def save(self):
         if self.filename is None:
             self.save_as()
         else:
-            self._save_func(self.filename)
+            self.save_filename(self.filename)
     
     def save_as(self):
         if self.filename:
@@ -60,27 +62,35 @@ class HistPersist(object):
             prev_name = os.path.basename(self.filename)
         else:
             prev_dir = None
-            prev_name = 'dreampie-history.html'
-        save_dialog(self._save_func,
+            #prev_name = 'dreampie-history.html'
+            prev_name = None
+        save_dialog(self.save_filename,
                     _('Choose where to save the history'),
                     self.window_main,
                     _('HTML Files'),
-                    '*.html',
+                    '*.html', 'html',
                     prev_dir, prev_name)
 
-    def _load_func(self, filename):
+    def load_filename(self, filename):
         s = open(filename, 'rb').read()
         parser = Parser(self.textbuffer)
         parser.feed(s)
         parser.close()
         self.status_bar.set_status(_('History loaded.'))
+        self.recent_add(filename)
     
     def load(self):
-        open_dialog(self._load_func,
+        open_dialog(self.load_filename,
                     _('Choose the saved history file'),
                     self.window_main,
                     _('HTML Files'),
                     '*.html')
+    
+    def recent_add(self, filename):
+        # FIXME: This doesn't add an entry when saving HTML files. VERY strange.
+        self.recent_manager.add_full('file://'+filename, {
+            'mime_type': 'text/html', 'app_name': 'dreampie',
+            'app_exec': 'dreampie'})
 
 def _html_escape(s):
     """

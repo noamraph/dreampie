@@ -21,6 +21,7 @@ __all__ = ['open_dialog', 'save_dialog']
 Easy to use wrappers around GTK file dialogs.
 """
 
+import os
 from os.path import abspath, dirname, basename, exists
 
 import gtk
@@ -64,7 +65,7 @@ def open_dialog(func, title, parent, filter_name, filter_pattern):
             break
     d.destroy()
 
-def save_dialog(func, title, parent, filter_name, filter_pattern,
+def save_dialog(func, title, parent, filter_name, filter_pattern, auto_ext=None,
                 prev_dir=None, prev_name=None):
     """
     Display the Save As dialog.
@@ -74,6 +75,7 @@ def save_dialog(func, title, parent, filter_name, filter_pattern,
     parent - parent window, or None
     filter_name - "HTML Files"
     filter_pattern - "*.html"
+    auto_ext - "html", if not None will be added if no extension given.
     prev_dir, prev_name - will set the default if given.
     """
     d = gtk.FileChooserDialog(
@@ -94,6 +96,8 @@ def save_dialog(func, title, parent, filter_name, filter_pattern,
         if r != gtk.RESPONSE_OK:
             break
         filename = abspath(d.get_filename()).decode('utf8')
+        if auto_ext and not os.path.splitext(filename)[1]:
+            filename += os.path.extsep + auto_ext
         if exists(filename):
             m = gtk.MessageDialog(d, gtk.DIALOG_MODAL, gtk.MESSAGE_QUESTION)
             m.props.text = _('A file named "%s" already exists.  Do '

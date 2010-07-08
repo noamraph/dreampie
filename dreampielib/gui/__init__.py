@@ -174,9 +174,15 @@ class DreamPie(SimpleGladeApp):
 
         self.history = History(self.textview, self.sourceview, self.config)
 
-        self.histpersist = HistPersist(self.window_main, self.textview,
-                                       self.status_bar)
+        self.recent_manager = gtk.recent_manager_get_default()
+        self.menuitem_recent = [self.menuitem_recent0, self.menuitem_recent1,
+                                self.menuitem_recent2, self.menuitem_recent3]
+        self.recent_filenames = [None] * len(self.menuitem_recent)
+        self.recent_manager.connect('changed', self.on_recent_manager_changed)
 
+        self.histpersist = HistPersist(self.window_main, self.textview,
+                                       self.status_bar, self.recent_manager)
+        
         self.autocomplete = Autocomplete(self.sourceview,
                                          self.complete_attributes,
                                          self.complete_filenames,
@@ -213,6 +219,7 @@ class DreamPie(SimpleGladeApp):
         self.set_window_default_size()
         self.window_main.show_all()
         self.set_is_executing(False)
+        self.update_recent()
         
         self.show_welcome()
         self.configure_subp()
@@ -723,6 +730,33 @@ class DreamPie(SimpleGladeApp):
     def on_load_history(self, _widget):
         self.histpersist.load()
     
+    # Recent history files
+    
+    def on_recent_manager_changed(self, _recent_manager):
+        self.update_recent()
+    
+    def update_recent(self):
+        """Update the menu and self.recent_filenames"""
+        rman = self.recent_manager
+        recent_items = [it for it in rman.get_items()
+                        if 'dreampie' in it.get_applications()
+                        and it.get_uri().startswith('file://')]
+        self.menuitem_recentsep.props.visible = (len(recent_items) > 0)
+        for i, menuitem in enumerate(self.menuitem_recent):
+            if i < len(recent_items):
+                it = recent_items[i]
+                menuitem.props.visible = True
+                menuitem.props.label = "_%d %s" % (i, it.get_display_name())
+                self.recent_filenames[i] = it.get_uri()[len('file://'):]
+            else:
+                menuitem.props.visible = False
+                self.recent_filenames[i] = None
+    
+    def on_menuitem_recent(self, widget):
+        num = self.menuitem_recent.index(widget)
+        fn = self.recent_filenames[num]
+        self.histpersist.load_filename(fn)
+    
     # Discard history
     
     def discard_hist_before_tag(self, tag):
@@ -815,7 +849,7 @@ class DreamPie(SimpleGladeApp):
                     f.write(text)
                     f.close()
                 save_dialog(func, _("Choose where to save the section"),
-                            self.main_widget, _("All Files"), "*")
+                            self.main_widget, _("All Files"), "*", None)
             else:
                 assert False, "Unexpected widget"
             
