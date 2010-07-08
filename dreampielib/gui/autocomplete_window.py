@@ -86,6 +86,9 @@ class AutocompleteWindow(object):
         self.private_list = None
         self.showing_private = None
         self.cur_prefix = None
+        # Indices to self.cur_list - range which is displayed
+        self.start = None
+        self.end = None
 
         # A list with (widget, handler) pairs, to be filled with self.connect()
         self.signals = []
@@ -169,6 +172,7 @@ class AutocompleteWindow(object):
                 self.cur_list.sort()
                 self.cur_list_keys = self.cur_list
             start, end = find_prefix_range(self.cur_list_keys, prefix_key)
+        self.start, self.end = start, end
         if start == end:
             self.hide()
             return False
@@ -289,8 +293,27 @@ class AutocompleteWindow(object):
         self.select_row(row)
         return True
 
-    @keyhandler('Return', 0)
     @keyhandler('Tab', 0)
+    def tab(self):
+        """
+        Complete the text to the common prefix, and if there's only one,
+        close the window.
+        """
+        if len(self.liststore) == 1:
+            self.complete()
+            return True
+        first = self.cur_list_keys[self.start]
+        last = self.cur_list_keys[self.end-1]
+        i = 0
+        while i < len(first) and i < len(last) and first[i] == last[i]:
+            i += 1
+        if i > len(self.cur_prefix):
+            toadd = first[len(self.cur_prefix):i]
+            self.sourcebuffer.insert_at_cursor(toadd)
+            self.cur_prefix += toadd
+        return True
+    
+    @keyhandler('Return', 0)
     def complete(self):
         sel_row = self.treeview.get_selection().get_selected_rows()[1][0][0]
         text = self.liststore[sel_row][0].decode('utf8')
