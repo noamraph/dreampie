@@ -185,6 +185,8 @@ class DreamPie(SimpleGladeApp):
         
         self.autocomplete = Autocomplete(self.sourceview,
                                          self.complete_attributes,
+                                         self.complete_firstlevels,
+                                         self.get_func_args,
                                          self.complete_filenames,
                                          INDENT_WIDTH)
         
@@ -907,6 +909,16 @@ class DreamPie(SimpleGladeApp):
             return None
         return self.call_subp(u'complete_attributes', expr)
 
+    def complete_firstlevels(self):
+        if self.is_executing:
+            return None
+        return self.call_subp(u'complete_firstlevels')
+    
+    def get_func_args(self, expr):
+        if self.is_executing:
+            return None
+        return self.call_subp(u'get_func_args', expr)
+    
     def complete_filenames(self, str_prefix, text, str_char, add_quote):
         if self.is_executing:
             return None

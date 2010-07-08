@@ -27,11 +27,15 @@ from .beep import beep
 ID_CHARS = string.ascii_letters + string.digits + "_"
 
 class Autocomplete(object):
-    def __init__(self, sourceview, complete_attributes, complete_filenames,
+    def __init__(self, sourceview, 
+                 complete_attributes, complete_firstlevels, get_func_args,
+                 complete_filenames,
                  INDENT_WIDTH):
         self.sourceview = sourceview
         self.sourcebuffer = sourceview.get_buffer()
         self.complete_attributes = complete_attributes
+        self.complete_firstlevels = complete_firstlevels
+        self.get_func_args = get_func_args
         self.complete_filenames = complete_filenames
         self.INDENT_WIDTH = INDENT_WIDTH
 
@@ -118,12 +122,28 @@ class Autocomplete(object):
             if is_auto and '(' in comp_what:
                 # Don't evaluate expressions which may contain a function call.
                 return
+            public_and_private = self.complete_attributes(comp_what)
+            if public_and_private is None: # The subprocess is busy
+                return
+            public, private = public_and_private
         else:
-            comp_what = u''
-        public_and_private = self.complete_attributes(comp_what)
-        if public_and_private is None:
-            return
-        public, private = public_and_private
+            public_and_private = self.complete_firstlevels()
+            if public_and_private is None: # The subprocess is busy
+                return
+            public, private = public_and_private
+            
+            # If we are inside a function call, get argument names
+            opener, _closer = hp.get_surrounding_brackets('(')
+            if opener:
+                hp.set_index(opener)
+                expr = hp.get_expression()
+                if expr and '(' not in expr:
+                    # Don't need to execute a function just to get arguments
+                    args = self.get_func_args(expr)
+                    if args is not None:
+                        public.extend(args)
+                        public.sort()
+        
         is_case_insen = False
         return comp_prefix, public, private, is_case_insen
 

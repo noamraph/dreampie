@@ -452,35 +452,55 @@ class Subprocess(object):
         sorted lists - public and private.
         public - completions that are thought to be relevant.
         private - completions that are not so.
-        If expr == '', return first-level completions.
         """
-        if expr == '':
-            namespace = self.locs.copy()
-            namespace.update(__builtin__.__dict__)
-            ids = eval("dir()", namespace) + keyword.kwlist
+        try:
+            entity = eval(expr, self.locs)
+            ids = dir(entity)
             ids = map(unicode, ids)
             ids.sort()
-            if '__all__' in namespace:
-                all_set = set(namespace['__all__'])
+            if hasattr(entity, '__all__'):
+                all_set = set(entity.__all__)
             else:
                 all_set = None
             public, private = self.split_list(ids, all_set)
-        else:
-            try:
-                entity = eval(expr, self.locs)
-                ids = dir(entity)
-                ids = map(unicode, ids)
-                ids.sort()
-                if hasattr(entity, '__all__'):
-                    all_set = set(entity.__all__)
-                else:
-                    all_set = None
-                public, private = self.split_list(ids, all_set)
-            except Exception:
-                public = private = []
+        except Exception:
+            public = private = []
 
         return public, private
 
+    @rpc_func
+    def complete_firstlevels(self):
+        """
+        Get (public, private) names (globals, builtins, keywords).
+        """
+        namespace = self.locs.copy()
+        namespace.update(__builtin__.__dict__)
+        ids = eval("dir()", namespace) + keyword.kwlist
+        ids = map(unicode, ids)
+        ids.sort()
+        if '__all__' in namespace:
+            all_set = set(namespace['__all__'])
+        else:
+            all_set = None
+        public, private = self.split_list(ids, all_set)
+        
+        return public, private
+        
+    @rpc_func
+    def get_func_args(self, expr):
+        """Return the argument names of the function (a list of strings)"""
+        try:
+            obj = eval(expr, self.locs)
+        except Exception:
+            return None
+        try:
+            args = inspect.getargspec(obj)[0]
+        except TypeError:
+            return None
+        # There may be nested args, so we filter them
+        return [unicodify(s) for s in args
+                if isinstance(s, basestring)]
+    
     @rpc_func
     def complete_filenames(self, str_prefix, text, str_char, add_quote):
         is_raw = 'r' in str_prefix.lower()

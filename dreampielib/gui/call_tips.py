@@ -18,7 +18,6 @@
 __all__ = ['CallTips']
 
 import gtk
-from gtk import gdk
 
 try:
     from glib import idle_add
