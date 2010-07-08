@@ -41,6 +41,7 @@ dirs = [
 files = [
     'dreampielib/__init__.py',
     'dreampielib/subprocess/__init__.py',
+    'dreampielib/subprocess/find_modules.py',
     'dreampielib/subprocess/split_to_singles.py',
     'dreampielib/subprocess/trunc_traceback.py',
     'dreampielib/common/__init__.py',

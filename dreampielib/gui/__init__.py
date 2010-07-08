@@ -187,6 +187,8 @@ class DreamPie(SimpleGladeApp):
                                          self.complete_attributes,
                                          self.complete_firstlevels,
                                          self.get_func_args,
+                                         self.find_modules,
+                                         self.get_module_members,
                                          self.complete_filenames,
                                          INDENT_WIDTH)
         
@@ -918,6 +920,16 @@ class DreamPie(SimpleGladeApp):
         if self.is_executing:
             return None
         return self.call_subp(u'get_func_args', expr)
+    
+    def find_modules(self, expr):
+        if self.is_executing:
+            return None
+        return self.call_subp(u'find_modules', expr)
+    
+    def get_module_members(self, expr):
+        if self.is_executing:
+            return None
+        return self.call_subp(u'get_module_members', expr)
     
     def complete_filenames(self, str_prefix, text, str_char, add_quote):
         if self.is_executing:

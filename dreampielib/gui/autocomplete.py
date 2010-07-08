@@ -18,6 +18,7 @@
 __all__ = ['Autocomplete']
 
 import string
+import re
 
 from .hyper_parser import HyperParser
 from .autocomplete_window import AutocompleteWindow, find_prefix_range
@@ -25,17 +26,20 @@ from .beep import beep
 
 # This string includes all chars that may be in an identifier
 ID_CHARS = string.ascii_letters + string.digits + "_"
+ID_CHARS_DOT = ID_CHARS + '.'
 
 class Autocomplete(object):
     def __init__(self, sourceview, 
                  complete_attributes, complete_firstlevels, get_func_args,
-                 complete_filenames,
+                 find_modules, get_module_members, complete_filenames,
                  INDENT_WIDTH):
         self.sourceview = sourceview
         self.sourcebuffer = sourceview.get_buffer()
         self.complete_attributes = complete_attributes
         self.complete_firstlevels = complete_firstlevels
         self.get_func_args = get_func_args
+        self.find_modules = find_modules
+        self.get_module_members = get_module_members
         self.complete_filenames = complete_filenames
         self.INDENT_WIDTH = INDENT_WIDTH
 
@@ -56,7 +60,16 @@ class Autocomplete(object):
         hp = HyperParser(text, index, self.INDENT_WIDTH)
 
         if hp.is_in_code():
-            res = self._complete_attributes(text, index, hp, is_auto)
+            line = text[text.rfind('\n', 0, index)+1:index].lstrip()
+            if line.startswith('import '):
+                res = self._complete_modules(line, is_auto)
+            elif line.startswith('from '):
+                if ' import ' not in line:            
+                    res = self._complete_modules(line, is_auto)
+                else:
+                    res = self._complete_module_members(line, is_auto)
+            else:
+                res = self._complete_attributes(text, index, hp, is_auto)
         elif hp.is_in_string():
             res = self._complete_filenames(text, index, hp, is_auto)
         else:
@@ -103,7 +116,8 @@ class Autocomplete(object):
         
     def _complete_attributes(self, text, index, hp, is_auto):
         """
-        Return (comp_prefix, public, private) - a string and two lists.
+        Return (comp_prefix, public, private, is_case_insen) 
+        (string, list, list, bool).
         If shouldn't complete - return None.
         """
         # Check whether autocompletion is really appropriate
@@ -132,24 +146,88 @@ class Autocomplete(object):
                 return
             public, private = public_and_private
             
-            # If we are inside a function call, get argument names
-            opener, _closer = hp.get_surrounding_brackets('(')
-            if opener:
-                hp.set_index(opener)
-                expr = hp.get_expression()
-                if expr and '(' not in expr:
-                    # Don't need to execute a function just to get arguments
-                    args = self.get_func_args(expr)
-                    if args is not None:
-                        public.extend(args)
-                        public.sort()
+            # If we are inside a function call after a ',' or '(',
+            # get argument names.
+            if text[:i].rstrip()[-1:] in (',', '('):
+                opener, _closer = hp.get_surrounding_brackets('(')
+                if opener:
+                    hp.set_index(opener)
+                    expr = hp.get_expression()
+                    if expr and '(' not in expr:
+                        # Don't need to execute a function just to get arguments
+                        args = self.get_func_args(expr)
+                        if args is not None:
+                            public.extend(args)
+                            public.sort()
         
         is_case_insen = False
         return comp_prefix, public, private, is_case_insen
 
+    def _complete_modules(self, line, is_auto):
+        """
+        line - the stripped line from its beginning to the cursor.
+        Return (comp_prefix, public, private, is_case_insen) 
+        (string, list, list, bool).
+        If shouldn't complete - return None.
+        """
+        # Check whether autocompletion is really appropriate
+        if is_auto and line[-1] != '.':
+            return
+        
+        i = len(line)
+        while i and line[i-1] in ID_CHARS:
+            i -= 1
+        comp_prefix = line[i:]
+        if i and line[i-1] == '.':
+            i -= 1
+            j = i
+            while j and line[j-1] in ID_CHARS_DOT:
+                j -= 1
+            comp_what = line[j:i]
+        else:
+            comp_what = u''
+        
+        modules = self.find_modules(comp_what)
+        if modules is None:
+            return None
+        
+        public = [s for s in modules if s[0] != '_']
+        private = [s for s in modules if s[0] == '_']
+        is_case_insen = False
+        return comp_prefix, public, private, is_case_insen
+        
+    def _complete_module_members(self, line, is_auto):
+        """
+        line - the stripped line from its beginning to the cursor.
+        Return (comp_prefix, public, private, is_case_insen) 
+        (string, list, list, bool).
+        If shouldn't complete - return None.
+        """
+        # Check whether autocompletion is really appropriate
+        if is_auto:
+            return
+        
+        i = len(line)
+        while i and line[i-1] in ID_CHARS:
+            i -= 1
+        comp_prefix = line[i:]
+        
+        m = re.match(r'from\s+([\w.]+)\s+import', line)
+        if m is None:
+            return
+        comp_what = m.group(1)
+        
+        public_and_private = self.get_module_members(comp_what)
+        if public_and_private is None:
+            return
+        public, private = public_and_private
+        is_case_insen = False
+        return comp_prefix, public, private, is_case_insen
+        
     def _complete_filenames(self, text, index, hp, is_auto):
         """
-        Return (comp_prefix, public, private) - a string and two lists.
+        Return (comp_prefix, public, private, is_case_insen) 
+        (string, list, list, bool).
         If shouldn't complete - return None.
         """
         # Check whether autocompletion is really appropriate

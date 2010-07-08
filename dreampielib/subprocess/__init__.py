@@ -1,4 +1,4 @@
-# Copyright 2009 Noam Yorav-Raphael
+# Copyright 2010 Noam Yorav-Raphael
 #
 # This file is part of DreamPie.
 # 
@@ -48,6 +48,7 @@ if sys.platform == 'win32':
     PeekNamedPipe = windll.kernel32.PeekNamedPipe
 
 from .trunc_traceback import trunc_traceback
+from .find_modules import find_modules
 # We don't use relative import because of a Jython 2.5.1 bug.
 from dreampielib.common.objectstream import send_object, recv_object
 
@@ -456,7 +457,7 @@ class Subprocess(object):
         try:
             entity = eval(expr, self.locs)
             ids = dir(entity)
-            ids = map(unicode, ids)
+            ids = map(unicodify, ids)
             ids.sort()
             if hasattr(entity, '__all__'):
                 all_set = set(entity.__all__)
@@ -476,7 +477,7 @@ class Subprocess(object):
         namespace = self.locs.copy()
         namespace.update(__builtin__.__dict__)
         ids = eval("dir()", namespace) + keyword.kwlist
-        ids = map(unicode, ids)
+        ids = map(unicodify, ids)
         ids.sort()
         if '__all__' in namespace:
             all_set = set(namespace['__all__'])
@@ -500,6 +501,27 @@ class Subprocess(object):
         # There may be nested args, so we filter them
         return [unicodify(s) for s in args
                 if isinstance(s, basestring)]
+    
+    @rpc_func
+    def find_modules(self, package):
+        if package:
+            package = package.split('.')
+        else:
+            package = []
+        return [unicodify(s) for s in find_modules(package)]
+    
+    @rpc_func
+    def get_module_members(self, mod_name):
+        try:
+            mod = sys.modules[mod_name]
+        except KeyError:
+            return None
+        if hasattr(mod, '__all__'):
+            all_set = set(mod.__all__)
+        else:
+            all_set = None
+        ids = [unicodify(x) for x in mod.__dict__.iterkeys()]
+        return self.split_list(ids, all_set)
     
     @rpc_func
     def complete_filenames(self, str_prefix, text, str_char, add_quote):
