@@ -45,9 +45,8 @@ class CallTipWindow(object):
     # This looks pretty much like a ScrolledWindow, but a SW doesn't have the
     # resize grip, So we layout the widgets by ourselves, and handle scrolling.
     
-    # The resize grip is a StatusBar, which has one. For some reason, the
-    # standard resize grip doesn't work on a popup window, so we implement it
-    # (and dragging) by ourselves.
+    # We implement our own resize grip - for some reason, the resize grip of
+    # a status bar doesn't work on popup windows.
     
     def __init__(self, sourceview):
         self.sourceview = sourceview
@@ -56,7 +55,7 @@ class CallTipWindow(object):
         self.textview = tv = gtk.TextView()
         self.hscrollbar = hs = gtk.HScrollbar()
         self.vscrollbar = vs = gtk.VScrollbar()
-        self.statusbar = sb = gtk.Statusbar()
+        self.resizegrip = rg = gtk.EventBox()
         self.vbox1 = vb1 = gtk.VBox()
         self.vbox2 = vb2 = gtk.VBox()
         self.hbox = hb = gtk.HBox()
@@ -98,17 +97,18 @@ class CallTipWindow(object):
         
         hs.props.adjustment.connect('changed', self.on_hadj_changed)
 
-        sb.add_events(gdk.BUTTON_PRESS_MASK
+        rg.add_events(gdk.BUTTON_PRESS_MASK
                       | gdk.BUTTON_MOTION_MASK
-                      | gdk.BUTTON_RELEASE_MASK)
+                      | gdk.BUTTON_RELEASE_MASK
+                      | gdk.EXPOSURE_MASK)
         
-        sb.connect('event', self.on_statusbar_event)
-        sb.set_size_request(vs.size_request()[0], -1)
+        rg.connect('event', self.on_resizegrip_event)
+        rg.set_size_request(vs.size_request()[0], vs.size_request()[0])
         
         vb1.pack_start(tv, True, True)
         vb1.pack_start(hs, False, False)
         vb2.pack_start(vs, True, True)
-        vb2.pack_end(sb, False, False)
+        vb2.pack_end(rg, False, False)
         hb.pack_start(vb1, True, True)
         hb.pack_start(vb2, False, False)
         win.add(hb)
@@ -168,7 +168,7 @@ class CallTipWindow(object):
         elif event.type == gdk.BUTTON_RELEASE:
             self.is_dragging = False
 
-    def on_statusbar_event(self, _widget, event):
+    def on_resizegrip_event(self, _widget, event):
         if event.type == gdk.BUTTON_PRESS:
             self.resize_x = event.x_root
             self.resize_y = event.y_root
@@ -178,6 +178,14 @@ class CallTipWindow(object):
             width = max(0, self.resize_width + event.x_root - self.resize_x)
             height = max(0, self.resize_height + event.y_root - self.resize_y)
             self.window.resize(int(width), int(height))
+            return True
+        elif event.type == gdk.EXPOSE:
+            rg = self.resizegrip
+            win = rg.get_window()
+            _x, _y, width, height, _depth = win.get_geometry()
+            rg.get_style().paint_resize_grip(
+                win, gtk.STATE_NORMAL, None, rg, None, 
+                gdk.WINDOW_EDGE_SOUTH_EAST, 0, 0, width, height)
             return True
     
     @keyhandler('Up', 0)
@@ -265,6 +273,8 @@ class CallTipWindow(object):
             self.was_displayed = True
             hand = gdk.Cursor(gdk.HAND1)
             tv.get_window(gtk.TEXT_WINDOW_TEXT).set_cursor(hand)
+            br_corner = gdk.Cursor(gdk.BOTTOM_RIGHT_CORNER)
+            self.resizegrip.get_window().set_cursor(br_corner)
     
     def hide(self):
         self.window.hide()

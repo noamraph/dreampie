@@ -751,9 +751,10 @@ class DreamPie(SimpleGladeApp):
         for i, menuitem in enumerate(self.menuitem_recent):
             if i < len(recent_items):
                 it = recent_items[i]
+                fn = it.get_uri()[len('file://'):]
                 menuitem.props.visible = True
-                menuitem.props.label = "_%d %s" % (i, it.get_display_name())
-                self.recent_filenames[i] = it.get_uri()[len('file://'):]
+                menuitem.props.label = "_%d %s" % (i, fn)
+                self.recent_filenames[i] = fn
             else:
                 menuitem.props.visible = False
                 self.recent_filenames[i] = None

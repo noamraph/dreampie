@@ -152,6 +152,7 @@ class SubprocessHandler(object):
             
             if time.time() - start_time > START_TIMEOUT:
                 raise StartTimeoutError(START_TIMEOUT)
+        self._sock.setblocking(True)
             
         #debug("Connected to addr %r." % (addr,))
         s.close()
