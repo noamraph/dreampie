@@ -36,32 +36,33 @@ from ..common.objectstream import send_object, recv_object
 
 _ = lambda s: s
 
-START_TIMEOUT = 10 # seconds
+START_TIMEOUT = 30 # seconds
 
 class StartError(IOError):
     """Error when starting subprocess"""
     pass
 
-class StartOutputError(StartError):
-    """Start subprocess failed because it produced output."""
-    def __init__(self, output):
-        self.output = output
-    def __str__(self):
-        return _("Subprocess wrote unexpected output:\n%s") % self.output
-
 class StartTerminatedError(StartError):
     """Start subprocess failed because process terminated."""
-    def __init__(self, rc):
+    def __init__(self, rc, output):
         self.rc = rc
+        self.output = output
     def __str__(self):
-        return _("Subprocess terminated with return code %d.") % self.rc
+        r = _("Subprocess terminated with return code %d.") % self.rc
+        if self.output:
+            r += _("\nSubprocess wrote:\n%s") % self.output
+        return r
 
 class StartTimeoutError(StartError):
     """Start subprocess failed because timeout elapsed."""
-    def __init__(self, timeout):
+    def __init__(self, timeout, output):
         self.timeout = timeout
+        self.output = output
     def __str__(self):
-        return _("Subprocess didn't call back in %s seconds.") % self.timeout
+        r = _("Subprocess didn't call back in %s seconds.") % self.timeout
+        if self.output:
+            r += _("\nSubprocess wrote:\n%s") % self.output
+        return r
 
 class SubprocessHandler(object):
     """
@@ -142,16 +143,14 @@ class SubprocessHandler(object):
             else:
                 break
             
-            out = (popen.recv() or '') + (popen.recv_err() or '')
-            if out:
-                raise StartOutputError(out)
-            
             rc = popen.poll()
             if rc is not None:
-                raise StartTerminatedError(rc)
+                out = (popen.recv() or '') + (popen.recv_err() or '')
+                raise StartTerminatedError(rc, out)
             
             if time.time() - start_time > START_TIMEOUT:
-                raise StartTimeoutError(START_TIMEOUT)
+                out = (popen.recv() or '') + (popen.recv_err() or '')
+                raise StartTimeoutError(START_TIMEOUT, out)
         self._sock.setblocking(True)
             
         #debug("Connected to addr %r." % (addr,))
