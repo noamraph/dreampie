@@ -2,8 +2,8 @@ Name DreamPie
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 1.0.3
-VIProductVersion 1.0.3.0
+!define VERSION 1.1
+VIProductVersion 1.1.0.0
 !define COMPANY DreamPie
 !define URL http://dreampie.sourceforge.net/
 
@@ -67,11 +67,13 @@ Section -Main SEC0000
     SetOutPath $INSTDIR
     SetOverwrite on
     File /r dist\*
-#    SetOutPath $SMPROGRAMS\$StartMenuGroup
-#    CreateShortcut $SMPROGRAMS\$StartMenuGroup\DreamPie.lnk $INSTDIR\dreampie.exe
+    SetOutPath $SMPROGRAMS\$StartMenuGroup
+    CreateShortcut "$SMPROGRAMS\$StartMenuGroup\Add Interpreter.lnk" "$INSTDIR\create-shortcuts.exe" \
+      '"$SMPROGRAMS\$StartMenuGroup"' "" "" "" "" \ 
+      "Add a shortcut for using a Python interpreter with DreamPie" 
     WriteRegStr HKLM "${REGKEY}\Components" Main 1
     # Create shortcuts
-    ExecWait '"$INSTDIR\create-shortcuts.exe" "$SMPROGRAMS\$StartMenuGroup"'
+    ExecWait '"$INSTDIR\create-shortcuts.exe" "--auto" "$SMPROGRAMS\$StartMenuGroup"'
 SectionEnd
 
 Section -post SEC0001

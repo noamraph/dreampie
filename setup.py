@@ -130,7 +130,7 @@ setup_args = dict(
     console=[{'script': 'dreampie.py',
               'icon_resources': [(1, 'dreampie.ico')]}],
     windows=[{'script': 'create-shortcuts.py',
-              'icon_resources': [(1, 'dreampie.ico')]}],
+              'icon_resources': [(1, 'blank.ico')]}],
     packages=['dreampielib',
               'dreampielib.common', 'dreampielib.gui', 'dreampielib.subprocess',
               ],

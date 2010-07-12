@@ -17,13 +17,13 @@
 
 # This script is run after the win32 installation has finished. it creates
 # start menu shortcuts for the available Python installations, as found in the
-# registry. If non are found, asks the user to find the Python installation.
-# If an executable isn't found, it creates a shortcut to the bare dreampie.exe,
-# which will show a warning that a Python executable is needed.
+# registry. 
+# It can also be run by the user, to create shortcuts to another interpreter.
 
 import sys
 import os
-from os.path import join, abspath, dirname, exists
+from os.path import join, abspath, dirname, basename, exists
+from optparse import OptionParser
 import _winreg
 import ctypes
 from ctypes import c_int, c_ulong, c_char_p, c_wchar_p, c_ushort
@@ -53,6 +53,9 @@ class OPENFILENAME(ctypes.Structure):
                 ("dwReserved", c_int),
                 ("flagsEx", c_int))
 
+MB_ICONWARNING = 0x30
+MB_ICONINFORMATION = 0x40
+
 from comtypes.client import CreateObject
 from comtypes.gen import IWshRuntimeLibrary
 
@@ -66,7 +69,7 @@ def select_file_dialog():
     ofx.lpstrTitle = "Please select the Python interpreter executable"
     opath = u"\0" * 1024
     ofx.lpstrFile = opath
-    filters = ["Executables|*.exe", "All Files|*.*"]
+    filters = ["Executables|*.exe; *.bat", "All Files|*.*"]
     ofx.lpstrFilter = unicode("\0".join([f.replace("|", "\0") for f in filters])+"\0\0")
     OFN_HIDEREADONLY = 4
     ofx.flags = OFN_HIDEREADONLY
@@ -120,67 +123,67 @@ def create_shortcut(ws, dp_folder, ver_name, pyexec):
     Create a shortcut.
     ws should be a Shell COM object.
     dp_folder should be the folder where the shortcuts are created.
-    If ver_name is None, the shortcut will be "DreamPie"
-    instead of "DreamPie ({ver_name})".
-    If pyexec is None, will start dreampie.exe with no arguments.
+    The shortcut will be called "DreamPie ({ver_name})".
+    pyexec is the argument to the dreampie executable - the interpreter.
     """
-    if ver_name:
-        shortcut_name = "DreamPie (Python %s).lnk" % ver_name
-    else:
-        shortcut_name = "DreamPie.lnk"
+    shortcut_name = "DreamPie (%s).lnk" % ver_name
     shortcut_fn = join(dp_folder, shortcut_name)
     shortcut = ws.CreateShortcut(shortcut_fn).QueryInterface(IWshRuntimeLibrary.IWshShortcut)
     shortcut.TargetPath = abspath(join(dirname(sys.executable), "dreampie.exe"))
-    args = ['--hide-console-window']
-    if pyexec: 
-        args.append('"%s"' % pyexec)
-        shortcut.WorkingDirectory = dirname(pyexec)
-    shortcut.Arguments = ' '.join(args)
+    shortcut.WorkingDirectory = dirname(pyexec)
+    shortcut.Arguments = ' '.join(['--hide-console-window', '"%s"' % pyexec])
     shortcut.Save()
 
-def create_shortcuts(dp_folder):
+def create_shortcuts_auto(dp_folder):
     ws = CreateObject("WScript.Shell")
-    #programs_folder = ws.SpecialFolders('Programs')
-    #dp_folder = join(programs_folder, "DreamPie")
     if not exists(dp_folder):
         os.mkdir(dp_folder)
     py_installs = [(ver_name, path)
                    for ver_name, path in find_python_installations()
                    if ver_name >= '2.5'
                       and exists(join(path, 'python.exe'))]
-    if py_installs:
-        for version_name, install_path in py_installs:
-            pyexec = join(install_path, "python.exe")
-            create_shortcut(ws, dp_folder, version_name, pyexec)
-    else:
-        MB_YESNO=4; MB_ICONWARNING=0x30; IDYES = 6
-        response = ctypes.windll.user32.MessageBoxW(
-            None, u"No matching Python installations were found. Do you wish to "
-            "manually find the Python interpreter program?", u"DreamPie Installation",
-            MB_YESNO | MB_ICONWARNING)
-        pyexec = None
-        if response == IDYES:
-            pyexec = select_file_dialog()
-            # If canceled, pyexec will stay None
-        if pyexec and pyexec.lower().endswith('pythonw.exe'):
-            pyexec = pyexec[:-len('w.exe')] + '.exe'
-            if not os.path.exists(pyexec):
-                ctypes.windll.user32.MessageBoxW(
-                    None, u"pythonw.exe would not run DreamPie, and python.exe not found. "
-                    "You will have to select another executable.", u"DreamPie Installation", MB_ICONWARNING)
-                pyexec = None
-        if pyexec:
-            create_shortcut(ws, dp_folder, None, pyexec)
-        else:
-            create_shortcut(ws, dp_folder, None, None)
+    for version_name, install_path in py_installs:
+        pyexec = join(install_path, "python.exe")
+        create_shortcut(ws, dp_folder, 'Python %s' % version_name, pyexec)
+
+def create_shortcut_ask(dp_folder):
+    ws = CreateObject("WScript.Shell")
+    pyexec = select_file_dialog()
+    if not pyexec:
+        # Canceled
+        return
+    if pyexec.lower().endswith('w.exe'):
+        pyexec = pyexec[:-len('w.exe')] + '.exe'
+        if not os.path.exists(pyexec):
+            ctypes.windll.user32.MessageBoxW(
+                None, u"pythonw.exe would not run DreamPie, and python.exe not found. "
+                "You will have to select another executable.", u"DreamPie Installation", MB_ICONWARNING)
+            return
+        
+    ver_name = basename(dirname(pyexec))
+     
+    create_shortcut(ws, dp_folder, ver_name, pyexec)
+
+    ctypes.windll.user32.MessageBoxW(
+        None, u"Shortcut created successfully.", u"DreamPie Installation", MB_ICONINFORMATION)
+
 
 def main():
-    if len(sys.argv) != 2 or sys.argv[1] in ('-h', '--help'):
-        print "Usage: %s <dreampie shortcut folder>" % sys.argv[0]
-        print "This program is used internally by the DreamPie installer."
-        sys.exit(1)
-    dp_folder = sys.argv[1]
-    create_shortcuts(dp_folder)
+    usage = "%prog [--auto] shortcut-dir"
+    description = "Create shortcuts for DreamPie"
+    parser = OptionParser(usage=usage, description=description)
+    parser.add_option("--auto", action="store_true", dest="auto",
+                      help="Automatically create shortcuts for Python "
+                      "installations found in registry")
+
+    opts, args = parser.parse_args()
+    if len(args) != 1:
+        parser.error("Must get exactly one argument")
+    dp_folder, = args
+    if opts.auto:
+        create_shortcuts_auto(dp_folder)
+    else:
+        create_shortcut_ask(dp_folder)
 
 if __name__ == '__main__':
     main()
