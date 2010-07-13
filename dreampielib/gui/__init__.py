@@ -522,6 +522,10 @@ class DreamPie(SimpleGladeApp):
             sb.insert(insert, '()')
             insert.backward_char()
         sb.place_cursor(insert)
+        
+        # Show a call tip
+        self.call_tips.show(is_auto=True)
+        
         return True
         
     # The following 3 handlers are for characters which may trigger automatic
