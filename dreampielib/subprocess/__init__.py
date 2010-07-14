@@ -630,6 +630,11 @@ class Subprocess(object):
             obj = eval(expr, self.locs)
         except Exception:
             return None
+        if isinstance(obj, (types.BuiltinFunctionType,
+                            types.BuiltinMethodType)):
+            # These don't have source code, and using pydoc will only
+            # add something like "execfile(...)" before the doc.
+            return unicodify(inspect.getdoc(obj))
         try:
             source = inspect.getsource(obj)
         except (TypeError, IOError):
