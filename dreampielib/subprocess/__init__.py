@@ -634,12 +634,30 @@ class Subprocess(object):
                             types.BuiltinMethodType)):
             # These don't have source code, and using pydoc will only
             # add something like "execfile(...)" before the doc.
-            return unicodify(inspect.getdoc(obj))
+            doc = inspect.getdoc(obj)
+            if doc is None:
+                return None
+            return unicodify(doc)
+        
+        # Check if obj.__doc__ is not in the code (was added after definition).
+        # If so, return pydoc's documentation.
+        # This test is CPython-specific. Another approach would be to look for
+        # the string in the source code.
+        co_consts = getattr(getattr(obj, 'func_code', None), 'co_consts', None)
+        __doc__ = getattr(obj, '__doc__', None)
+        if co_consts is not None and __doc__ is not None:
+            if __doc__ not in co_consts:
+                # Return pydoc's documentation
+                return unicodify(textdoc.document(obj).strip())
+        
         try:
             source = inspect.getsource(obj)
         except (TypeError, IOError):
+            # If can't get the source, return pydoc's documentation
             return unicodify(textdoc.document(obj).strip())
         else:
+            # If we can get the source, return it.
+            
             # cleandoc removes extra indentation.
             # We add a newline because it ignores indentation of first line...
             return unicodify(inspect.cleandoc('\n'+source))
