@@ -64,7 +64,10 @@ class Autocomplete(object):
             if line.startswith('import '):
                 res = self._complete_modules(line, is_auto)
             elif line.startswith('from '):
-                if ' import ' not in line:            
+                if len((line+'x').split()) == 3:
+                    # The third word should be "import".
+                    res = self._complete_import(line)
+                elif ' import ' not in line:            
                     res = self._complete_modules(line, is_auto)
                 else:
                     res = self._complete_module_members(line, is_auto)
@@ -163,6 +166,20 @@ class Autocomplete(object):
         is_case_insen = False
         return comp_prefix, public, private, is_case_insen
 
+    def _complete_import(self, line):
+        """
+        Complete the word "import"...
+        """
+        i = len(line)
+        while i and line[i-1] in ID_CHARS:
+            i -= 1
+        comp_prefix = line[i:]
+        public = ['import']
+        private = []
+        is_case_insen = False
+        return comp_prefix, public, private, is_case_insen
+        
+    
     def _complete_modules(self, line, is_auto):
         """
         line - the stripped line from its beginning to the cursor.
