@@ -64,7 +64,14 @@ class ConfigDialog(SimpleGladeApp):
         
         self.hide_defs_chk.props.active = config.get_bool('hide-defs')
         
-        self.matplotlib_ia_warn_chk.props.active = config.get_bool('matplotlib-ia-warn')
+        switch = config.get_bool('matplotlib-ia-switch')
+        warn = config.get_bool('matplotlib-ia-warn')
+        if switch:
+            self.matplotlib_ia_switch_rad.props.active = True
+        elif warn:
+            self.matplotlib_ia_warn_rad.props.active = True
+        else:
+            self.matplotlib_ia_ignore_rad.props.active = True
     
         self.ask_on_quit_chk.props.active = config.get_bool('ask-on-quit')
     
@@ -144,7 +151,16 @@ class ConfigDialog(SimpleGladeApp):
         
         config.set_bool('hide-defs', self.hide_defs_chk.props.active)
         
-        config.set_bool('matplotlib-ia-warn', self.matplotlib_ia_warn_chk.props.active)
+        if self.matplotlib_ia_switch_rad.props.active:
+            switch = True
+            warn = False
+        elif self.matplotlib_ia_warn_rad.props.active:
+            switch = False
+            warn = True
+        else:
+            switch = warn = False
+        config.set_bool('matplotlib-ia-switch', switch)
+        config.set_bool('matplotlib-ia-warn', warn)
         
         config.set_bool('ask-on-quit', self.ask_on_quit_chk.props.active)
         

@@ -38,6 +38,7 @@ viewer = ''
 init-code = ''
 expects-str = 'execfile chdir open run runeval'
 ask-on-quit = True
+matplotlib-ia-switch = False
 matplotlib-ia-warn = True
 
 recall-1-char-commands = False

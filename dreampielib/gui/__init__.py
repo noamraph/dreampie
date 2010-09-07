@@ -115,7 +115,7 @@ from .beep import beep
 from .file_dialogs import save_dialog
 from .tags import (OUTPUT, STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND,
                    COMMAND_DEFS, COMMAND_SEP, MESSAGE, RESULT_IND, RESULT)
-import tags
+from . import tags
 
 INDENT_WIDTH = 4
 
@@ -599,7 +599,8 @@ class DreamPie(SimpleGladeApp):
         
         self.call_subp(u'set_pprint', config.get_bool('pprint'))
         
-        self.call_subp(u'set_matplotlib_ia_warn',
+        self.call_subp(u'set_matplotlib_ia',
+                       config.get_bool('matplotlib-ia-switch'),
                        config.get_bool('matplotlib-ia-warn'))
         
     def run_init_code(self):
