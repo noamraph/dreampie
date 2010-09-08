@@ -233,6 +233,8 @@ class CallTipWindow(object):
         vs = self.vscrollbar
         win = self.window
         
+        text = text.replace('\0', '') # Fixes bug #611513
+        
         win.hide()
         tv.get_buffer().set_text(text)
         
