@@ -717,7 +717,7 @@ class Subprocess(object):
             sys.stderr.write(
                 "Warning: matplotlib in non-interactive mode detected.\n"
                 "This means that plots will appear only after you run show().\n"
-                "Use the Preferences window to automatically switch to interactive mode \n"
+                "Use Edit->Preferences->Shell to automatically switch to interactive mode \n"
                 "or to suppress this warning.\n")
 
 
