@@ -280,7 +280,7 @@ class Subprocess(object):
             # which had no effect
             filename = '<pyshell#%d>' % self.gid
             self.gid += 1
-            lines = src.split("\n")
+            lines = [x+'\n' for x in src.split("\n")]
             linecache.cache[filename] = len(src)+1, None, lines, filename
             codeob = compile(src, filename, 'single', self.flags)
             self.flags = self.update_features(self.flags, codeob.co_flags)
@@ -662,7 +662,9 @@ class Subprocess(object):
             
             # cleandoc removes extra indentation.
             # We add a newline because it ignores indentation of first line...
-            return unicodify(inspect.cleandoc('\n'+source))
+            # The next line is for Python 2.5 compatibility.
+            cleandoc = getattr(inspect, 'cleandoc', lambda s: s)
+            return unicodify(cleandoc('\n'+source))
     
     @rpc_func
     def is_callable_only(self, what):
