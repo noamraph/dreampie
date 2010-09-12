@@ -142,6 +142,7 @@ class DreamPie(SimpleGladeApp):
     def __init__(self, pyexec):
         SimpleGladeApp.__init__(self, gladefile, 'window_main')
         self.load_popup_menus()
+        self.set_mac_accelerators()
         
         self.config = Config()
 
@@ -237,7 +238,7 @@ class DreamPie(SimpleGladeApp):
             self.show_getting_started_dialog()
             self.config.set_bool('show-getting-started', False)
             self.config.save()
-
+        
     def load_popup_menus(self):
         # Load popup menus from the glade file. Would not have been needed if
         # popup menus could be children of windows.
@@ -252,6 +253,40 @@ class DreamPie(SimpleGladeApp):
         self.copy_section_menu = xml.get_widget('copy_section_menu')
         self.view_section_menu = xml.get_widget('view_section_menu')
         self.save_section_menu = xml.get_widget('save_section_menu')
+    
+    def set_mac_accelerators(self):
+        # Set up accelerators suitable for the Mac.
+        # Ctrl-Up and Ctrl-Down are taken by the window manager, so we use
+        # Ctrl-PgUp and Ctrl-PgDn.
+        # We want it to be easy to switch, so both sets of keys are always
+        # active, but only one, most suitable for each platform, is displayed
+        # in the menu.
+        
+        accel_group = gtk.accel_groups_from_object(self.window_main)[0]
+        menu_up = self.menuitem_history_up
+        UP = gdk.keyval_from_name('Up')
+        PGUP = gdk.keyval_from_name('Prior')
+        menu_dn = self.menuitem_history_down
+        DN = gdk.keyval_from_name('Down')
+        PGDN = gdk.keyval_from_name('Next')
+
+        if sys.platform != 'darwin':
+            menu_up.add_accelerator('activate', accel_group, PGUP,
+                                    gdk.CONTROL_MASK, 0)
+            menu_dn.add_accelerator('activate', accel_group, PGDN,
+                                    gdk.CONTROL_MASK, 0)
+        else:
+            menu_up.remove_accelerator(accel_group, UP, gdk.CONTROL_MASK)
+            menu_up.add_accelerator('activate', accel_group, PGUP,
+                                    gdk.CONTROL_MASK, gtk.ACCEL_VISIBLE)
+            menu_up.add_accelerator('activate', accel_group, UP,
+                                    gdk.CONTROL_MASK, 0)
+    
+            menu_dn.remove_accelerator(accel_group, DN, gdk.CONTROL_MASK)
+            menu_dn.add_accelerator('activate', accel_group, PGDN,
+                                    gdk.CONTROL_MASK, gtk.ACCEL_VISIBLE)
+            menu_dn.add_accelerator('activate', accel_group, DN,
+                                    gdk.CONTROL_MASK, 0)
 
     def on_cut(self, _widget):
         return self.selection.cut()

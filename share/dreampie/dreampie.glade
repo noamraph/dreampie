@@ -90,7 +90,7 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="menuitem5">
+                      <widget class="GtkMenuItem" id="menuitem_history_up">
                         <property name="visible">True</property>
                         <property name="tooltip" translatable="yes">Search the history upwards</property>
                         <property name="label" translatable="yes">History Up</property>
@@ -100,7 +100,7 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="menuitem7">
+                      <widget class="GtkMenuItem" id="menuitem_history_down">
                         <property name="visible">True</property>
                         <property name="tooltip" translatable="yes">Search the history downwards</property>
                         <property name="label" translatable="yes">History Down</property>
@@ -129,8 +129,8 @@
                         <property name="label" translatable="yes">Unfold Last Folded Output</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_unfold_last"/>
-                        <accelerator key="plus" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                         <accelerator key="equal" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <accelerator key="plus" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
