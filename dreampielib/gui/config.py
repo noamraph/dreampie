@@ -24,6 +24,9 @@ from StringIO import StringIO
 
 from .odict import OrderedDict
 
+# We use expects-str-2, because expects-str had a different format (uses repr)
+# in DreamPie 1.1
+
 default_config = """
 [DreamPie]
 show-getting-started = True
@@ -36,7 +39,8 @@ autofold = True
 autofold-numlines = 30
 viewer = ''
 init-code = ''
-expects-str = 'execfile chdir open run runeval'
+autoparen = True
+expects-str-2 = execfile chdir open run runeval
 ask-on-quit = True
 matplotlib-ia-switch = False
 matplotlib-ia-warn = True

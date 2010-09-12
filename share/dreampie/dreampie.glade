@@ -129,8 +129,8 @@
                         <property name="label" translatable="yes">Unfold Last Folded Output</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_unfold_last"/>
-                        <accelerator key="equal" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                         <accelerator key="plus" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <accelerator key="equal" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -1203,29 +1203,53 @@ Tip: If you want a non-gui viewer, use something like "xterm -e less"</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkLabel" id="label10">
+                      <widget class="GtkCheckButton" id="autoparen_chk">
+                        <property name="label" translatable="yes">Automatically add parentheses when pressing space</property>
                         <property name="visible">True</property>
-                        <property name="xalign">0</property>
-                        <property name="label" translatable="yes">Automatically add quotes for these functions:</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">False</property>
+                        <property name="draw_indicator">True</property>
+                        <signal name="toggled" handler="on_autoparen_chk_toggled"/>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
-                        <property name="fill">False</property>
                         <property name="position">3</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkAlignment" id="alignment12">
+                      <widget class="GtkAlignment" id="expects_str_alignment">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="left_padding">22</property>
                         <child>
-                          <widget class="GtkEntry" id="expects_str_entry">
+                          <widget class="GtkVBox" id="vbox7">
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="tooltip" translatable="yes">A list of function names, separated by spaces, that usually get a string literal as an argument.
+                            <child>
+                              <widget class="GtkLabel" id="label10">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">Also add quotes for these functions:</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkEntry" id="expects_str_entry">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="tooltip" translatable="yes">A list of function names, separated by spaces, that usually get a string literal as an argument.
 If you type the name of a function of the list and then press the space key, parens and quotes will automatically be added - for example, 'execfile&lt;space&gt;' -&gt; 'execfile("")'.
 You can also set the __expects_str__ attribute of a function to True to achieve the same effect.</property>
-                            <property name="invisible_char">&#x25CF;</property>
+                                <property name="invisible_char">&#x25CF;</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
                           </widget>
                         </child>
                       </widget>

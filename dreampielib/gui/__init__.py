@@ -110,6 +110,7 @@ from .history import History
 from .hist_persist import HistPersist
 from .autocomplete import Autocomplete
 from .call_tips import CallTips
+from .autoparen import Autoparen
 from .subprocess_handler import SubprocessHandler, StartError
 from .beep import beep
 from .file_dialogs import save_dialog
@@ -155,9 +156,6 @@ class DreamPie(SimpleGladeApp):
 
         self.init_sourcebufferview()
         
-        # List of function names which expect a string argument
-        self.expects_str = []
-        
         self.configure()
 
         self.output = Output(self.textview)
@@ -198,6 +196,12 @@ class DreamPie(SimpleGladeApp):
 
         self.call_tips = CallTips(self.sourceview, self.get_func_doc,
                                   INDENT_WIDTH)
+        
+        self.autoparen = Autoparen(self.sourcebuffer,
+                                   self.is_callable_only,
+                                   self.get_expects_str,
+                                   self.autoparen_show_call_tip,
+                                   INDENT_WIDTH)
 
         self.subp = SubprocessHandler(
             pyexec, data_dir,
@@ -487,47 +491,6 @@ class DreamPie(SimpleGladeApp):
 
         return False
 
-    @sourceview_keyhandler('space', 0)
-    def on_sourceview_space(self):
-        """
-        If a space was hit after a callable-only object, add parentheses.
-        """
-        if self.is_executing:
-            return False
-        
-        sb = self.sourcebuffer
-        insert = sb.get_iter_at_mark(sb.get_insert())
-        insert_linestart = sb.get_iter_at_line(insert.get_line())
-        line = self.sb_get_text(insert_linestart, insert)
-        # Search for a sequence of identifiers separated by dots at the
-        # end of the line
-        m = re.search(r'[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*$',
-                      line)
-        if not m:
-            return False
-        what = m.group()
-        if iskeyword(what):
-            # This is a common case, no need to ask the subprocess for it.
-            return False
-        
-        is_callable_only, expects_str = self.call_subp(u'is_callable_only', what)
-        if not is_callable_only:
-            return False
-        
-        last_name = what.rsplit('.', 1)[-1]
-        if expects_str or last_name in self.expects_str:
-            sb.insert(insert, '("")')
-            insert.backward_chars(2)
-        else:
-            sb.insert(insert, '()')
-            insert.backward_char()
-        sb.place_cursor(insert)
-        
-        # Show a call tip
-        self.call_tips.show(is_auto=True)
-        
-        return True
-        
     # The following 3 handlers are for characters which may trigger automatic
     # opening of the completion list. (slash and backslash depend on path.sep)
     # We leave the final decision whether to open the list to the autocompleter.
@@ -565,6 +528,33 @@ class DreamPie(SimpleGladeApp):
 
     def on_sourceview_keypress(self, _widget, event):
         return handle_keypress(self, event, sourceview_keyhandlers)
+
+
+    # Autoparen
+    
+    @sourceview_keyhandler('space', 0)
+    def on_sourceview_space(self):
+        """
+        If a space was hit after a callable-only object, add parentheses.
+        """
+        if self.is_executing:
+            return False
+        if not self.config.get_bool('autoparen'):
+            return False
+        
+        return self.autoparen.add_parens()
+
+    def is_callable_only(self, expr):
+        # This should be called only as a result of on_sourceview_space, which
+        # already checks that is_executing==False.
+        return self.call_subp(u'is_callable_only', expr)
+    
+    def get_expects_str(self):
+        return set(self.config.get('expects-str-2').split())
+    
+    def autoparen_show_call_tip(self):
+        self.call_tips.show(is_auto=True)
+
 
     # History
 
@@ -973,8 +963,6 @@ class DreamPie(SimpleGladeApp):
         
         command_defs = self.textbuffer.get_tag_table().lookup(COMMAND_DEFS)
         command_defs.props.invisible = config.get_bool('hide-defs')
-
-        self.expects_str = set(eval(config.get('expects-str')).split())
 
     def on_preferences(self, _widget):
         cd = ConfigDialog(self.config, gladefile, self.window_main)

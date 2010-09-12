@@ -58,7 +58,8 @@ class ConfigDialog(SimpleGladeApp):
         
         self.viewer_entry.props.text = eval(config.get('viewer'))
         
-        self.expects_str_entry.props.text = eval(config.get('expects-str'))
+        self.autoparen_chk.props.active = config.get_bool('autoparen')
+        self.expects_str_entry.props.text = config.get('expects-str-2')
         
         self.leave_code_chk.props.active = config.get_bool('leave-code')
         
@@ -145,7 +146,8 @@ class ConfigDialog(SimpleGladeApp):
         
         config.set('viewer', repr(self.viewer_entry.props.text.decode('utf8').strip()))
         
-        config.set('expects-str', repr(expects_str))
+        config.set_bool('autoparen', self.autoparen_chk.props.active)
+        config.set('expects-str-2', expects_str)
         
         config.set_bool('leave-code', self.leave_code_chk.props.active)
         
@@ -443,4 +445,5 @@ class ConfigDialog(SimpleGladeApp):
     def on_autofold_chk_toggled(self, _widget):
         self.autofold_spin.props.sensitive = self.autofold_chk.props.active
 
-
+    def on_autoparen_chk_toggled(self, _widget):
+        self.expects_str_alignment.props.sensitive = self.autoparen_chk.props.active
