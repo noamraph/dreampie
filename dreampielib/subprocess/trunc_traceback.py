@@ -76,7 +76,7 @@ def canonical_fn(fn):
 
 def trunc_traceback((_typ, value, tb), source_file):
     """
-    Format a traceback where entried before a frame from source_file are
+    Format a traceback where entries before a frame from source_file are
     omitted (unless the last frame is from source_file).
     Return the result as a unicode string.
     """
@@ -101,6 +101,10 @@ def trunc_traceback((_typ, value, tb), source_file):
             continue
     
         tbe = traceback.extract_tb(tb)
+        # This is a work around a really weird IronPython bug.
+        while len(tbe)>1 and 'split_to_singles' in tbe[-1][0]:
+            tbe.pop()
+            
         if canonical_fn(tbe[-1][0]) != source_file:
             # If the last entry is from this file, don't remove
             # anything. Otherwise, remove lines before the current
