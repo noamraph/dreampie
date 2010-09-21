@@ -181,7 +181,7 @@ class CallTipWindow(object):
             return True
         elif event.type == gdk.EXPOSE:
             rg = self.resizegrip
-            win = rg.get_window()
+            win = rg.window
             _x, _y, width, height, _depth = win.get_geometry()
             rg.get_style().paint_resize_grip(
                 win, gtk.STATE_NORMAL, None, rg, None, 
@@ -276,7 +276,7 @@ class CallTipWindow(object):
             hand = gdk.Cursor(gdk.HAND1)
             tv.get_window(gtk.TEXT_WINDOW_TEXT).set_cursor(hand)
             br_corner = gdk.Cursor(gdk.BOTTOM_RIGHT_CORNER)
-            self.resizegrip.get_window().set_cursor(br_corner)
+            self.resizegrip.window.set_cursor(br_corner)
     
     def hide(self):
         self.window.hide()
