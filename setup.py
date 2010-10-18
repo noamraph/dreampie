@@ -118,6 +118,11 @@ if py2exe is not None:
 else:
     additional_py2exe_data_files = []
 
+if py2exe is not None:
+    # Generate needed wrappers
+    from comtypes.client import CreateObject
+    ws = CreateObject("WScript.Shell")
+
 setup_args = dict(
     name='dreampie',
     version=__version__,

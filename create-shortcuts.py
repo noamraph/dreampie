@@ -57,6 +57,7 @@ MB_ICONWARNING = 0x30
 MB_ICONINFORMATION = 0x40
 
 from comtypes.client import CreateObject
+ws = CreateObject("WScript.Shell")
 from comtypes.gen import IWshRuntimeLibrary
 
 _ = lambda s: s
@@ -118,10 +119,9 @@ def find_python_installations():
                 pass
     return L
 
-def create_shortcut(ws, dp_folder, ver_name, pyexec):
+def create_shortcut(dp_folder, ver_name, pyexec):
     """
     Create a shortcut.
-    ws should be a Shell COM object.
     dp_folder should be the folder where the shortcuts are created.
     The shortcut will be called "DreamPie ({ver_name})".
     pyexec is the argument to the dreampie executable - the interpreter.
@@ -135,7 +135,6 @@ def create_shortcut(ws, dp_folder, ver_name, pyexec):
     shortcut.Save()
 
 def create_shortcuts_auto(dp_folder):
-    ws = CreateObject("WScript.Shell")
     if not exists(dp_folder):
         os.mkdir(dp_folder)
     py_installs = [(ver_name, path)
@@ -144,10 +143,9 @@ def create_shortcuts_auto(dp_folder):
                       and exists(join(path, 'python.exe'))]
     for version_name, install_path in py_installs:
         pyexec = join(install_path, "python.exe")
-        create_shortcut(ws, dp_folder, 'Python %s' % version_name, pyexec)
+        create_shortcut(dp_folder, 'Python %s' % version_name, pyexec)
 
 def create_shortcut_ask(dp_folder):
-    ws = CreateObject("WScript.Shell")
     pyexec = select_file_dialog()
     if not pyexec:
         # Canceled
@@ -162,7 +160,7 @@ def create_shortcut_ask(dp_folder):
         
     ver_name = basename(dirname(pyexec))
      
-    create_shortcut(ws, dp_folder, ver_name, pyexec)
+    create_shortcut(dp_folder, ver_name, pyexec)
 
     ctypes.windll.user32.MessageBoxW(
         None, u"Shortcut created successfully.", u"DreamPie Installation", MB_ICONINFORMATION)

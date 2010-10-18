@@ -30,6 +30,7 @@ SetCompressorDictSize 64
 !include MultiUser.nsh
 !include Sections.nsh
 !include MUI2.nsh
+!include LogicLib.nsh
 
 # Variables
 Var StartMenuGroup
@@ -66,14 +67,20 @@ ShowUninstDetails hide
 Section -Main SEC0000
     SetOutPath $INSTDIR
     SetOverwrite on
-    File /r dist\*
+    File /r windist\*
+    File /r gtk-runtime
+    File /r pygtk-2.6
+    # Create shortcuts
+    ExecWait '"$INSTDIR\create-shortcuts.exe" "--auto" "$SMPROGRAMS\$StartMenuGroup"'
     SetOutPath $SMPROGRAMS\$StartMenuGroup
     CreateShortcut "$SMPROGRAMS\$StartMenuGroup\Add Interpreter.lnk" "$INSTDIR\create-shortcuts.exe" \
       '"$SMPROGRAMS\$StartMenuGroup"' "" "" "" "" \ 
       "Add a shortcut for using a Python interpreter with DreamPie" 
+    ${If} $MultiUser.InstallMode == "AllUsers"
+        ShellLink::SetRunAsAdministrator "$SMPROGRAMS\$StartMenuGroup\Add Interpreter.lnk"
+        Pop $0
+    ${EndIf}
     WriteRegStr HKLM "${REGKEY}\Components" Main 1
-    # Create shortcuts
-    ExecWait '"$INSTDIR\create-shortcuts.exe" "--auto" "$SMPROGRAMS\$StartMenuGroup"'
 SectionEnd
 
 Section -post SEC0001
