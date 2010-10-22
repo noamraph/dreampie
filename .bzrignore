@@ -14,3 +14,4 @@ dreampie-*-setup.exe.asc
 .settings
 share/dreampie/subp-py2
 share/dreampie/subp-py3
+windist

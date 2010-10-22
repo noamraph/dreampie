@@ -61,6 +61,9 @@ class ConfigDialog(SimpleGladeApp):
         self.autoparen_chk.props.active = config.get_bool('autoparen')
         self.expects_str_entry.props.text = config.get('expects-str-2')
         
+        self.vertical_layout_rad.props.active = config.get_bool('vertical-layout')
+        self.horizontal_layout_rad.props.active = not config.get_bool('vertical-layout')
+        
         self.leave_code_chk.props.active = config.get_bool('leave-code')
         
         self.hide_defs_chk.props.active = config.get_bool('hide-defs')
@@ -148,6 +151,8 @@ class ConfigDialog(SimpleGladeApp):
         
         config.set_bool('autoparen', self.autoparen_chk.props.active)
         config.set('expects-str-2', expects_str)
+        
+        config.set_bool('vertical-layout', self.vertical_layout_rad.props.active)
         
         config.set_bool('leave-code', self.leave_code_chk.props.active)
         

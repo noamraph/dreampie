@@ -41,6 +41,7 @@ viewer = ''
 init-code = ''
 autoparen = True
 expects-str-2 = execfile chdir open run runeval
+vertical-layout = True
 ask-on-quit = True
 matplotlib-ia-switch = False
 matplotlib-ia-warn = True

@@ -157,6 +157,8 @@ class DreamPie(SimpleGladeApp):
 
         self.init_sourcebufferview()
         
+        self.set_initial_hpaned_position()
+        
         self.configure()
 
         self.output = Output(self.textview)
@@ -181,6 +183,7 @@ class DreamPie(SimpleGladeApp):
 
         self.histpersist = HistPersist(self.window_main, self.textview,
                                        self.status_bar, self.recent_manager)
+        self.update_recent()
         
         self.autocomplete = Autocomplete(self.sourceview,
                                          self.complete_attributes,
@@ -220,15 +223,12 @@ class DreamPie(SimpleGladeApp):
             sys.exit(1)
 
         # Is the subprocess executing a command
-        self.is_executing = False
+        self.set_is_executing(False)
         
         # Are we trying to shut down
         self.is_terminating = False
 
-        self.set_window_default_size()
-        self.window_main.show_all()
-        self.set_is_executing(False)
-        self.update_recent()
+        self.window_main.show()
         
         self.show_welcome()
         self.configure_subp()
@@ -339,8 +339,21 @@ class DreamPie(SimpleGladeApp):
         sb.set_language(python)
         self.scrolledwindow_sourceview.add(self.sourceview)
         sv.connect('focus-in-event', self.on_sourceview_focus_in)
+        sv.show()
         sv.grab_focus()
 
+    def set_initial_hpaned_position(self):
+        # We want the initial position for the horizontal pane to be in the
+        # middle. However, we only know the width when it's displayed (which
+        # may never happen.) So we bind an one-time event handler to the expose
+        # event.
+        callback_id = None
+        def callback(_widget, _event):
+            self.hpaned_main.props.position = \
+                self.hpaned_main.props.max_position//2
+            self.hpaned_main.disconnect(callback_id)
+        callback_id = self.hpaned_main.connect('expose-event', callback)
+        
     def sb_get_text(self, *args):
         # Unfortunately, PyGTK returns utf-8 encoded byte strings...
         return self.sourcebuffer.get_text(*args).decode('utf8')
@@ -994,6 +1007,20 @@ class DreamPie(SimpleGladeApp):
         tags.apply_theme_text(tv, tb, tags.get_theme(self.config, cur_theme))
         tags.apply_theme_source(sb, tags.get_theme(self.config, cur_theme))
 
+        vertical_layout = self.config.get_bool('vertical-layout')
+        if vertical_layout:
+            pane = self.vpaned_main; other_pane = self.hpaned_main
+        else:
+            pane = self.hpaned_main; other_pane = self.vpaned_main
+        pane.props.visible = True
+        other_pane.props.visible = False
+        if pane.get_child1() is None:
+            child1 = other_pane.get_child1(); other_pane.remove(child1)
+            child2 = other_pane.get_child2(); other_pane.remove(child2)
+            pane.pack1(child1, resize=True, shrink=True)
+            pane.pack2(child2, resize=not vertical_layout, shrink=True)
+        
+        # If the fonts were changed, we might need to enlarge the window
         self.set_window_default_size()
         
         command_defs = self.textbuffer.get_tag_table().lookup(COMMAND_DEFS)
