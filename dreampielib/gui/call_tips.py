@@ -29,9 +29,10 @@ from .call_tip_window import CallTipWindow
 from .beep import beep
 
 class CallTips(object):
-    def __init__(self, sourceview, get_func_doc, INDENT_WIDTH):
+    def __init__(self, sourceview, window_main, get_func_doc, INDENT_WIDTH):
         self.sourceview = sourceview
         self.sourcebuffer = sb = sourceview.get_buffer()
+        self.window_main = window_main
         self.get_func_doc = get_func_doc
         self.INDENT_WIDTH = INDENT_WIDTH
 
@@ -95,6 +96,7 @@ class CallTips(object):
         self.connect(sb, 'insert-text', self.on_insert_text)
         self.connect(sb, 'delete-range', self.on_delete_range)
         self.connect(self.sourceview, 'focus-out-event', self.on_focus_out)
+        self.connect(self.window_main, 'configure-event', self.on_configure)
 
         self.is_shown = True
 
@@ -159,6 +161,9 @@ class CallTips(object):
             idle_add(self.place_window)
 
     def on_focus_out(self, _widget, _event):
+        self.hide()
+    
+    def on_configure(self, _widget, _event):
         self.hide()
 
     def hide(self):

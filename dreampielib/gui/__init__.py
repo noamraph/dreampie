@@ -186,6 +186,7 @@ class DreamPie(SimpleGladeApp):
         self.update_recent()
         
         self.autocomplete = Autocomplete(self.sourceview,
+                                         self.window_main,
                                          self.complete_attributes,
                                          self.complete_firstlevels,
                                          self.get_func_args,
@@ -197,9 +198,9 @@ class DreamPie(SimpleGladeApp):
         # Hack: we connect this signal here, so that it will have lower
         # priority than the key-press event of autocomplete, when active.
         self.sourceview.connect('key-press-event', self.on_sourceview_keypress)
-
-        self.call_tips = CallTips(self.sourceview, self.get_func_doc,
-                                  INDENT_WIDTH)
+        
+        self.call_tips = CallTips(self.sourceview, self.window_main,
+                                  self.get_func_doc, INDENT_WIDTH)
         
         self.autoparen = Autoparen(self.sourcebuffer,
                                    self.is_callable_only,

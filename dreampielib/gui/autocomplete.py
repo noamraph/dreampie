@@ -29,7 +29,7 @@ ID_CHARS = string.ascii_letters + string.digits + "_"
 ID_CHARS_DOT = ID_CHARS + '.'
 
 class Autocomplete(object):
-    def __init__(self, sourceview, 
+    def __init__(self, sourceview, window_main,
                  complete_attributes, complete_firstlevels, get_func_args,
                  find_modules, get_module_members, complete_filenames,
                  INDENT_WIDTH):
@@ -43,7 +43,8 @@ class Autocomplete(object):
         self.complete_filenames = complete_filenames
         self.INDENT_WIDTH = INDENT_WIDTH
 
-        self.window = AutocompleteWindow(sourceview, self._on_complete)
+        self.window = AutocompleteWindow(sourceview, window_main,
+                                         self._on_complete)
 
     def show_completions(self, is_auto, complete):
         """

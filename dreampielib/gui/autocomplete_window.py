@@ -36,9 +36,10 @@ keyhandlers = {}
 keyhandler = make_keyhandler_decorator(keyhandlers)
 
 class AutocompleteWindow(object):
-    def __init__(self, sourceview, on_complete):
+    def __init__(self, sourceview, window_main, on_complete):
         self.sourceview = sourceview
         self.sourcebuffer = sb = sourceview.get_buffer()
+        self.window_main = window_main
         self.on_complete = on_complete
         
         self.liststore = gtk.ListStore(gobject.TYPE_STRING)        
@@ -137,6 +138,7 @@ class AutocompleteWindow(object):
         self.connect(self.treeview, 'button-press-event',
                      self.on_tv_button_press)
         self.connect(self.sourceview, 'focus-out-event', self.on_focus_out)
+        self.connect(self.window_main, 'configure-event', self.on_configure)
 
         self.sourceview.handler_unblock(self.keypress_handler)
         self.keypress_handler_blocked = False
@@ -332,6 +334,9 @@ class AutocompleteWindow(object):
             return True
 
     def on_focus_out(self, _widget, _event):
+        self.hide()
+    
+    def on_configure(self, _widget, _event):
         self.hide()
 
     def hide(self):
