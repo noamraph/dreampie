@@ -332,7 +332,7 @@ class Subprocess(object):
                     res_str = unicode(repr(self.last_res))
             else:
                 res_str = None
-        except (Exception, KeyboardInterrupt):
+        except:
             sys.stdout.flush()
             excinfo = sys.exc_info()
             sys.last_type, sys.last_value, sys.last_traceback = excinfo
