@@ -42,6 +42,11 @@ class Autoparen(object):
         # so that if the user removes the paren and presses space, we won't
         # interfere another time.
         self.mark = sb.create_mark(None, sb.get_start_iter(), left_gravity=True)
+        
+        # If the first thing the user does after the autoparen is adding "=",
+        # then he meant to write "f =" and not "f(=)". We listen for the next
+        # insert, and if it's a "=", we remove the parens.
+        self.insert_handler = None
 
     def add_parens(self):
         """
@@ -100,6 +105,31 @@ class Autoparen(object):
         sb.place_cursor(insert)
         sb.end_user_action()
         
+        self.insert_handler = sb.connect('insert-text', self.on_insert_text)
+
         self.show_call_tip()
         
         return True
+    
+    def on_insert_text(self, _textbuffer, iter, text, _length):
+        """
+        This is called upon the first insert after autoparen.
+        """
+        sb = self.sourcebuffer
+        
+        sb.disconnect(self.insert_handler)
+        
+        if text != '=':
+            return
+        # We should be one char after the mark
+        it = sb.get_iter_at_mark(self.mark)
+        iter.backward_char()
+        if not it.equal(iter):
+            return
+        
+        it2 = iter.copy()
+        it2.forward_chars(3)
+        sb.delete(iter, it2)
+        sb.insert(iter, ' ')
+        
+        # The '=' will be added by the default event handler.
