@@ -797,7 +797,7 @@ class DreamPie(SimpleGladeApp):
                 it = recent_items[i]
                 fn = it.get_uri()[len('file://'):]
                 menuitem.props.visible = True
-                menuitem.props.label = "_%d %s" % (i, fn)
+                menuitem.child.props.label = "_%d %s" % (i, fn)
                 self.recent_filenames[i] = fn
             else:
                 menuitem.props.visible = False
