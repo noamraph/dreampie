@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <glade-interface>
   <!-- interface-requires gtk+ 2.16 -->
   <!-- interface-naming-policy toplevel-contextual -->
@@ -129,8 +129,8 @@
                         <property name="label" translatable="yes">Unfold Last Folded Output</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_unfold_last"/>
-                        <accelerator key="plus" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                         <accelerator key="equal" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <accelerator key="plus" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -456,19 +456,19 @@
     <property name="use_markup">True</property>
     <property name="secondary_text" translatable="yes">Some tips to help you get started quickly:&lt;span size='xx-small'&gt;
 
-&lt;/span&gt;&#x2022; Type your code in the lower pane of the window. To execute, press Ctrl+Enter. One-liners can be executed by simply pressing Enter; If you don't want them executed, press Space and then Enter.&lt;span size='xx-small'&gt;
+&lt;/span&gt;• &lt;b&gt;To execute your code, press Ctrl+Enter.&lt;/b&gt; One-liners can be executed by simply pressing Enter; If you don't want them executed, press Space and then Enter.&lt;span size='xx-small'&gt;
 
-&lt;/span&gt;&#x2022; Use Ctrl+Up and Ctrl+Down to navigate between code segments you've already executed. You can write a few letters before pressing Ctrl+Up, and DreamPie will only search through code segments starting with those letters.&lt;span size='xx-small'&gt;
+&lt;/span&gt;• Use Ctrl+Up and Ctrl+Down to navigate between code segments you've already executed. You can write a few letters before pressing Ctrl+Up, and DreamPie will only search through code segments starting with those letters.&lt;span size='xx-small'&gt;
 
-&lt;/span&gt;&#x2022; Press Tab or Ctrl+Space to show a list of completions to the current expression. It will also complete file names!&lt;span size='xx-small'&gt;
+&lt;/span&gt;• Press Tab or Ctrl+Space to show a list of completions to the current expression. It will also complete file names!&lt;span size='xx-small'&gt;
 
-&lt;/span&gt;&#x2022; Your results are stored in variables named _0, _1, and so on.&lt;span size='xx-small'&gt;
+&lt;/span&gt;• Your results are stored in variables named _0, _1, and so on.&lt;span size='xx-small'&gt;
 
-&lt;/span&gt;&#x2022; Type a function name and press the space key and DreamPie will automatically add parentheses for you!&lt;span size='xx-small'&gt;
+&lt;/span&gt;• Type a function name and press the space key and DreamPie will automatically add parentheses for you!&lt;span size='xx-small'&gt;
 
-&lt;/span&gt;&#x2022; These commands, and some neat others, are also available from the menu.&lt;span size='xx-small'&gt;
+&lt;/span&gt;• These commands, and some neat others, are also available from the menu.&lt;span size='xx-small'&gt;
 
-&lt;/span&gt;&#x2022; You can display these tips again by choosing Help&#x2192;Getting Started from the menu.</property>
+&lt;/span&gt;• You can display these tips again by choosing Help→Getting Started from the menu.</property>
     <property name="secondary_use_markup">True</property>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox2">
@@ -487,7 +487,6 @@
     <property name="border_width">5</property>
     <property name="title" translatable="yes">DreamPie Preferences</property>
     <property name="type_hint">normal</property>
-    <property name="has_separator">False</property>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox4">
         <property name="visible">True</property>
@@ -954,7 +953,7 @@
                               <widget class="GtkSpinButton" id="reshist_spin">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="invisible_char">●</property>
                                 <property name="adjustment">1 1 9999 1 10 0</property>
                                 <property name="snap_to_ticks">True</property>
                                 <property name="numeric">True</property>
@@ -1144,7 +1143,7 @@
                               <widget class="GtkSpinButton" id="autofold_spin">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="invisible_char">●</property>
                                 <property name="adjustment">1 1 9999 1 10 0</property>
                                 <property name="snap_to_ticks">True</property>
                                 <property name="numeric">True</property>
@@ -1192,7 +1191,7 @@ Tip: If you want a non-gui viewer, use something like "xterm -e less"</property>
                           <widget class="GtkEntry" id="viewer_entry">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="invisible_char">&#x25CF;</property>
+                            <property name="invisible_char">●</property>
                           </widget>
                           <packing>
                             <property name="position">1</property>
@@ -1258,7 +1257,7 @@ Tip: If you want a non-gui viewer, use something like "xterm -e less"</property>
                                 <property name="tooltip" translatable="yes">A list of function names, separated by spaces, that usually get a string literal as an argument.
 If you type the name of a function of the list and then press the space key, parens and quotes will automatically be added - for example, 'execfile&lt;space&gt;' -&gt; 'execfile("")'.
 You can also set the __expects_str__ attribute of a function to True to achieve the same effect.</property>
-                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="invisible_char">●</property>
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
@@ -1431,9 +1430,8 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
   <widget class="GtkAboutDialog" id="about_dialog">
     <property name="border_width">5</property>
     <property name="type_hint">normal</property>
-    <property name="has_separator">False</property>
     <property name="program_name">DreamPie</property>
-    <property name="copyright" translatable="yes">Copyright &#xA9; 2010 Noam Yorav-Raphael</property>
+    <property name="copyright" translatable="yes">Copyright © 2010 Noam Yorav-Raphael</property>
     <property name="comments" translatable="yes">The Python shell you've always dreamed about!</property>
     <property name="license" translatable="yes">DreamPie is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
 
@@ -1466,7 +1464,6 @@ You should have received a copy of the GNU General Public License along with Dre
   <widget class="GtkDialog" id="discard_hist_dialog">
     <property name="border_width">5</property>
     <property name="type_hint">normal</property>
-    <property name="has_separator">False</property>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox6">
         <property name="visible">True</property>
@@ -1651,7 +1648,6 @@ You should have received a copy of the GNU General Public License along with Dre
     <property name="modal">True</property>
     <property name="type_hint">normal</property>
     <property name="transient_for">window_main</property>
-    <property name="has_separator">False</property>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox6">
         <property name="visible">True</property>
