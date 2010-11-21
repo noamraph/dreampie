@@ -288,6 +288,23 @@ class Subprocess(object):
         
         return True, codeobs
     
+    @staticmethod
+    def unmask_sigint():
+        # We want to accept ctrl-c on win32 only when executing the user code
+        # under the big "try-except" block - otherwise it will just cause
+        # problems. We may get unwanted ctrl-c events if the user is running
+        # a subprocess. Since all processes in the same "console group" get the
+        # event, the subprocess may get it before us and exit. Then we get out
+        # of the try-except block, and only later we get the ctrl-c. So we mask
+        # it when we get outside the try-except block.
+        if sys.platform == 'win32':
+            windll.kernel32.SetConsoleCtrlHandler(None, False)
+    
+    @staticmethod
+    def mask_sigint():
+        if sys.platform == 'win32':
+            windll.kernel32.SetConsoleCtrlHandler(None, True)
+    
     @rpc_func
     def execute(self, source):
         """
@@ -316,22 +333,28 @@ class Subprocess(object):
             
         self.last_res = None
         try:
-            # Execute
-            for codeob in codeobs:
-                exec codeob in self.locs
-            # Work around http://bugs.python.org/issue8213 - stdout buffered
-            # in Python 3.
-            sys.stdout.flush()
-            sys.stderr.flush()
-            # Convert the result to a string. This is here because exceptions
-            # may be raised here.
-            if self.last_res is not None:
-                if self.is_pprint:
-                    res_str = unicode(pprint.pformat(self.last_res))
+            # Allow ctrl-c to cause KeyboardInterrupt on win32
+            self.unmask_sigint()
+            try:
+                # Execute
+                for codeob in codeobs:
+                    exec codeob in self.locs
+                # Work around http://bugs.python.org/issue8213 - stdout buffered
+                # in Python 3.
+                sys.stdout.flush()
+                sys.stderr.flush()
+                # Convert the result to a string. This is here because exceptions
+                # may be raised here.
+                if self.last_res is not None:
+                    if self.is_pprint:
+                        res_str = unicode(pprint.pformat(self.last_res))
+                    else:
+                        res_str = unicode(repr(self.last_res))
                 else:
-                    res_str = unicode(repr(self.last_res))
-            else:
-                res_str = None
+                    res_str = None
+            finally:
+                # Forbid ctrl-c from causing KeyboardInterrupt on win32
+                self.mask_sigint()
         except:
             sys.stdout.flush()
             excinfo = sys.exc_info()
