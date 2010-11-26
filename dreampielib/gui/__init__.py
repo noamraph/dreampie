@@ -139,7 +139,11 @@ def get_widget(name):
     return xml.get_widget(name)
 
 class DreamPie(SimpleGladeApp):
-    def __init__(self, pyexec):
+    def __init__(self, pyexec, runfile):
+        """
+        pyexec - the Python interpreter executable
+        runfile - a filename to run upon startup, or None.
+        """
         SimpleGladeApp.__init__(self, gladefile, 'window_main')
         self.load_popup_menus()
         self.set_mac_accelerators()
@@ -233,7 +237,7 @@ class DreamPie(SimpleGladeApp):
         
         self.show_welcome()
         self.configure_subp()
-        self.run_init_code()
+        self.run_init_code(runfile)
 
         if self.config.get_bool('show-getting-started'):
             self.show_getting_started_dialog()
@@ -642,13 +646,20 @@ class DreamPie(SimpleGladeApp):
                        config.get_bool('matplotlib-ia-switch'),
                        config.get_bool('matplotlib-ia-warn'))
         
-    def run_init_code(self):
+    def run_init_code(self, runfile=None):
         """
         Runs the init code.
         This will result in the code being run and a '>>>' printed afterwards.
         If there's no init code, will just print '>>>'.
+        
+        If runfile is given, will also execute the code in that.
         """
         init_code = unicode(eval(self.config.get('init-code')))
+        if runfile:
+            msg = "Running %s" % runfile
+            # This should be both valid py3 and py2 code.
+            init_code += ('\n\nprint(%r)\nexec(open(%r).read())\n'
+                          % (msg, runfile))
         if init_code:
             is_ok, syntax_error_info = self.call_subp(u'execute', init_code)
             if not is_ok:
@@ -1140,6 +1151,9 @@ def main():
     usage = "%prog [options] [python-executable]"
     version = 'DreamPie %s' % __version__
     parser = OptionParser(usage=usage, version=version)
+    parser.add_option("--run", dest="runfile",
+                      help="A file to run upon initialization. It will be "
+                      "run only once.")
     if sys.platform == 'win32':
         parser.add_option("--hide-console-window", action="store_true",
                           dest="hide_console",
@@ -1171,5 +1185,5 @@ def main():
         hide_console_window()
 
     gtk.widget_set_default_direction(gtk.TEXT_DIR_LTR)
-    _dp = DreamPie(pyexec)
+    _dp = DreamPie(pyexec, opts.runfile)
     gtk.main()
