@@ -520,7 +520,10 @@ class Subprocess(object):
         except Exception:
             return None
         try:
-            args = inspect.getargspec(obj)[0]
+            if not py3k:
+                args = inspect.getargspec(obj)[0]
+            else:
+                args = inspect.getfullargspec(obj).args
         except TypeError:
             return None
         # There may be nested args, so we filter them
