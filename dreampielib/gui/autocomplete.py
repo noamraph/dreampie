@@ -160,7 +160,8 @@ class Autocomplete(object):
                 return None
     
             comp_prefix = text[open_bracket_index+1:index]
-            public = private = key_reprs
+            public = key_reprs
+            private = []
             is_case_insen = False
             return (comp_prefix, public, private, is_case_insen)
         finally:
