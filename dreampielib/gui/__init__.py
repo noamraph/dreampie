@@ -800,7 +800,9 @@ class DreamPie(SimpleGladeApp):
         recent_items = [it for it in rman.get_items()
                         if it.has_application('dreampie')
                         and it.get_uri().startswith('file://')]
-        recent_items.sort(key=lambda it: it.get_application_info('dreampie')[2],
+        # it.get_visited() makes more sense, but since we call RecentManager.add
+        # when we open and when we save, get_modified() does the trick.
+        recent_items.sort(key=lambda it: it.get_modified(),
                           reverse=True)
         self.menuitem_recentsep.props.visible = (len(recent_items) > 0)
         for i, menuitem in enumerate(self.menuitem_recent):
