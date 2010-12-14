@@ -23,7 +23,9 @@ import re
 from functools import partial
 
 from .hyper_parser import HyperParser
-from .autocomplete_window import AutocompleteWindow, find_prefix_range
+from .autocomplete_window import (AutocompleteWindow,
+                                  find_prefix_range,
+                                  common_prefix_length)
 from .beep import beep
 
 # This string includes all chars that may be in an identifier
@@ -121,10 +123,7 @@ class Autocomplete(object):
             # Find maximum prefix
             first = combined_keys[start]
             last = combined_keys[end-1]
-            i = 0
-            min_len = min(len(first), len(last))
-            while i < min_len and first[i] == last[i]:
-                i += 1
+            i = common_prefix_length(first, last)
             if i > len(comp_prefix):
                 sb.insert_at_cursor(combined[start][len(comp_prefix):i])
                 comp_prefix = first[:i]

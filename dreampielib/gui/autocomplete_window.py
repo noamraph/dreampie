@@ -15,7 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with DreamPie.  If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ['AutocompleteWindow', 'find_prefix_range']
+__all__ = [
+    'AutocompleteWindow',
+    'find_prefix_range',
+    'common_prefix_length',
+    ]
 
 import gobject
 import gtk
@@ -307,9 +311,7 @@ class AutocompleteWindow(object):
             return True
         first = self.cur_list_keys[self.start]
         last = self.cur_list_keys[self.end-1]
-        i = 0
-        while i < len(first) and i < len(last) and first[i] == last[i]:
-            i += 1
+        i = common_prefix_length(first, last)
         if i > len(self.cur_prefix):
             toadd = first[len(self.cur_prefix):i]
             self.sourcebuffer.insert_at_cursor(toadd)
@@ -387,4 +389,11 @@ def find_prefix_range(L, prefix):
     end = l
 
     return start, end
+
+def common_prefix_length(str1, str2):
+    i = 0
+    min_len = min(len(str1), len(str2))
+    while i < min_len and str1[i] == str2[i]:
+        i += 1
+    return i
 
