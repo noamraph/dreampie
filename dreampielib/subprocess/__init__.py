@@ -649,7 +649,7 @@ class Subprocess(object):
         return self.split_list(ids, all_set)
     
     @rpc_func
-    def complete_filenames(self, str_prefix, text, str_char, add_quote):
+    def complete_filenames(self, str_prefix, text, str_char):
         is_raw = 'r' in str_prefix.lower()
         is_unicode = 'u' in str_prefix.lower()
         try:
@@ -702,11 +702,7 @@ class Subprocess(object):
                 continue
 
             is_dir = os.path.isdir(os.path.join(comp_what, orig_name))
-
-            if not is_dir:
-                if add_quote:
-                    name += str_char
-            else:
+            if is_dir:
                 if '/' in text or os.path.sep == '/':
                     # Prefer forward slash
                     name += '/'

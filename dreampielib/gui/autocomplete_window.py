@@ -36,11 +36,10 @@ keyhandlers = {}
 keyhandler = make_keyhandler_decorator(keyhandlers)
 
 class AutocompleteWindow(object):
-    def __init__(self, sourceview, window_main, on_complete):
+    def __init__(self, sourceview, window_main):
         self.sourceview = sourceview
         self.sourcebuffer = sb = sourceview.get_buffer()
         self.window_main = window_main
-        self.on_complete = on_complete
         
         self.liststore = gtk.ListStore(gobject.TYPE_STRING)        
         self.cellrend = gtk.CellRendererText()
@@ -85,6 +84,7 @@ class AutocompleteWindow(object):
         self.cur_list_keys = None
         self.is_case_insen = None
         self.private_list = None
+        self.on_complete = None
         self.showing_private = None
         self.cur_prefix = None
         # Indices to self.cur_list - range which is displayed
@@ -103,7 +103,7 @@ class AutocompleteWindow(object):
             widget.disconnect(handler)
         self.signals[:] = []
 
-    def show(self, public, private, is_case_insen, start_len):
+    def show(self, public, private, is_case_insen, start_len, on_complete):
         sb = self.sourcebuffer
 
         if self.is_shown:
@@ -122,6 +122,7 @@ class AutocompleteWindow(object):
         else:
             self.cur_list_keys = [s.lower() for s in self.cur_list]
         self.private_list = private
+        self.on_complete = on_complete
         self.showing_private = False
         self.cur_prefix = None
         
@@ -320,9 +321,11 @@ class AutocompleteWindow(object):
         sel_row = self.treeview.get_selection().get_selected_rows()[1][0][0]
         text = self.liststore[sel_row][0].decode('utf8')
         insert = text[len(self.cur_prefix):]
+        on_complete = self.on_complete # self.hide() resets this to None
         self.hide()
         self.sourcebuffer.insert_at_cursor(insert)
-        self.on_complete()
+        if on_complete is not None:
+            on_complete(text)
         return True
 
     def on_keypress(self, _widget, event):
@@ -350,6 +353,7 @@ class AutocompleteWindow(object):
         self.is_shown = False
         self.cur_list = None
         self.private_list = None
+        self.on_complete = None
         self.showing_private = None
         self.cur_prefix = None
 
