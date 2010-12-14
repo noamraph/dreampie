@@ -120,6 +120,7 @@ class Autocomplete(object):
                 comp_prefix = first[:i]
             if end == start + 1:
                 # Only one matching completion - don't show the window
+                self._on_complete()
                 return
 
         self.window.show(public, private, is_case_insen, len(comp_prefix))
