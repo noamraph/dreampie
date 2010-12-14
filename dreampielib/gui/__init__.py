@@ -197,6 +197,7 @@ class DreamPie(SimpleGladeApp):
                                          self.find_modules,
                                          self.get_module_members,
                                          self.complete_filenames,
+                                         self.complete_dict_keys,
                                          INDENT_WIDTH)
         
         # Hack: we connect this signal here, so that it will have lower
@@ -558,6 +559,9 @@ class DreamPie(SimpleGladeApp):
     @sourceview_keyhandler('backslash', 0)
     def on_sourceview_backslash(self):
         timeout_add(AUTOCOMPLETE_WAIT, self.check_autocomplete, '\\')
+    @sourceview_keyhandler('bracketleft', 0)
+    def on_sourceview_bracketleft(self):
+        timeout_add(AUTOCOMPLETE_WAIT, self.check_autocomplete, '[')
 
     def check_autocomplete(self, last_char):
         """
@@ -961,6 +965,11 @@ class DreamPie(SimpleGladeApp):
 
     def on_show_completions(self, _widget):
         self.autocomplete.show_completions(is_auto=False, complete=False)
+
+    def complete_dict_keys(self, expr):
+        if self.is_executing:
+            return None
+        return self.call_subp(u'complete_dict_keys', expr)
 
     def complete_attributes(self, expr):
         if self.is_executing:

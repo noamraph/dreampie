@@ -31,6 +31,7 @@ import inspect
 import pydoc
 import pprint
 import codeop
+from itertools import chain
 try:
     # Executing multiple statements in 'single' mode (print results) is done
     # with the ast module. Python 2.5 doesn't have it, so we use the compiler
@@ -94,6 +95,81 @@ is_callable_cache = {}
 operator_methods = ['__%s__' % s for s in
                     'add sub mul div floordiv truediv mod divmod pow lshift '
                     'rshift and xor or'.split()]
+
+# utility functions for getting reprs of objects
+# which can be evalutated to create an identical object
+def get_repr(obj, max_contained=1000):
+    """
+    Get the repr of and object, or None if it has no repr.
+    
+    Having a repr in this context means that the repr can be evaluated to
+    create an identical object.
+    
+    For containers, contained objects are also checked, recursively. However,
+    the maximum total number of objects allowed is finite and is given by
+    the max_count parameter.
+    """
+    return repr(obj) if has_repr(obj, max_contained) else None
+
+def has_repr(obj, max_contained=1000):
+    """
+    Check whether an object has a repr.
+    
+    Having a repr in this context means that the repr can be evaluated to
+    create an identical object.
+    
+    For containers, contained objects are also checked, recursively. However,
+    the maximum total number of objects allowed is finite and is given by
+    the max_count parameter.
+    """
+    return _has_repr_internal(obj, max_contained)[0]
+
+def _has_repr_internal(obj, max_contained):
+    """
+    Recursively check whether contained objects have a repr.
+    
+    max_contained indicates the maximal allowed number of contained objects.
+    """
+    obj_type = type(obj)
+    if obj_type in _has_repr_internal.REPR_REVERSIBLE_SIMPLE_TYPES:
+        return True, max_contained
+    elif obj_type in _has_repr_internal.REPR_NON_REVERSIBLE_TYPES:
+        return False, max_contained
+    elif obj_type in _has_repr_internal.REPR_REVERSIBLE_CONTAINER_TYPES:
+        if isinstance(obj, dict):
+            contained = chain(obj.iterkeys(), obj.itervalues())
+            max_contained -= len(obj) * 2
+        else:
+            contained = obj
+            max_contained -= len(obj)
+        if max_contained < 0:
+            return False, max_contained
+        for item in contained:
+            item_has_repr, max_contained = _has_repr_internal(item, max_contained)
+            if not item_has_repr or max_contained < 0:
+                return False, max_contained
+        return True, max_contained
+    else:
+        return False, max_contained
+
+_has_repr_internal.REPR_REVERSIBLE_SIMPLE_TYPES = set([
+    bool, int, float, complex, type(None), slice,
+    long, # 2to3 replaces long with int, so this is fine
+    bytes if py3k else str, # 2to3 can't replace str with bytes
+    unicode, # 2to3 replaces unicode with str, so this is fine
+    ])
+_has_repr_internal.REPR_REVERSIBLE_CONTAINER_TYPES = set([
+    list, tuple, set, frozenset, dict,
+    ])
+_has_repr_internal.REPR_NON_REVERSIBLE_TYPES = set([
+    # range(100) == range(100) --> False, on all versions of CPython
+    range if py3k else xrange, # 2to3 should replace xrange with range,
+                               # but doesn't do so here!!!
+    types.GeneratorType, types.ModuleType,
+    types.FunctionType, types.LambdaType, types.MethodType,
+    types.BuiltinFunctionType, types.BuiltinMethodType,
+    ])
+
 
 class Subprocess(object):
     def __init__(self, port):
@@ -529,7 +605,28 @@ class Subprocess(object):
         # There may be nested args, so we filter them
         return [unicodify(s) for s in args
                 if isinstance(s, basestring)]
-    
+
+    MAX_DICT_SIZE_FOR_DICT_KEY_COMPLETION = 1000
+    @rpc_func
+    def complete_dict_keys(self, expr):
+        """
+        Return the reprs of the dict's keys (a list of strings)
+        
+        Note:
+        Some values have no repr, so they cannot be completed.
+        Such values are omitted from the resulting list.
+        """
+        try:
+            obj = eval(expr, self.locs)
+        except Exception:
+            return None
+        if not isinstance(obj, dict):
+            return None
+        if len(obj) > self.MAX_DICT_SIZE_FOR_DICT_KEY_COMPLETION:
+            return None
+        key_reprs = [get_repr(item, max_contained=12) for item in obj]
+        return [unicodify(kr) for kr in key_reprs if kr is not None]
+
     @rpc_func
     def find_modules(self, package):
         if package:
