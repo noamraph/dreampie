@@ -32,6 +32,7 @@ class Autocomplete(object):
     def __init__(self, sourceview, window_main,
                  complete_attributes, complete_firstlevels, get_func_args,
                  find_modules, get_module_members, complete_filenames,
+                 complete_dict_keys,
                  INDENT_WIDTH):
         self.sourceview = sourceview
         self.sourcebuffer = sourceview.get_buffer()
@@ -41,6 +42,7 @@ class Autocomplete(object):
         self.find_modules = find_modules
         self.get_module_members = get_module_members
         self.complete_filenames = complete_filenames
+        self.complete_dict_keys = complete_dict_keys
         self.INDENT_WIDTH = INDENT_WIDTH
 
         self.window = AutocompleteWindow(sourceview, window_main,
@@ -73,9 +75,13 @@ class Autocomplete(object):
                 else:
                     res = self._complete_module_members(line, is_auto)
             else:
-                res = self._complete_attributes(text, index, hp, is_auto)
+                res = self._complete_dict_keys(text, index, hp, is_auto)
+                if res is None:
+                    res = self._complete_attributes(text, index, hp, is_auto)
         elif hp.is_in_string():
-            res = self._complete_filenames(text, index, hp, is_auto)
+            res = self._complete_dict_keys(text, index, hp, is_auto)
+            if res is None:
+                res = self._complete_filenames(text, index, hp, is_auto)
         else:
             # Not in string and not in code
             res = None
@@ -113,11 +119,52 @@ class Autocomplete(object):
                 sb.insert_at_cursor(combined[start][len(comp_prefix):i])
                 comp_prefix = first[:i]
             if end == start + 1:
-                # Only one matchine completion - don't show the window
+                # Only one matching completion - don't show the window
                 return
 
         self.window.show(public, private, is_case_insen, len(comp_prefix))
         
+    def _complete_dict_keys(self, text, index, hp, is_auto):
+        """
+        Return (comp_prefix, public, private, is_case_insen) 
+        (string, list, list, bool).
+        If shouldn't complete - return None.
+        """
+        try:
+            # Check whether auto-completion is really appropriate,
+            # finding the index of the o     pening bracket in the process.
+            if is_auto:
+                if text[index-1] != '[' or not hp.is_in_code():
+                    return
+                open_bracket_index = index-1
+            else:
+                if hp.is_in_string():
+                    open_quote_index = hp.get_surrounding_brackets('\'"')[0]
+                    hp.set_index(open_quote_index)
+                if not hp.is_in_code():
+                    return
+                open_bracket_index = hp.get_surrounding_brackets()[0]
+                if open_bracket_index is None or text[open_bracket_index] != '[':
+                    return
+    
+            # With the index of the opening bracket in hand, assume that the
+            # expression just before the bracket is a dict, and try to fetch
+            # the reprs of its keys.
+            hp.set_index(open_bracket_index)
+            comp_what = hp.get_expression()
+            if not comp_what:
+                return
+            key_reprs = self.complete_dict_keys(comp_what)
+            if key_reprs is None:
+                return None
+    
+            comp_prefix = text[open_bracket_index+1:index]
+            public = private = key_reprs
+            is_case_insen = False
+            return (comp_prefix, public, private, is_case_insen)
+        finally:
+            hp.set_index(index)
+
     def _complete_attributes(self, text, index, hp, is_auto):
         """
         Return (comp_prefix, public, private, is_case_insen) 
