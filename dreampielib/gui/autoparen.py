@@ -76,6 +76,17 @@ class Autoparen(object):
         text = sb.get_slice(sb.get_start_iter(),
                             sb.get_end_iter()).decode('utf8')
         index = sb.get_iter_at_mark(sb.get_insert()).get_offset()
+
+        line = text[text.rfind('\n', 0, index)+1:index].lstrip()
+        # don't add parens in import statements
+        if line.startswith(('import ', 'from ')):
+            return False
+        # don't add parens immediately after the "for" in a "for" loop
+        # TODO: also don't add parens between "for" and "in" in a
+        #       list comprehension or generator expression
+        if line.startswith('for ') and len(line.split()) == 2:
+            return False
+
         hp = HyperParser(text, index, self.INDENT_WIDTH)
 
         if not hp.is_in_code():
