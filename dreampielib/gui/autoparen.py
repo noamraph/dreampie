@@ -78,8 +78,8 @@ class Autoparen(object):
         index = sb.get_iter_at_mark(sb.get_insert()).get_offset()
 
         line = text[text.rfind('\n', 0, index)+1:index].lstrip()
-        # don't add parens in import statements
-        if line.startswith(('import ', 'from ')):
+        # don't add parens in import and except statements
+        if line.startswith(('import ', 'from ', 'except ')):
             return False
         # don't add parens immediately after the "for" in a "for" loop
         # TODO: also don't add parens between "for" and "in" in a
