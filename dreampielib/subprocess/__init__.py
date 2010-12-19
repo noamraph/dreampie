@@ -381,6 +381,20 @@ class Subprocess(object):
         if sys.platform == 'win32':
             windll.kernel32.SetConsoleCtrlHandler(None, True)
     
+    @staticmethod
+    def safe_pformat(obj):
+        """
+        Use pprint to format an object.
+        In case of an exception, warn and use regular repr instead.
+        """
+        try:
+            return unicode(pprint.pformat(obj))
+        except:
+            from warnings import warn
+            warn('pprint raised an exception, using repr instead. '
+                 'To reproduce, run: "from pprint import pprint; pprint(_)"')
+            return unicode(repr(obj))
+    
     @rpc_func
     def execute(self, source):
         """
@@ -423,7 +437,7 @@ class Subprocess(object):
                 # may be raised here.
                 if self.last_res is not None:
                     if self.is_pprint:
-                        res_str = unicode(pprint.pformat(self.last_res))
+                        res_str = self.safe_pformat(self.last_res)
                     else:
                         res_str = unicode(repr(self.last_res))
                 else:
