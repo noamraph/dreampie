@@ -471,7 +471,7 @@ class Subprocess(object):
                 if not r:
                     # File may be in error state
                     break
-                rem_stdin.append(r)
+                rem_stdin.append(unicodify(r))
         elif sys.platform == 'win32':
             fd = sys.stdin.fileno()
             handle = get_osfhandle(fd)
