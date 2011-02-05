@@ -59,7 +59,10 @@ class StartTimeoutError(StartError):
         self.timeout = timeout
         self.output = output
     def __str__(self):
-        r = _("Subprocess didn't call back in %s seconds.") % self.timeout
+        r = _("Subprocess didn't call back in %s seconds. "
+              "This may be caused by a firewall program blocking the "
+              "communication between the main process and the subproces."
+              ) % self.timeout
         if self.output:
             r += _("\nSubprocess wrote:\n%s") % self.output
         return r
