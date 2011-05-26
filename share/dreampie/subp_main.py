@@ -27,7 +27,10 @@
 # the -S flag, and call sys.setdefaultencoding before site.py has a chance of
 # doing anything else.
 import sys
-sys.setdefaultencoding('utf-8')
+try:
+    getattr(sys, 'setdefaultencoding')('utf-8')
+except AttributeError:
+    sys.stderr.write("setdefaultencoding is not found")
 import site
 
 from os.path import abspath, join, dirname
