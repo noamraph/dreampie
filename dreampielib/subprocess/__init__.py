@@ -96,6 +96,15 @@ operator_methods = ['__%s__' % s for s in
                     'add sub mul div floordiv truediv mod divmod pow lshift '
                     'rshift and xor or'.split()]
 
+quit_msg = """\
+Press Ctrl-Q or close the window if you want to quit DreamPie.
+Press Ctrl-F6 if you want to restart the subprocess."""
+class Quit(object):
+    def __repr__(self):
+        return quit_msg
+    def __call__(self):
+        raise RuntimeError(quit_msg)
+
 # utility functions for getting reprs of objects
 # which can be evalutated to create an identical object
 def get_repr(obj, max_contained=1000):
@@ -193,8 +202,8 @@ class Subprocess(object):
         # (Otherwise multiprocessing on win32 starts running subp_main.py)
         sys.argv = ['']
 
-        # Remove __builtin__.exit, which only confuses users
-        del __builtin__.exit
+        # Adjust exit and quit objects
+        __builtin__.exit = __builtin__.quit = Quit()
         
         self.gui_handlers = [GtkHandler(), Qt4Handler(), TkHandler()]
 
