@@ -27,7 +27,8 @@
 # the -S flag, and call sys.setdefaultencoding before site.py has a chance of
 # doing anything else.
 import sys
-sys.setdefaultencoding('utf-8')
+if sys.version_info[0] < 3:
+    sys.setdefaultencoding('utf-8')
 import site
 
 from os.path import abspath, join, dirname
