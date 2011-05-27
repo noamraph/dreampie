@@ -105,7 +105,8 @@ def trunc_traceback((_typ, value, tb), source_file):
         while len(tbe)>1 and 'split_to_singles' in tbe[-1][0]:
             tbe.pop()
             
-        if canonical_fn(tbe[-1][0]) != source_file:
+        # tbe may be an empty list if "raise from ExceptionClass" was used.
+        if tbe and canonical_fn(tbe[-1][0]) != source_file:
             # If the last entry is from this file, don't remove
             # anything. Otherwise, remove lines before the current
             # frame.
@@ -114,7 +115,8 @@ def trunc_traceback((_typ, value, tb), source_file):
                     tbe = tbe[i+1:]
                     break
                 
-        efile.write('Traceback (most recent call last):'+'\n')
+        if tbe:
+            efile.write('Traceback (most recent call last):'+'\n')
         traceback.print_list(tbe, file=efile)
         lines = traceback.format_exception_only(type(value), value)
         for line in lines:
