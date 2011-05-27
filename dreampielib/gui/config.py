@@ -19,7 +19,7 @@ __all__ = ['Config']
 
 import sys
 import os
-from ConfigParser import SafeConfigParser
+from ConfigParser import RawConfigParser
 from StringIO import StringIO
 
 from .odict import OrderedDict
@@ -212,17 +212,17 @@ def get_config_fn():
 
 class Config(object):
     """
-    Manage configuration - a simple wrapper around SafeConfigParser.
+    Manage configuration - a simple wrapper around RawConfigParser.
     Upon initialization, the loaded file is updated with the default values.
     config.save() will save the current state.
     """
     def __init__(self):
         self.filename = get_config_fn()
         try:
-            self.parser = SafeConfigParser(dict_type=OrderedDict)
+            self.parser = RawConfigParser(dict_type=OrderedDict)
         except TypeError:
             # Python versions < 2.6 don't support dict_type
-            self.parser = SafeConfigParser()
+            self.parser = RawConfigParser()
         f = StringIO(default_config)
         self.parser.readfp(f)
         self.parser.read(self.filename)
