@@ -998,10 +998,11 @@ class DreamPie(SimpleGladeApp):
             return None
         return self.call_subp(u'get_module_members', expr)
     
-    def complete_filenames(self, str_prefix, text, str_char):
+    def complete_filenames(self, str_prefix, text, str_char, add_quote):
         if self.is_executing:
             return None
-        return self.call_subp(u'complete_filenames', str_prefix, text, str_char)
+        return self.call_subp(u'complete_filenames', str_prefix, text, str_char,
+                              add_quote)
 
     def on_show_calltip(self, _widget):
         self.call_tips.show(is_auto=False)

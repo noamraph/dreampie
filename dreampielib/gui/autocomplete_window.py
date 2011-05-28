@@ -15,11 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with DreamPie.  If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = [
-    'AutocompleteWindow',
-    'find_prefix_range',
-    'common_prefix_length',
-    ]
+__all__ = ['AutocompleteWindow', 'find_prefix_range']
 
 import gobject
 import gtk
@@ -40,10 +36,11 @@ keyhandlers = {}
 keyhandler = make_keyhandler_decorator(keyhandlers)
 
 class AutocompleteWindow(object):
-    def __init__(self, sourceview, window_main):
+    def __init__(self, sourceview, window_main, on_complete):
         self.sourceview = sourceview
         self.sourcebuffer = sb = sourceview.get_buffer()
         self.window_main = window_main
+        self.on_complete = on_complete
         
         self.liststore = gtk.ListStore(gobject.TYPE_STRING)        
         self.cellrend = gtk.CellRendererText()
@@ -88,7 +85,6 @@ class AutocompleteWindow(object):
         self.cur_list_keys = None
         self.is_case_insen = None
         self.private_list = None
-        self.on_complete = None
         self.showing_private = None
         self.cur_prefix = None
         # Indices to self.cur_list - range which is displayed
@@ -107,7 +103,7 @@ class AutocompleteWindow(object):
             widget.disconnect(handler)
         self.signals[:] = []
 
-    def show(self, public, private, is_case_insen, start_len, on_complete):
+    def show(self, public, private, is_case_insen, start_len):
         sb = self.sourcebuffer
 
         if self.is_shown:
@@ -126,7 +122,6 @@ class AutocompleteWindow(object):
         else:
             self.cur_list_keys = [s.lower() for s in self.cur_list]
         self.private_list = private
-        self.on_complete = on_complete
         self.showing_private = False
         self.cur_prefix = None
         
@@ -311,7 +306,9 @@ class AutocompleteWindow(object):
             return True
         first = self.cur_list_keys[self.start]
         last = self.cur_list_keys[self.end-1]
-        i = common_prefix_length(first, last)
+        i = 0
+        while i < len(first) and i < len(last) and first[i] == last[i]:
+            i += 1
         if i > len(self.cur_prefix):
             toadd = first[len(self.cur_prefix):i]
             self.sourcebuffer.insert_at_cursor(toadd)
@@ -323,11 +320,9 @@ class AutocompleteWindow(object):
         sel_row = self.treeview.get_selection().get_selected_rows()[1][0][0]
         text = self.liststore[sel_row][0].decode('utf8')
         insert = text[len(self.cur_prefix):]
-        on_complete = self.on_complete # self.hide() resets this to None
         self.hide()
         self.sourcebuffer.insert_at_cursor(insert)
-        if on_complete is not None:
-            on_complete(text)
+        self.on_complete()
         return True
 
     def on_keypress(self, _widget, event):
@@ -355,7 +350,6 @@ class AutocompleteWindow(object):
         self.is_shown = False
         self.cur_list = None
         self.private_list = None
-        self.on_complete = None
         self.showing_private = None
         self.cur_prefix = None
 
@@ -389,11 +383,4 @@ def find_prefix_range(L, prefix):
     end = l
 
     return start, end
-
-def common_prefix_length(str1, str2):
-    i = 0
-    min_len = min(len(str1), len(str2))
-    while i < min_len and str1[i] == str2[i]:
-        i += 1
-    return i
 

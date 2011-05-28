@@ -17,15 +17,11 @@
 
 __all__ = ['Autocomplete']
 
-import os
 import string
 import re
-from functools import partial
 
 from .hyper_parser import HyperParser
-from .autocomplete_window import (AutocompleteWindow,
-                                  find_prefix_range,
-                                  common_prefix_length)
+from .autocomplete_window import AutocompleteWindow, find_prefix_range
 from .beep import beep
 
 # This string includes all chars that may be in an identifier
@@ -49,7 +45,8 @@ class Autocomplete(object):
         self.complete_dict_keys = complete_dict_keys
         self.INDENT_WIDTH = INDENT_WIDTH
 
-        self.window = AutocompleteWindow(sourceview, window_main)
+        self.window = AutocompleteWindow(sourceview, window_main,
+                                         self._on_complete)
 
     def show_completions(self, is_auto, complete):
         """
@@ -90,7 +87,7 @@ class Autocomplete(object):
             res = None
 
         if res is not None:
-            comp_prefix, public, private, is_case_insen, on_complete = res
+            comp_prefix, public, private, is_case_insen = res
         else:
             if not is_auto:
                 beep()
@@ -112,23 +109,21 @@ class Autocomplete(object):
             return
 
         if complete:
-            if end == start + 1:
-                #import pdb; pdb.set_trace()
-                # Only one matching completion - don't show the window
-                sb.insert_at_cursor(combined[start][len(comp_prefix):])
-                if on_complete is not None:
-                    on_complete(combined[start])
-                return
-
             # Find maximum prefix
             first = combined_keys[start]
             last = combined_keys[end-1]
-            i = common_prefix_length(first, last)
+            i = 0
+            while i < len(first) and i < len(last) and first[i] == last[i]:
+                i += 1
             if i > len(comp_prefix):
                 sb.insert_at_cursor(combined[start][len(comp_prefix):i])
                 comp_prefix = first[:i]
+            if end == start + 1:
+                # Only one matching completion - don't show the window
+                self._on_complete()
+                return
 
-        self.window.show(public, private, is_case_insen, len(comp_prefix), on_complete)
+        self.window.show(public, private, is_case_insen, len(comp_prefix))
         
     def _complete_dict_keys(self, text, index, hp, is_auto):
         """
@@ -168,8 +163,7 @@ class Autocomplete(object):
             public = key_reprs
             private = []
             is_case_insen = False
-            on_complete = self._on_complete_dict_key
-            return (comp_prefix, public, private, is_case_insen, on_complete)
+            return (comp_prefix, public, private, is_case_insen)
         finally:
             hp.set_index(index)
 
@@ -220,8 +214,7 @@ class Autocomplete(object):
                             public.sort()
         
         is_case_insen = False
-        on_complete = None
-        return comp_prefix, public, private, is_case_insen, on_complete
+        return comp_prefix, public, private, is_case_insen
 
     def _complete_import(self, line):
         """
@@ -234,8 +227,7 @@ class Autocomplete(object):
         public = ['import']
         private = []
         is_case_insen = False
-        on_complete = None
-        return comp_prefix, public, private, is_case_insen, on_complete
+        return comp_prefix, public, private, is_case_insen
         
     
     def _complete_modules(self, line, is_auto):
@@ -269,8 +261,7 @@ class Autocomplete(object):
         public = [s for s in modules if s[0] != '_']
         private = [s for s in modules if s[0] == '_']
         is_case_insen = False
-        on_complete = None
-        return comp_prefix, public, private, is_case_insen, on_complete
+        return comp_prefix, public, private, is_case_insen
         
     def _complete_module_members(self, line, is_auto):
         """
@@ -298,8 +289,7 @@ class Autocomplete(object):
             return
         public, private = public_and_private
         is_case_insen = False
-        on_complete = None
-        return comp_prefix, public, private, is_case_insen, on_complete
+        return comp_prefix, public, private, is_case_insen
         
     def _complete_filenames(self, text, index, hp, is_auto):
         """
@@ -346,29 +336,21 @@ class Autocomplete(object):
 
         comp_prefix = text[comp_prefix_index:index]
         
+        add_quote = not (len(text) > index and text[index] == str_char)
+        
         res = self.complete_filenames(
-            str_prefix, text[str_start:comp_prefix_index], str_char)
+            str_prefix, text[str_start:comp_prefix_index], str_char, add_quote)
         if res is None:
             return
         public, private, is_case_insen = res
-        on_complete = partial(self._on_complete_filename, str_prefix, str_char)
         
-        return comp_prefix, public, private, is_case_insen, on_complete
-
-    def _on_complete_dict_key(self, key_repr):
-        """called when the user has completed a dictionary key"""
-        self.sourcebuffer.insert_at_cursor(']')
-
-    def _on_complete_filename(self, comp_what, open_paren, filename):
-        """called when the user has completed the name of a file/directory"""
-        is_dir = filename[-1] in '/\\'
-        if is_dir:
-            # open completions for the contents of the directory
-            self.show_completions(is_auto=True, complete=False)
-        else:
-            # close the parenthesis
-            self.sourcebuffer.insert_at_cursor(open_paren)
-
+        return comp_prefix, public, private, is_case_insen
+    
+    def _on_complete(self):
+        # Called when the user completed. This is relevant if he completed
+        # a dir name, so that another completion window will be opened.
+        self.show_completions(is_auto=True, complete=False)
+        
     @staticmethod
     def _is_backslash_char(string, index):
         """
