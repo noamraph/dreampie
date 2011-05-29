@@ -57,10 +57,9 @@ class Autocomplete(object):
         If is_auto is True, don't beep if can't find completions.
         """
         sb = self.sourcebuffer
-        text = get_text(sb, sb.get_start_iter(),
-                        sb.get_iter_at_mark(sb.get_insert()))
-        index = len(text)
-        hp = HyperParser(text, index, self.INDENT_WIDTH)
+        text = get_text(sb, sb.get_start_iter(), sb.get_end_iter())
+        index = sb.get_iter_at_mark(sb.get_insert()).get_offset()
+        hp = HyperParser(text[:index], index, self.INDENT_WIDTH)
 
         if hp.is_in_code():
             line = text[text.rfind('\n', 0, index)+1:index].lstrip()
