@@ -20,7 +20,7 @@ __all__ = ['Selection']
 import gtk
 
 from .tags import COMMAND, PROMPT
-from .beep import beep
+from .common import beep, get_text
 
 class Selection(object):
     """
@@ -67,7 +67,7 @@ class Selection(object):
             # display
             tb = self.textbuffer
             sel_start, sel_end = tb.get_selection_bounds()
-            text = tb.get_text(sel_start, sel_end).decode('utf8')
+            text = get_text(tb, sel_start, sel_end)
             text = text.replace('\r', '')
             self.clipboard.set_text(text)
         elif self.sourcebuffer.get_has_selection():
@@ -97,7 +97,7 @@ class Selection(object):
                 it2 = sel_end.copy()
                 reached_end = True
             if it.has_tag(command) and not it.has_tag(prompt):
-                r.append(tb.get_text(it, it2).decode('utf8'))
+                r.append(get_text(tb, it, it2))
             it = it2
         r = ''.join(r)
         if not r:

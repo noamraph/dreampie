@@ -21,6 +21,7 @@ import string
 from keyword import iskeyword
 
 from .hyper_parser import HyperParser
+from .common import get_text
 
 # These are all the chars that may be before the parens
 LAST_CHARS = set(string.ascii_letters + string.digits + "_)]")
@@ -70,11 +71,10 @@ class Autoparen(object):
             return False
         it.forward_char()
         it.backward_word_start()
-        if iskeyword(it.get_text(insert).decode('utf8')):
+        if iskeyword(get_text(sb, it, insert)):
             return False
         
-        text = sb.get_slice(sb.get_start_iter(),
-                            sb.get_end_iter()).decode('utf8')
+        text = get_text(sb, sb.get_start_iter(), sb.get_end_iter())
         index = sb.get_iter_at_mark(sb.get_insert()).get_offset()
 
         line = text[text.rfind('\n', 0, index)+1:index].lstrip()

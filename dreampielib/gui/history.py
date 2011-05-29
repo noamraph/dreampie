@@ -18,7 +18,7 @@
 __all__ = ['History']
 
 from .tags import COMMAND, PROMPT
-from .beep import beep
+from .common import beep, get_text
 
 class History(object):
     """
@@ -79,9 +79,9 @@ class History(object):
             if it2.compare(it_end) >= 0:
                 it2 = it.copy()
                 it2.forward_to_tag_toggle(command)
-                r.append(tb.get_text(it, it2).decode('utf8'))
+                r.append(get_text(tb, it, it2))
                 break
-            r.append(tb.get_text(it, it2))
+            r.append(get_text(tb, it, it2))
             if only_first_line:
                 break
             it = it2
@@ -129,8 +129,8 @@ class History(object):
                     # Don't allow prefixes of more than one line
                     beep()
                     return
-                self.hist_prefix = sb.get_text(sb.get_start_iter(),
-                                               sb.get_end_iter())
+                self.hist_prefix = get_text(sb, sb.get_start_iter(),
+                                            sb.get_end_iter())
                 self._track_change()
                 tb.move_mark(self.hist_mark, tb.get_end_iter())
             it = tb.get_iter_at_mark(self.hist_mark)

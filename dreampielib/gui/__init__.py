@@ -112,7 +112,7 @@ from .autocomplete import Autocomplete
 from .call_tips import CallTips
 from .autoparen import Autoparen
 from .subprocess_handler import SubprocessHandler, StartError
-from .beep import beep
+from .common import beep, get_text
 from .file_dialogs import save_dialog
 from .tags import (OUTPUT, STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND,
                    COMMAND_DEFS, COMMAND_SEP, MESSAGE, RESULT_IND, RESULT)
@@ -360,10 +360,6 @@ class DreamPie(SimpleGladeApp):
             self.hpaned_main.disconnect(callback_id)
         callback_id = self.hpaned_main.connect('expose-event', callback)
         
-    def sb_get_text(self, *args):
-        # Unfortunately, PyGTK returns utf-8 encoded byte strings...
-        return self.sourcebuffer.get_text(*args).decode('utf8')
-
     def sv_scroll_cursor_onscreen(self):
         self.sourceview.scroll_mark_onscreen(self.sourcebuffer.get_insert())
 
@@ -408,7 +404,7 @@ class DreamPie(SimpleGladeApp):
         """Execute the source in the source buffer.
         """
         sb = self.sourcebuffer
-        source = self.sb_get_text(sb.get_start_iter(), sb.get_end_iter())
+        source = get_text(sb, sb.get_start_iter(), sb.get_end_iter())
         source = source.rstrip()
         source = self.replace_gtk_quotes(source)
         is_ok, syntax_error_info = self.call_subp(u'execute', source)
@@ -439,7 +435,7 @@ class DreamPie(SimpleGladeApp):
     def send_stdin(self):
         """Send the contents of the sourcebuffer as stdin."""
         sb = self.sourcebuffer
-        s = self.sb_get_text(sb.get_start_iter(), sb.get_end_iter())
+        s = get_text(sb, sb.get_start_iter(), sb.get_end_iter())
         if not s.endswith('\n'):
             s += '\n'
 
@@ -465,12 +461,11 @@ class DreamPie(SimpleGladeApp):
         if (insert_iter.equal(sb.get_end_iter())
             and insert_iter.get_line() == 0
             and insert_iter.get_offset() != 0
-            and not self.sb_get_text(sb.get_start_iter(),
-                                     insert_iter).endswith(' ')):
+            and not get_text(sb, sb.get_start_iter(),
+                             insert_iter).endswith(' ')):
 
             if not self.is_executing:
-                source = self.sb_get_text(sb.get_start_iter(),
-                                          sb.get_end_iter())
+                source = get_text(sb, sb.get_start_iter(), sb.get_end_iter())
                 source = source.rstrip()
                 source = self.replace_gtk_quotes(source)
                 is_incomplete = self.call_subp(u'is_incomplete', source)
@@ -491,7 +486,7 @@ class DreamPie(SimpleGladeApp):
             # This goes to the beginning of the line, and another line
             # backwards, so we get two lines
             it.backward_lines(1)
-            text = self.sb_get_text(it, sb.get_end_iter())
+            text = get_text(sb, it, sb.get_end_iter())
             if not text.strip():
                 show_execution_tip = True
 
@@ -508,7 +503,7 @@ class DreamPie(SimpleGladeApp):
         sb = self.sourcebuffer
         insert = sb.get_iter_at_mark(sb.get_insert())
         insert_linestart = sb.get_iter_at_line(insert.get_line())
-        line = self.sb_get_text(insert_linestart, insert)
+        line = get_text(sb, insert_linestart, insert)
 
         if not line.strip():
             # We are at the beginning of a line, so indent - forward to next
@@ -532,7 +527,7 @@ class DreamPie(SimpleGladeApp):
         sb = self.sourcebuffer
         insert = sb.get_iter_at_mark(sb.get_insert())
         insert_linestart = sb.get_iter_at_line(insert.get_line())
-        line = self.sb_get_text(insert_linestart, insert)
+        line = get_text(sb, insert_linestart, insert)
 
         if line and not line.strip():
             # There are only space before us, so remove spaces up to last
@@ -573,7 +568,7 @@ class DreamPie(SimpleGladeApp):
             it = sb.get_iter_at_mark(sb.get_insert())
             it2 = it.copy()
             it2.backward_chars(1)
-            char = sb.get_text(it2, it)
+            char = get_text(sb, it2, it)
             if char == last_char:
                 self.autocomplete.show_completions(is_auto=True, complete=False)
         # return False so as not to be called repeatedly.
@@ -747,7 +742,7 @@ class DreamPie(SimpleGladeApp):
         while True:
             it2 = it.copy()
             it2.backward_to_tag_toggle(stdin)
-            cur_stdin = tb.get_slice(it2, it, True)
+            cur_stdin = get_text(tb, it2, it, True)
             min_len = min(len(cur_stdin), len(rem_stdin))
             assert min_len > 0
             if cur_stdin[-min_len:] != rem_stdin[-min_len:]:
@@ -897,7 +892,7 @@ class DreamPie(SimpleGladeApp):
             else:
                 end_it = start_it.copy()
                 end_it.forward_to_tag_toggle(self.folding.get_tag(typ))
-                text = tb.get_text(start_it, end_it).decode('utf8')
+                text = get_text(tb, start_it, end_it)
             if sys.platform == 'win32':
                 text = text.replace('\n', '\r\n')
             if widget is self.copy_section_menu:

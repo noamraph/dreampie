@@ -18,7 +18,7 @@
 all = ['Folding']
 
 from .tags import OUTPUT, COMMAND, FOLDED, FOLD_MESSAGE
-from .beep import beep
+from .common import beep, get_text
 
 # Maybe someday we'll want translations...
 _ = lambda s: s
@@ -110,7 +110,7 @@ class Folding(object):
         # Move 'it' to the end of the first line (this is where we start hiding)
         it = start_it.copy()
         it.forward_chars(self.LINE_LEN)
-        first_line = start_it.get_slice(it).decode('utf8')
+        first_line = get_text(tb, start_it, it)
         newline_pos = first_line.find('\n')
         if newline_pos != -1:
             it.backward_chars(len(first_line)-newline_pos)

@@ -21,6 +21,7 @@ import re
 from StringIO import StringIO
 
 from .tags import OUTPUT
+from .common import get_text
 
 # This RE is used to remove chars that won't be displayed from the data string.
 remove_cr_re = re.compile(r'\n[^\n]*\r')
@@ -88,7 +89,7 @@ class Output(object):
             it = tb.get_iter_at_mark(self.mark)
             it2 = it.copy()
             it2.backward_char()
-            assert tb.get_text(it2, it) == '\n'
+            assert get_text(tb, it2, it) == '\n'
             tb.delete(it2, it)
             self.added_newline = False
 

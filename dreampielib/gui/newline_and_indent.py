@@ -18,6 +18,7 @@
 __all__ = ['newline_and_indent']
 
 from . import pyparse
+from .common import get_text
 
 def newline_and_indent(sourceview, INDENT_WIDTH):
     """
@@ -32,8 +33,7 @@ def newline_and_indent(sourceview, INDENT_WIDTH):
     insert = lambda: sb.get_iter_at_mark(insert_mark)
     try:
         sb.delete_selection(True, True)
-        line = sb.get_text(sb.get_iter_at_line(insert().get_line()),
-                           insert())
+        line = get_text(sb, sb.get_iter_at_line(insert().get_line()), insert())
         i, n = 0, len(line)
         while i < n and line[i] in " \t":
             i = i+1
@@ -55,7 +55,7 @@ def newline_and_indent(sourceview, INDENT_WIDTH):
                       insert())
         # strip whitespace after insert point
         it = insert(); it.forward_to_line_end()
-        after_insert = sb.get_text(insert(), it)
+        after_insert = get_text(sb, insert(), it)
         i = 0
         while i < len(after_insert) and after_insert[i] in " \t":
             i += 1
@@ -71,7 +71,7 @@ def newline_and_indent(sourceview, INDENT_WIDTH):
         # adjust indentation for continuations and block
         # open/close first need to find the last stmt
         y = pyparse.Parser(INDENT_WIDTH, INDENT_WIDTH)
-        y.set_str(sb.get_text(sb.get_start_iter(), insert()))
+        y.set_str(get_text(sb, sb.get_start_iter(), insert()))
         c = y.get_continuation_type()
         if c != pyparse.C_NONE:
             # The current stmt hasn't ended yet.

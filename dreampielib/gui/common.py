@@ -15,10 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with DreamPie.  If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ['beep']
+__all__ = ['beep', 'get_text']
 
 import sys
 if sys.platform == 'win32':
     from winsound import MessageBeep as beep
 else:
     from gtk.gdk import beep
+
+def get_text(textbuffer, *args):
+    # Unfortunately, PyGTK returns utf-8 encoded byte strings instead of unicode
+    # strings. There's no point in getting the utf-8 byte string, so whenever
+    # TextBuffer.get_text is used, this function should be used instead.
+    return textbuffer.get_text(*args).decode('utf8')

@@ -28,7 +28,7 @@ import pango
 from .SimpleGladeApp import SimpleGladeApp
 from . import tags
 from .tags import DEFAULT, FG, BG, COLOR, ISSET
-from .beep import beep
+from .common import beep, get_text
 from .file_dialogs import open_dialog
 
 # Allow future translations
@@ -172,8 +172,7 @@ class ConfigDialog(SimpleGladeApp):
         config.set_bool('ask-on-quit', self.ask_on_quit_chk.props.active)
         
         sb = self.sourcebuffer
-        init_code = sb.get_text(sb.get_start_iter(),
-                                sb.get_end_iter()).decode('utf8')
+        init_code = get_text(sb, sb.get_start_iter(), sb.get_end_iter())
         config.set('init-code', repr(init_code))
         
         tags.remove_themes(config)

@@ -22,6 +22,7 @@ from HTMLParser import HTMLParser
 from htmlentitydefs import name2codepoint
 
 from .file_dialogs import open_dialog, save_dialog
+from .common import get_text
 
 _ = lambda s: s
 
@@ -196,7 +197,7 @@ body {
         
         new_it = it.copy()
         new_it.forward_to_tag_toggle(None)
-        text = tb.get_text(it, new_it).decode('utf8')
+        text = get_text(tb, it, new_it)
         text = _html_escape(text)
         f.write(text.encode('utf8'))
         

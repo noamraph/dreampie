@@ -22,7 +22,7 @@ import gtk
 from gtk import gdk
 
 from .keyhandler import make_keyhandler_decorator, handle_keypress
-from .beep import beep
+from .common import beep, get_text
 
 try:
     from glib import idle_add
@@ -155,9 +155,8 @@ class AutocompleteWindow(object):
             # See bug #529939.
             return False
         sb = self.sourcebuffer
-        prefix = sb.get_text(
-            sb.get_iter_at_mark(self.mark),
-            sb.get_iter_at_mark(sb.get_insert())).decode('utf8')
+        prefix = get_text(sb, sb.get_iter_at_mark(self.mark),
+                          sb.get_iter_at_mark(sb.get_insert()))
         if prefix == self.cur_prefix:
             return True and not return_false
         self.cur_prefix = prefix

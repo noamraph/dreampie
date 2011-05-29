@@ -26,7 +26,7 @@ except ImportError:
 
 from .hyper_parser import HyperParser
 from .call_tip_window import CallTipWindow
-from .beep import beep
+from .common import beep, get_text
 
 class CallTips(object):
     def __init__(self, sourceview, window_main, get_func_doc, INDENT_WIDTH):
@@ -59,8 +59,7 @@ class CallTips(object):
 
     def show(self, is_auto):
         sb = self.sourcebuffer
-        text = sb.get_slice(sb.get_start_iter(),
-                            sb.get_end_iter()).decode('utf8')
+        text = get_text(sb, sb.get_start_iter(), sb.get_end_iter())
         index = sb.get_iter_at_mark(sb.get_insert()).get_offset()
         hp = HyperParser(text, index, self.INDENT_WIDTH)
 
@@ -151,7 +150,7 @@ class CallTips(object):
             idle_add(self.place_window)
 
     def on_delete_range(self, sb, start, end):
-        text = sb.get_slice(start, end).decode('utf8')
+        text = get_text(sb, start, end)
         if ('(' in text
             or ')' in text
             or start.compare(sb.get_iter_at_mark(self.start_mark)) < 0

@@ -22,7 +22,7 @@ import re
 
 from .hyper_parser import HyperParser
 from .autocomplete_window import AutocompleteWindow, find_prefix_range
-from .beep import beep
+from .common import beep, get_text
 
 # This string includes all chars that may be in an identifier
 ID_CHARS = string.ascii_letters + string.digits + "_"
@@ -57,8 +57,8 @@ class Autocomplete(object):
         If is_auto is True, don't beep if can't find completions.
         """
         sb = self.sourcebuffer
-        text = sb.get_slice(sb.get_start_iter(),
-                            sb.get_iter_at_mark(sb.get_insert())).decode('utf8')
+        text = get_text(sb, sb.get_start_iter(),
+                        sb.get_iter_at_mark(sb.get_insert()))
         index = len(text)
         hp = HyperParser(text, index, self.INDENT_WIDTH)
 
