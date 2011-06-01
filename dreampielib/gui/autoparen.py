@@ -27,8 +27,19 @@ from .common import get_text
 # These are all the chars that may be before the parens
 LAST_CHARS = set(string.ascii_letters + string.digits + "_)]")
 
+# Compile REs for checking if we are between 'for' and 'in'.
 _for_re = re.compile(r'\bfor\b')
 _in_re = re.compile(r'\bin\b')
+
+# If after adding parens one of these strings is typed, we remove the parens.
+# These are symbols (or prefixes of symbols) which don't make sense at the
+# beginning of an expression, but do between two expressions - for example,
+# "a and b" is fine, but "a(and b)" doesn't make sense.
+undo_strings = set(x+' ' for x in 'and or is not if else for as'.split())
+undo_strings.update('! % & * + / < = > ^ , ) ] }'.split())
+undo_strings.add('- ') # A binary '-', not an unary '-'.
+# A set of prefixes of undo_strings
+prefixes = set(s[:i] for s in undo_strings for i in range(1, len(s)))
 
 class Autoparen(object):
     """
@@ -48,10 +59,14 @@ class Autoparen(object):
         # interfere another time.
         self.mark = sb.create_mark(None, sb.get_start_iter(), left_gravity=True)
         
-        # If the first thing the user does after the autoparen is adding "=",
-        # then he meant to write "f =" and not "f(=)". We listen for the next
-        # insert, and if it's a "=", we remove the parens.
+        # If a string in undo_strings is typed, we undo. We track changes to
+        # the sourcebuffer until we are not in 'prefixes' or we are in
+        # undo_strings.
+        # To accomplish that, we listen for insert-text and delete-range
+        # signals while we are in 'prefixes'.
+        self.cur_prefix = None
         self.insert_handler = None
+        self.delete_handler = None
 
     def add_parens(self):
         """
@@ -120,31 +135,66 @@ class Autoparen(object):
         sb.place_cursor(insert)
         sb.end_user_action()
         
-        self.insert_handler = sb.connect('insert-text', self.on_insert_text)
+        if not expects_str:
+            self.cur_prefix = ''
+            self.insert_handler = sb.connect('insert-text', self.on_insert_text)
+            self.delete_handler = sb.connect('delete-range', self.on_delete_range)
 
         self.show_call_tip()
         
         return True
     
+    def disconnect(self):
+        self.sourcebuffer.disconnect(self.insert_handler)
+        self.sourcebuffer.disconnect(self.delete_handler)
+    
     def on_insert_text(self, _textbuffer, iter, text, _length):
-        """
-        This is called upon the first insert after autoparen.
-        """
         sb = self.sourcebuffer
         
-        sb.disconnect(self.insert_handler)
-        
-        if text != '=':
+        if len(text) != 1:
+            self.disconnect()
             return
-        # We should be one char after the mark
         it = sb.get_iter_at_mark(self.mark)
-        iter.backward_char()
+        it.forward_chars(len(self.cur_prefix)+1)
         if not it.equal(iter):
+            self.disconnect()
             return
         
-        it2 = iter.copy()
-        it2.forward_chars(3)
-        sb.delete(iter, it2)
-        sb.insert(iter, ' ')
-        
-        # The '=' will be added by the default event handler.
+        new_prefix = self.cur_prefix + text
+        if new_prefix in prefixes:
+            # We continue to wait
+            self.cur_prefix = new_prefix
+        elif new_prefix in undo_strings:
+            # Undo adding the parens.
+            # Currently we have: "obj(prefi|)"
+            # ("|" is iter. The last char wasn't written yet.)
+            # We want: "obj prefix".
+            # (the last char will be added by the default event handler.)
+            # So we delete '(' and ')' and insert ' '.
+            # We must keep 'iter' validated for the default handler, so it is
+            # used in all insert and delete operations.
+            self.disconnect()
+            it = iter.copy()
+            it.forward_char()
+            sb.delete(iter, it)
+            iter.backward_chars(len(self.cur_prefix))
+            it = iter.copy()
+            it.backward_char()
+            sb.delete(it, iter)
+            sb.insert(iter, ' ')
+            iter.forward_chars(len(self.cur_prefix))
+            return
+        else:
+            self.disconnect()
+    
+    def on_delete_range(self, _textbuffer, start, end):
+        sb = self.sourcebuffer
+        it = sb.get_iter_at_mark(self.mark)
+        it.forward_chars(len(self.cur_prefix))
+        it2 = it.copy()
+        it2.forward_char()
+        if self.cur_prefix and it.equal(start) and it2.equal(end):
+            # BS was pressed, remove a char from cur_prefix and keep watching.
+            self.cur_prefix = self.cur_prefix[:-1]
+        else:
+            self.disconnect()
