@@ -19,12 +19,16 @@ __all__ = ['Autoparen']
 
 import string
 from keyword import iskeyword
+import re
 
 from .hyper_parser import HyperParser
 from .common import get_text
 
 # These are all the chars that may be before the parens
 LAST_CHARS = set(string.ascii_letters + string.digits + "_)]")
+
+_for_re = re.compile(r'\bfor\b')
+_in_re = re.compile(r'\bin\b')
 
 class Autoparen(object):
     """
@@ -81,11 +85,11 @@ class Autoparen(object):
         # don't add parens in import and except statements
         if line.startswith(('import ', 'from ', 'except ')):
             return False
-        # don't add parens immediately after the "for" in a "for" loop
-        # TODO: also don't add parens between "for" and "in" in a
-        #       list comprehension or generator expression
-        if line.startswith('for ') and len(line.split()) == 2:
-            return False
+        # don't add parens between 'for' and 'in'
+        m = list(_for_re.finditer(line))
+        if m:
+            if not _in_re.search(line, m[-1].end()):
+                return False
 
         hp = HyperParser(text, index, self.INDENT_WIDTH)
 
