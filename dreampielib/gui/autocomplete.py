@@ -73,13 +73,16 @@ class Autocomplete(object):
                     res = self._complete_modules(line, is_auto)
                 else:
                     res = self._complete_module_members(line, is_auto)
-            else:
+            elif line.endswith('['):
+                # We complete dict keys either after a '[' or in a string
+                # after a '['.
                 res = self._complete_dict_keys(text, index, hp, is_auto)
-                if res is None:
-                    res = self._complete_attributes(text, index, hp, is_auto)
+            else:
+                res = self._complete_attributes(text, index, hp, is_auto)
         elif hp.is_in_string():
-            res = self._complete_dict_keys(text, index, hp, is_auto)
-            if res is None:
+            if text[max(hp.bracketing[hp.indexbracket][0]-1,0)] == '[':
+                res = self._complete_dict_keys(text, index, hp, is_auto)
+            else:
                 res = self._complete_filenames(text, index, hp, is_auto)
         else:
             # Not in string and not in code
@@ -130,41 +133,31 @@ class Autocomplete(object):
         (string, list, list, bool).
         If shouldn't complete - return None.
         """
-        try:
-            # Check whether auto-completion is really appropriate,
-            # finding the index of the o     pening bracket in the process.
-            if is_auto:
-                if text[index-1] != '[' or not hp.is_in_code():
-                    return
-                open_bracket_index = index-1
-            else:
-                if hp.is_in_string():
-                    open_quote_index = hp.get_surrounding_brackets('\'"')[0]
-                    hp.set_index(open_quote_index)
-                if not hp.is_in_code():
-                    return
-                open_bracket_index = hp.get_surrounding_brackets()[0]
-                if open_bracket_index is None or text[open_bracket_index] != '[':
-                    return
-    
-            # With the index of the opening bracket in hand, assume that the
-            # expression just before the bracket is a dict, and try to fetch
-            # the reprs of its keys.
-            hp.set_index(open_bracket_index)
-            comp_what = hp.get_expression()
-            if not comp_what:
-                return
-            key_reprs = self.complete_dict_keys(comp_what)
-            if key_reprs is None:
-                return None
-    
-            comp_prefix = text[open_bracket_index+1:index]
-            public = key_reprs
-            private = []
-            is_case_insen = False
-            return (comp_prefix, public, private, is_case_insen)
-        finally:
-            hp.set_index(index)
+        # Check whether auto-completion is really appropriate,
+        if is_auto and text[index-1] != '[':
+            return
+        
+        opener, _closer = hp.get_surrounding_brackets('[')
+        if not opener:
+            return
+        hp.set_index(opener)
+        comp_what = hp.get_expression()
+        if not comp_what:
+            return
+        if is_auto and '(' in comp_what:
+            # Don't evaluate expressions which may contain a function call.
+            return
+        key_reprs = self.complete_dict_keys(comp_what)
+        if key_reprs is None:
+            return
+        if text[index:index+1] != ']':
+            key_reprs = [x+']' for x in key_reprs]
+
+        comp_prefix = text[opener+1:index]
+        public = key_reprs
+        private = []
+        is_case_insen = False
+        return (comp_prefix, public, private, is_case_insen)
 
     def _complete_attributes(self, text, index, hp, is_auto):
         """

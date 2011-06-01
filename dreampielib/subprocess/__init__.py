@@ -105,79 +105,31 @@ class Quit(object):
     def __call__(self):
         raise RuntimeError(quit_msg)
 
-# utility functions for getting reprs of objects
-# which can be evalutated to create an identical object
-def get_repr(obj, max_contained=1000):
-    """
-    Get the repr of and object, or None if it has no repr.
-    
-    Having a repr in this context means that the repr can be evaluated to
-    create an identical object.
-    
-    For containers, contained objects are also checked, recursively. However,
-    the maximum total number of objects allowed is finite and is given by
-    the max_count parameter.
-    """
-    return repr(obj) if has_repr(obj, max_contained) else None
-
-def has_repr(obj, max_contained=1000):
-    """
-    Check whether an object has a repr.
-    
-    Having a repr in this context means that the repr can be evaluated to
-    create an identical object.
-    
-    For containers, contained objects are also checked, recursively. However,
-    the maximum total number of objects allowed is finite and is given by
-    the max_count parameter.
-    """
-    return _has_repr_internal(obj, max_contained)[0]
-
-def _has_repr_internal(obj, max_contained):
-    """
-    Recursively check whether contained objects have a repr.
-    
-    max_contained indicates the maximal allowed number of contained objects.
-    """
-    obj_type = type(obj)
-    if obj_type in _has_repr_internal.REPR_REVERSIBLE_SIMPLE_TYPES:
-        return True, max_contained
-    elif obj_type in _has_repr_internal.REPR_NON_REVERSIBLE_TYPES:
-        return False, max_contained
-    elif obj_type in _has_repr_internal.REPR_REVERSIBLE_CONTAINER_TYPES:
-        if isinstance(obj, dict):
-            contained = chain(obj.iterkeys(), obj.itervalues())
-            max_contained -= len(obj) * 2
-        else:
-            contained = obj
-            max_contained -= len(obj)
-        if max_contained < 0:
-            return False, max_contained
-        for item in contained:
-            item_has_repr, max_contained = _has_repr_internal(item, max_contained)
-            if not item_has_repr or max_contained < 0:
-                return False, max_contained
-        return True, max_contained
-    else:
-        return False, max_contained
-
-_has_repr_internal.REPR_REVERSIBLE_SIMPLE_TYPES = set([
+_simple_types = (
     bool, int, float, complex, type(None), slice,
     long, # 2to3 replaces long with int, so this is fine
+    )
+_string_types = (
     bytes if py3k else str, # 2to3 can't replace str with bytes
     unicode, # 2to3 replaces unicode with str, so this is fine
-    ])
-_has_repr_internal.REPR_REVERSIBLE_CONTAINER_TYPES = set([
-    list, tuple, set, frozenset, dict,
-    ])
-_has_repr_internal.REPR_NON_REVERSIBLE_TYPES = set([
-    # range(100) == range(100) --> False, on all versions of CPython
-    range if py3k else xrange, # 2to3 should replace xrange with range,
-                               # but doesn't do so here!!!
-    types.GeneratorType, types.ModuleType,
-    types.FunctionType, types.LambdaType, types.MethodType,
-    types.BuiltinFunctionType, types.BuiltinMethodType,
-    ])
+    )
+def is_key_reprable(obj, max_depth=2):
+    """
+    Check whether an object (which is a dict key) simple enough
+    to be used in the completion list.
+    This checks that it's of simple types, and has some arbitrary limits.
+    """
+    if type(obj) in _simple_types:
+        return True
+    elif type(obj) in _string_types:
+        return len(obj) < 1000
+    elif type(obj) in (tuple, frozenset):
+        if max_depth <= 0 or len(obj) > 5:
+            return False
+        else:
+            return all(is_key_reprable(x, max_depth-1) for x in obj)
+    else:
+        return False
 
 
 class Subprocess(object):
@@ -629,26 +581,20 @@ class Subprocess(object):
         return [unicodify(s) for s in args
                 if isinstance(s, basestring)]
 
-    MAX_DICT_SIZE_FOR_DICT_KEY_COMPLETION = 1000
     @rpc_func
     def complete_dict_keys(self, expr):
         """
         Return the reprs of the dict's keys (a list of strings)
-        
-        Note:
-        Some values have no repr, so they cannot be completed.
-        Such values are omitted from the resulting list.
+        Returns only those which have a simple-enough repr.
         """
         try:
             obj = eval(expr, self.locs)
         except Exception:
             return None
-        if not isinstance(obj, dict):
+        if not isinstance(obj, dict) or len(obj) > 1000:
             return None
-        if len(obj) > self.MAX_DICT_SIZE_FOR_DICT_KEY_COMPLETION:
-            return None
-        key_reprs = [get_repr(item, max_contained=12) for item in obj]
-        return [unicodify(kr) for kr in key_reprs if kr is not None]
+        return sorted(unicodify(repr(x)) for x in obj if is_key_reprable(x))
+        
 
     @rpc_func
     def find_modules(self, package):
