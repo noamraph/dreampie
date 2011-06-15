@@ -24,11 +24,6 @@ from gtk import gdk
 from .keyhandler import make_keyhandler_decorator, handle_keypress
 from .common import beep, get_text
 
-try:
-    from glib import idle_add
-except ImportError:
-    from gobject import idle_add
-
 N_ROWS = 10
 
 # A decorator for managing sourceview key handlers
@@ -132,8 +127,7 @@ class AutocompleteWindow(object):
         self.place_window()
 
         self.connect(sb, 'mark-set', self.on_mark_set)
-        self.connect(sb, 'insert-text', self.on_insert_text)
-        self.connect(sb, 'delete-range', self.on_delete_range)
+        self.connect(sb, 'changed', self.on_changed)
 
         self.connect(self.treeview, 'button-press-event',
                      self.on_tv_button_press)
@@ -208,19 +202,10 @@ class AutocompleteWindow(object):
             if it.compare(sb.get_iter_at_mark(self.mark)) < 0:
                 self.hide()
             else:
-                idle_add(self.update_list, True)
+                self.update_list()
 
-    def on_insert_text(self, sb, it, _text, _length):
-        if it.compare(sb.get_iter_at_mark(self.mark)) < 0:
-            self.hide()
-        else:
-            idle_add(self.update_list, True)
-
-    def on_delete_range(self, sb, start, _end):
-        if start.compare(sb.get_iter_at_mark(self.mark)) < 0:
-            self.hide()
-        else:
-            idle_add(self.update_list, True)
+    def on_changed(self, _sb):
+        self.update_list()
 
     @keyhandler('Escape', 0)
     def on_esc(self):
