@@ -88,6 +88,9 @@ class AutocompleteWindow(object):
 
         # A list with (widget, handler) pairs, to be filled with self.connect()
         self.signals = []
+        
+        # handler id for on_changed_after_hide
+        self.changed_after_hide_handler = None
 
     def connect(self, widget, *args):
         handler = widget.connect(*args)
@@ -120,6 +123,10 @@ class AutocompleteWindow(object):
         self.showing_private = False
         self.cur_prefix = None
         
+        if self.changed_after_hide_handler is not None:
+            sb.disconnect(self.changed_after_hide_handler)
+            self.changed_after_hide_handler = None
+
         isnt_empty = self.update_list()
         if not isnt_empty:
             return
@@ -157,8 +164,10 @@ class AutocompleteWindow(object):
         prefix_key = prefix.lower() if self.is_case_insen else prefix
 
         start, end = find_prefix_range(self.cur_list_keys, prefix_key)
+        public_list = None
         if start == end and not self.showing_private:
             self.showing_private = True
+            public_list = self.cur_list[:]
             self.cur_list.extend(self.private_list)
             if self.is_case_insen:
                 self.cur_list.sort(key = lambda s: s.lower())
@@ -169,6 +178,28 @@ class AutocompleteWindow(object):
             start, end = find_prefix_range(self.cur_list_keys, prefix_key)
         self.start, self.end = start, end
         if start == end:
+            # We check to see if removing the last char (by pressing backspace)
+            # should re-open the list.
+            start2, end2 = find_prefix_range(self.cur_list_keys, prefix_key[:-1])
+            if start2 != end2:
+                # Re-open the list if the last char is removed
+                if public_list is not None:
+                    # We were not showing private
+                    public = public_list
+                    private = self.private_list
+                else:
+                    # We were showing private - now everything is public
+                    public = self.cur_list
+                    private = []
+                if public is None or private is None:
+                    import pdb; pdb.set_trace()
+                text = get_text(sb, sb.get_start_iter(), sb.get_end_iter())
+                offset = sb.get_iter_at_mark(sb.get_insert()).get_offset()
+                expected_text = text[:offset-1] + text[offset:]
+                self.changed_after_hide_handler = \
+                    sb.connect('changed', self.on_changed_after_hide,
+                               expected_text, public, private,
+                               self.is_case_insen, len(prefix)-1)
             self.hide()
             return False
 
@@ -336,6 +367,22 @@ class AutocompleteWindow(object):
         self.private_list = None
         self.showing_private = None
         self.cur_prefix = None
+    
+    def on_changed_after_hide(self, sb, expected_text,
+                              public, private, is_case_insen, start_len):
+        """
+        This is called on the first 'changed' signal after the completion list
+        was hidden because a "wrong" character was typed. If it is deleted,
+        this method opens the list again.
+        """
+        # Stop handler
+        sb.disconnect(self.changed_after_hide_handler)
+        self.changed_after_hide_handler = None
+        
+        if sb.get_text(sb.get_start_iter(), sb.get_end_iter()) == expected_text:
+            self.show(public, private, is_case_insen, start_len)
+        
+        
 
         
 def find_prefix_range(L, prefix):
@@ -368,3 +415,16 @@ def find_prefix_range(L, prefix):
 
     return start, end
 
+
+class BackspaceUndo(object):
+    """
+    If the completion list was closed because of a wrong character, we want it
+    to be re-opened if it is deleted by pressing backspace.
+    This class holds the data needed to re-open the list in that case. It
+    waits for a backspace. If it is pressed, it re-opens the window. Otherwise,
+    it stops listening.
+    """
+    def __init__(self, public, private, is_case_insen, mark):
+        pass
+    
+    #def on_mark
