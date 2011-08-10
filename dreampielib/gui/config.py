@@ -88,6 +88,14 @@ comment-bg = black
 
 bracket-match-fg = white
 bracket-match-bg = darkblue
+bracket-1-fg = #abffab
+bracket-1-bg = black
+bracket-2-fg = #dfabff
+bracket-2-bg = black
+bracket-3-fg = #ffabab
+bracket-3-bg = black
+error-fg = white
+error-bg = red
 
 stdin-fg-set = False
 stdin-bg-set = False
@@ -121,6 +129,14 @@ comment-bg-set = False
 
 bracket-match-fg-set = False
 bracket-match-bg-set = True
+bracket-1-fg-set = True
+bracket-1-bg-set = False
+bracket-2-fg-set = True
+bracket-2-bg-set = False
+bracket-3-fg-set = True
+bracket-3-bg-set = False
+error-fg-set = False
+error-bg-set = True
 
 [Light theme]
 is-active = True
@@ -160,6 +176,14 @@ comment-bg = white
 
 bracket-match-fg = black
 bracket-match-bg = lightblue
+bracket-1-fg = #005400
+bracket-1-bg = white
+bracket-2-fg = #9400f0
+bracket-2-bg = white
+bracket-3-fg = brown
+bracket-3-bg = #a50000
+error-fg = black
+error-bg = red
 
 stdin-fg-set = False
 stdin-bg-set = False
@@ -193,6 +217,14 @@ comment-bg-set = False
 
 bracket-match-fg-set = False
 bracket-match-bg-set = True
+bracket-1-fg-set = True
+bracket-1-bg-set = False
+bracket-2-fg-set = True
+bracket-2-bg-set = False
+bracket-3-fg-set = True
+bracket-3-bg-set = False
+error-fg-set = False
+error-bg-set = True
 
 """
 

@@ -47,6 +47,8 @@ MESSAGE = 'message'
 # Tags for syntax highlighting
 KEYWORD = 'keyword'; BUILTIN = 'builtin'; STRING = 'string'
 NUMBER = 'number'; COMMENT = 'comment'; BRACKET_MATCH = 'bracket-match'
+BRACKET_1 = 'bracket-1'; BRACKET_2 = 'bracket-2'; BRACKET_3 = 'bracket-3'
+ERROR = 'error'
 
 # Constants to retrieve data from a theme. A theme is just a dict which maps
 # tuples to strings, and is used like this: 
@@ -67,6 +69,10 @@ tag_desc = [
     (NUMBER, 'Number'),
     (COMMENT, 'Comment'),
     (BRACKET_MATCH, 'Bracket Match'),
+    (BRACKET_1, 'Bracket 1'),
+    (BRACKET_2, 'Bracket 2'),
+    (BRACKET_3, 'Bracket 3'),
+    (ERROR, 'Error'),
     
     (STDIN, 'Standard Input'),
     (STDOUT, 'Standard Output'),
@@ -283,6 +289,10 @@ def _get_style_scheme_spec(theme):
         'def:comment': COMMENT,
 
         'bracket-match': BRACKET_MATCH,
+        'python:bracket-1': BRACKET_1,
+        'python:bracket-2': BRACKET_2,
+        'python:bracket-3': BRACKET_3,
+        'def:error': ERROR,
         }
 
     res = {}

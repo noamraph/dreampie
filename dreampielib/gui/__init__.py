@@ -341,8 +341,8 @@ class DreamPie(SimpleGladeApp):
         self.sourceview = sv = gtksourceview2.View(self.sourcebuffer)
 
         lm = gtksourceview2.LanguageManager()
-        python = lm.get_language('python')
-        sb.set_language(python)
+        lm.set_search_path([path.join(data_dir, 'dreampie', 'language-specs')])
+        sb.set_language(lm.get_language('python'))
         self.scrolledwindow_sourceview.add(self.sourceview)
         sv.connect('focus-in-event', self.on_sourceview_focus_in)
         sv.show()

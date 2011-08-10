@@ -81,6 +81,8 @@ class HistPersist(object):
         parser.feed(s)
         parser.close()
         self.status_bar.set_status(_('History loaded.'))
+        self.filename = filename
+        self.update_title()
         self.recent_add(filename)
     
     def load(self):
@@ -96,13 +98,16 @@ class HistPersist(object):
             'mime_type': 'text/html', 'app_name': 'dreampie',
             'app_exec': 'dreampie'})
     
+    def update_title(self):
+        disp_fn = os.path.basename(self.filename)
+        if self.textbuffer.get_modified():
+            disp_fn += '*'
+        self.window_main.set_title("%s - DreamPie" % disp_fn)
+        
+    
     def on_modified_changed(self, _widget):
         if self.filename:
-            disp_fn = os.path.basename(self.filename)
-            if self.textbuffer.get_modified():
-                disp_fn += '*'
-            self.window_main.props.title = "%s - DreamPie" % disp_fn
-            
+            self.update_title()
 
 
 def _html_escape(s):
