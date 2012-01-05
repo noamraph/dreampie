@@ -31,6 +31,8 @@ import inspect
 import pydoc
 import pprint
 import codeop
+import signal
+from contextlib import contextmanager
 from itertools import chain
 try:
     # Executing multiple statements in 'single' mode (print results) is done
@@ -131,12 +133,55 @@ def is_key_reprable(obj, max_depth=2):
     else:
         return False
 
+# SIGINT masking
+
+def can_mask_sigint():
+    return sys.platform in ('linux2', 'win32')
+
+def unmask_sigint():
+    # We want to mask ctrl-c events when not running user code, to allow
+    # the main process to send a SIGINT anytime, in order to allow it to
+    # break GUI code executed when idle.
+    # If we can't mask ctrl-c events, the main process will only send
+    # SIGINT when executing user code (it uses the get_subprocess_info
+    # method to know that.)
+    # Also, on win32 we may get unwanted ctrl-c events if the user is
+    # running a subprocess. Since all processes in the same "console group"
+    # get the event, the subprocess may get it before us and exit. Then we 
+    # get out of the try-except block, and only later we get the ctrl-c.
+    if sys.platform == 'linux2':
+        signal.signal(signal.SIGINT, signal.default_int_handler)
+    elif sys.platform == 'win32':
+        windll.kernel32.SetConsoleCtrlHandler(None, False)
+    else:
+        pass
+
+def mask_sigint():
+    if sys.platform == 'linux2':
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+    elif sys.platform == 'win32':
+        windll.kernel32.SetConsoleCtrlHandler(None, True)
+    else:
+        pass
+
+@contextmanager
+def unmasked_sigint():
+    try:
+        mask_sigint()
+        yield
+    finally:
+        unmask_sigint()
+
+
 
 class Subprocess(object):
     def __init__(self, port):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect(('localhost', port))
 
+        # Mask SIGINT/Ctrl-C
+        mask_sigint()
+        
         # Make sys.displayhook change self.last_res
         self.last_res = None
         sys.displayhook = self.displayhook
@@ -158,6 +203,7 @@ class Subprocess(object):
         __builtin__.exit = __builtin__.quit = Quit()
         
         self.gui_handlers = [GtkHandler(), Qt4Handler(), TkHandler()]
+        self.idle_paused = False
 
         self.gid = 0
         self.flags = 0
@@ -179,7 +225,8 @@ class Subprocess(object):
 
     def loop(self):
         while True:
-            self.handle_gui_events(self.sock)
+            if not self.idle_paused:
+                self.handle_gui_events(self.sock)
             funcname, args = recv_object(self.sock)
             if funcname in rpc_funcs:
                 func = getattr(self, funcname)
@@ -326,23 +373,6 @@ class Subprocess(object):
         return True, codeobs
     
     @staticmethod
-    def unmask_sigint():
-        # We want to accept ctrl-c on win32 only when executing the user code
-        # under the big "try-except" block - otherwise it will just cause
-        # problems. We may get unwanted ctrl-c events if the user is running
-        # a subprocess. Since all processes in the same "console group" get the
-        # event, the subprocess may get it before us and exit. Then we get out
-        # of the try-except block, and only later we get the ctrl-c. So we mask
-        # it when we get outside the try-except block.
-        if sys.platform == 'win32':
-            windll.kernel32.SetConsoleCtrlHandler(None, False)
-    
-    @staticmethod
-    def mask_sigint():
-        if sys.platform == 'win32':
-            windll.kernel32.SetConsoleCtrlHandler(None, True)
-    
-    @staticmethod
     def safe_pformat(obj):
         """
         Use pprint to format an object.
@@ -371,6 +401,9 @@ class Subprocess(object):
         exception_string - description of the exception, or None if is_success.
         rem_stdin - data that was sent into stdin and wasn't consumed.
         """
+        # pause_idle was called before execute, disable it.
+        self.idle_paused = False
+        
         if ast:
             success, r = self.compile_ast(source)
         else:
@@ -384,9 +417,7 @@ class Subprocess(object):
             
         self.last_res = None
         try:
-            # Allow ctrl-c to cause KeyboardInterrupt on win32
-            self.unmask_sigint()
-            try:
+            with unmasked_sigint():
                 # Execute
                 for codeob in codeobs:
                     exec codeob in self.locs
@@ -403,9 +434,6 @@ class Subprocess(object):
                         res_str = unicode(repr(self.last_res))
                 else:
                     res_str = None
-            finally:
-                # Forbid ctrl-c from causing KeyboardInterrupt on win32
-                self.mask_sigint()
         except:
             sys.stdout.flush()
             excinfo = sys.exc_info()
@@ -452,6 +480,19 @@ class Subprocess(object):
 
         yield is_success, res_no, res_str, exception_string, rem_stdin
 
+    @rpc_func
+    def pause_idle(self):
+        """
+        before 'execute' is called, 'pause_idle' is called to check if we don't
+        do any idle jobs right now. It is followed by either 'execute' or
+        'resume_idle'.
+        """
+        self.idle_paused = True
+    
+    @rpc_func
+    def resume_idle(self):
+        self.idle_paused = False
+    
     @rpc_func
     def set_pprint(self, is_pprint):
         self.is_pprint = is_pprint
@@ -692,8 +733,8 @@ class Subprocess(object):
         
         return public, private, case_insen_filenames
     
-    @rpc_func
-    def get_welcome(self):
+    @staticmethod
+    def get_welcome():
         if 'IronPython' in sys.version:
             first_line = sys.version[sys.version.find('(')+1:sys.version.rfind(')')]
         else:
@@ -705,6 +746,10 @@ class Subprocess(object):
         return (first_line+'\n'
                 +u'Type "copyright", "credits" or "license()" for more information.\n')
 
+    @rpc_func
+    def get_subprocess_info(self):
+        return (self.get_welcome(), can_mask_sigint())
+        
     @classmethod
     def _find_constructor(cls, class_ob):
         # Given a class object, return a function object used for the
@@ -827,6 +872,20 @@ class GuiHandler(object):
         """
         raise NotImplementedError("Abstract method")
 
+@contextmanager
+def user_code():
+    """
+    Run user code, unmasking SIGINT, and catching exceptions.
+    """
+    try:
+        unmask_sigint()
+        yield
+    except:
+        sys.excepthook(*sys.exc_info())
+    finally:
+        mask_sigint()
+
+
 class GtkHandler(GuiHandler):
     def __init__(self):
         self.gtk = None
@@ -844,7 +903,9 @@ class GtkHandler(GuiHandler):
             else:
                 return False
         self.timeout_add(int(delay * 1000), self.gtk_main_quit)
-        self.gtk.main()
+        with user_code():
+            self.gtk.main()
+            
         return True
 
     def gtk_main_quit(self):
@@ -876,7 +937,8 @@ class Qt4Handler(GuiHandler):
         QtCore.QObject.connect(timer, QtCore.SIGNAL('timeout()'),
                                self.qt4_quit_if_no_modal)
         timer.start(delay*1000)
-        self.app.exec_()
+        with user_code():
+            self.app.exec_()
         timer.stop()
         QtCore.QObject.disconnect(timer, QtCore.SIGNAL('timeout()'),
                                   self.qt4_quit_if_no_modal)
@@ -909,8 +971,9 @@ class TkHandler(GuiHandler):
         # is something before we handle Tk events.
         if Tkinter._default_root:
             _tkinter = Tkinter._tkinter
-            while _tkinter.dooneevent(_tkinter.DONT_WAIT):
-                pass
+            with user_code():
+                while _tkinter.dooneevent(_tkinter.DONT_WAIT):
+                    pass
         time.sleep(delay)
         return True
 

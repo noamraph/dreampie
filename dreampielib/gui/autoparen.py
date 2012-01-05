@@ -22,7 +22,7 @@ from keyword import iskeyword
 import re
 
 from .hyper_parser import HyperParser
-from .common import get_text
+from .common import get_text, TimeoutError
 
 # These are all the chars that may be before the parens
 LAST_CHARS = set(string.ascii_letters + string.digits + "_)]")
@@ -74,8 +74,6 @@ class Autoparen(object):
         the subprocess is not executing commands (so is_callable_only can work.)
         Should return True if event-handling should stop, or False if it should
         continue as usual.
-        
-        Should be called only when is_callable_only can be called safely.
         """
         sb = self.sourcebuffer
         
@@ -118,7 +116,10 @@ class Autoparen(object):
             # Don't evaluate expressions which may contain a function call.
             return False
         
-        is_callable_only, expects_str = self.is_callable_only(expr)
+        try:
+            is_callable_only, expects_str = self.is_callable_only(expr)
+        except TimeoutError:
+            return False
         if not is_callable_only:
             return False
         

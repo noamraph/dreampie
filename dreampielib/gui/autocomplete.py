@@ -22,20 +22,21 @@ import re
 
 from .hyper_parser import HyperParser
 from .autocomplete_window import AutocompleteWindow, find_prefix_range
-from .common import beep, get_text
+from .common import beep, get_text, TimeoutError
 
 # This string includes all chars that may be in an identifier
 ID_CHARS = string.ascii_letters + string.digits + "_"
 ID_CHARS_DOT = ID_CHARS + '.'
 
 class Autocomplete(object):
-    def __init__(self, sourceview, window_main,
+    def __init__(self, sourceview, window_main, get_is_executing,
                  complete_attributes, complete_firstlevels, get_func_args,
                  find_modules, get_module_members, complete_filenames,
                  complete_dict_keys,
                  INDENT_WIDTH):
         self.sourceview = sourceview
         self.sourcebuffer = sourceview.get_buffer()
+        self.get_is_executing = get_is_executing
         self.complete_attributes = complete_attributes
         self.complete_firstlevels = complete_firstlevels
         self.get_func_args = get_func_args
@@ -50,12 +51,17 @@ class Autocomplete(object):
 
     def show_completions(self, is_auto, complete):
         """
-        If complete is False, just show the comopletion list.
+        If complete is False, just show the completion list.
         If complete is True, complete as far as possible. If there's only
         one completion, don't show the window.
 
         If is_auto is True, don't beep if can't find completions.
         """
+        if self.get_is_executing():
+            if not is_auto:
+                beep()
+            return
+        
         sb = self.sourcebuffer
         text = get_text(sb, sb.get_start_iter(), sb.get_end_iter())
         index = sb.get_iter_at_mark(sb.get_insert()).get_offset()
@@ -147,8 +153,9 @@ class Autocomplete(object):
         if is_auto and '(' in comp_what:
             # Don't evaluate expressions which may contain a function call.
             return
-        key_reprs = self.complete_dict_keys(comp_what)
-        if key_reprs is None:
+        try:
+            key_reprs = self.complete_dict_keys(comp_what)
+        except TimeoutError:
             return
         if text[index:index+1] != ']':
             key_reprs = [x+']' for x in key_reprs]
@@ -181,15 +188,15 @@ class Autocomplete(object):
             if is_auto and '(' in comp_what:
                 # Don't evaluate expressions which may contain a function call.
                 return
-            public_and_private = self.complete_attributes(comp_what)
-            if public_and_private is None: # The subprocess is busy
+            try:
+                public, private = self.complete_attributes(comp_what)
+            except TimeoutError:
                 return
-            public, private = public_and_private
         else:
-            public_and_private = self.complete_firstlevels()
-            if public_and_private is None: # The subprocess is busy
+            try:
+                public, private = self.complete_firstlevels()
+            except TimeoutError:
                 return
-            public, private = public_and_private
             
             # If we are inside a function call after a ',' or '(',
             # get argument names.
@@ -200,8 +207,11 @@ class Autocomplete(object):
                     expr = hp.get_expression()
                     if expr and '(' not in expr:
                         # Don't need to execute a function just to get arguments
-                        args = self.get_func_args(expr)
-                        if args is not None:
+                        try:
+                            args = self.get_func_args(expr)
+                        except TimeoutError:
+                            pass
+                        else:
                             public.extend(args)
                             public.sort()
         
@@ -246,8 +256,9 @@ class Autocomplete(object):
         else:
             comp_what = u''
         
-        modules = self.find_modules(comp_what)
-        if modules is None:
+        try:
+            modules = self.find_modules(comp_what)
+        except TimeoutError:
             return None
         
         public = [s for s in modules if s[0] != '_']
@@ -276,10 +287,10 @@ class Autocomplete(object):
             return
         comp_what = m.group(1)
         
-        public_and_private = self.get_module_members(comp_what)
-        if public_and_private is None:
+        try:
+            public, private = self.get_module_members(comp_what)
+        except TimeoutError:
             return
-        public, private = public_and_private
         is_case_insen = False
         return comp_prefix, public, private, is_case_insen
         
@@ -330,11 +341,12 @@ class Autocomplete(object):
         
         add_quote = not (len(text) > index and text[index] == str_char)
         
-        res = self.complete_filenames(
-            str_prefix, text[str_start:comp_prefix_index], str_char, add_quote)
-        if res is None:
+        try:
+            public, private, is_case_insen = self.complete_filenames(
+                str_prefix, text[str_start:comp_prefix_index], str_char,
+                add_quote)
+        except TimeoutError:
             return
-        public, private, is_case_insen = res
         
         return comp_prefix, public, private, is_case_insen
     

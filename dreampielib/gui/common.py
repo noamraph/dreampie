@@ -28,3 +28,6 @@ def get_text(textbuffer, *args):
     # strings. There's no point in getting the utf-8 byte string, so whenever
     # TextBuffer.get_text is used, this function should be used instead.
     return textbuffer.get_text(*args).decode('utf8')
+
+class TimeoutError(Exception):
+    pass

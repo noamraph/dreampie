@@ -188,7 +188,7 @@ class SubprocessHandler(object):
             self._on_stderr_recv(r.decode('utf8', 'replace'))
         
         # Read from socket
-        if select([self._sock], [], [], 0)[0]:
+        if self.wait_for_object(0):
             try:
                 obj = recv_object(self._sock)
             except IOError:
@@ -210,6 +210,13 @@ class SubprocessHandler(object):
             raise ValueError("Subprocess not living")
         send_object(self._sock, obj)
 
+    def wait_for_object(self, timeout_s):
+        """
+        Wait for timeout_s seconds or until the socket is ready for reading.
+        Return True if an object was received, and False if the timeout expired.
+        """
+        return len(select([self._sock], [], [], timeout_s)[0]) > 0
+    
     def recv_object(self):
         """Wait for an object from the subprocess and return it"""
         if self._popen is None:

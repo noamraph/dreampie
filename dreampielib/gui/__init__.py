@@ -112,7 +112,7 @@ from .autocomplete import Autocomplete
 from .call_tips import CallTips
 from .autoparen import Autoparen
 from .subprocess_handler import SubprocessHandler, StartError
-from .common import beep, get_text
+from .common import beep, get_text, TimeoutError
 from .file_dialogs import save_dialog
 from .tags import (OUTPUT, STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND,
                    COMMAND_DEFS, COMMAND_SEP, MESSAGE, RESULT_IND, RESULT)
@@ -125,6 +125,10 @@ LINE_LEN = 80
 
 # Time to wait before autocompleting, to see if the user continues to type
 AUTOCOMPLETE_WAIT = 400
+
+# Time to wait for the subprocess for a result. The subprocess may be doing
+# idle jobs, and so not return a result.
+SUBP_WAIT_TIMEOUT_S = .5
 
 # Maybe someday we'll want translations...
 _ = lambda s: s
@@ -191,6 +195,7 @@ class DreamPie(SimpleGladeApp):
         
         self.autocomplete = Autocomplete(self.sourceview,
                                          self.window_main,
+                                         self.get_is_executing,
                                          self.complete_attributes,
                                          self.complete_firstlevels,
                                          self.get_func_args,
@@ -205,7 +210,8 @@ class DreamPie(SimpleGladeApp):
         self.sourceview.connect('key-press-event', self.on_sourceview_keypress)
         
         self.call_tips = CallTips(self.sourceview, self.window_main,
-                                  self.get_func_doc, INDENT_WIDTH)
+                                  self.get_is_executing, self.get_func_doc,
+                                  INDENT_WIDTH)
         
         self.autoparen = Autoparen(self.sourcebuffer,
                                    self.is_callable_only,
@@ -217,6 +223,8 @@ class DreamPie(SimpleGladeApp):
             pyexec, data_dir,
             self.on_stdout_recv, self.on_stderr_recv, self.on_object_recv,
             self.on_subp_terminated)
+        # Number of RPC calls that timed out and expecting results
+        self._n_unclaimed_results = 0
         try:
             self.subp.start()
         except StartError, e:
@@ -236,6 +244,8 @@ class DreamPie(SimpleGladeApp):
 
         self.window_main.show()
         
+        self.subp_welcome, self.subp_can_mask_sigint = (
+            self.call_subp(u'get_subprocess_info', block=True))
         self.show_welcome()
         self.configure_subp()
         self.run_init_code(runfile)
@@ -388,10 +398,18 @@ class DreamPie(SimpleGladeApp):
             self.folding.autofold(it, self.config.get_int('autofold-numlines'))
     
     def set_is_executing(self, is_executing):
+        """
+        Called when the subprocess starts or stops to execute user code.
+        Note that the subprocess may also execute code when idle, and
+        get_is_executing checks that.
+        """
         self.is_executing = is_executing
         label = _(u'Execute Code') if not is_executing else _(u'Write Input')
         self.menuitem_execute.child.props.label = label
         self.menuitem_discard_hist.props.sensitive = not is_executing
+    
+    def get_is_executing(self):
+        return self.is_executing
 
     @staticmethod
     def replace_gtk_quotes(source):
@@ -407,7 +425,23 @@ class DreamPie(SimpleGladeApp):
         source = get_text(sb, sb.get_start_iter(), sb.get_end_iter())
         source = source.rstrip()
         source = self.replace_gtk_quotes(source)
-        is_ok, syntax_error_info = self.call_subp(u'execute', source)
+        try:
+            # There's a chance that the subprocess won't reply, because it's
+            # busy doing "idle jobs". For most queries we can ask for an answer
+            # and if it doesn't arrive, cancel what we tried to do and ignore
+            # the answer when it comes. However, here we can't let the execute
+            # function run and ignore the result, so we first call 'pause_idle'.
+            # If we don't get a reply for pause_idle, we don't execute.
+            self.call_subp(u'pause_idle')
+        except TimeoutError:
+            self.subp.send_object((u'resume_idle', ()))
+            self._n_unclaimed_results += 1
+
+            self.status_bar.set_status(_("The subprocess is currently busy"))
+            beep()
+            return
+            
+        is_ok, syntax_error_info = self.call_subp(u'execute', source, block=True)
         if not is_ok:
             if syntax_error_info:
                 msg, lineno, offset = syntax_error_info
@@ -468,7 +502,10 @@ class DreamPie(SimpleGladeApp):
                 source = get_text(sb, sb.get_start_iter(), sb.get_end_iter())
                 source = source.rstrip()
                 source = self.replace_gtk_quotes(source)
-                is_incomplete = self.call_subp(u'is_incomplete', source)
+                try:
+                    is_incomplete = self.call_subp(u'is_incomplete', source)
+                except TimeoutError:
+                    is_incomplete = True
                 if not is_incomplete:
                     self.execute_source()
                     return True
@@ -597,8 +634,6 @@ class DreamPie(SimpleGladeApp):
         return self.autoparen.add_parens()
 
     def is_callable_only(self, expr):
-        # This should be called only as a result of on_sourceview_space, which
-        # already checks that is_executing==False.
         return self.call_subp(u'is_callable_only', expr)
     
     def get_expects_str(self):
@@ -624,8 +659,7 @@ class DreamPie(SimpleGladeApp):
     # Subprocess
 
     def show_welcome(self):
-        s = self.call_subp(u'get_welcome')
-        s += 'DreamPie %s\n' % __version__
+        s = self.subp_welcome + 'DreamPie %s\n' % __version__
         self.write(s, MESSAGE)
         self.output.start_new_section()
 
@@ -636,14 +670,15 @@ class DreamPie(SimpleGladeApp):
             reshist_size = config.get_int('reshist-size')
         else:
             reshist_size = 0
-        self.call_subp(u'set_reshist_size', reshist_size)
+        self.call_subp(u'set_reshist_size', reshist_size, block=True)
         self.menuitem_clear_reshist.props.sensitive = (reshist_size > 0)
         
-        self.call_subp(u'set_pprint', config.get_bool('pprint'))
+        self.call_subp(u'set_pprint', config.get_bool('pprint'), block=True)
         
         self.call_subp(u'set_matplotlib_ia',
                        config.get_bool('matplotlib-ia-switch'),
-                       config.get_bool('matplotlib-ia-warn'))
+                       config.get_bool('matplotlib-ia-warn'),
+                       block=True)
         
     def run_init_code(self, runfile=None):
         """
@@ -660,7 +695,8 @@ class DreamPie(SimpleGladeApp):
             init_code += ('\n\nprint(%r)\nexec(open(%r).read())\n'
                           % (msg, runfile))
         if init_code:
-            is_ok, syntax_error_info = self.call_subp(u'execute', init_code)
+            is_ok, syntax_error_info = self.call_subp(u'execute', init_code,
+                                                      block=True)
             if not is_ok:
                 msg, lineno, offset = syntax_error_info
                 warning = _(
@@ -682,6 +718,7 @@ class DreamPie(SimpleGladeApp):
             return
         # This may raise an exception if subprocess couldn't be started,
         # but hopefully if it was started once it will be started again.
+        self._n_unclaimed_results = 0
         self.subp.start()
         self.set_is_executing(False)
         self.write('\n')
@@ -701,11 +738,47 @@ class DreamPie(SimpleGladeApp):
     def on_stderr_recv(self, data):
         self.write_output(data, STDERR)
 
-    def call_subp(self, funcname, *args):
+    def call_subp(self, funcname, *args, **kwargs):
+        """
+        Make an RPC call.
+        If block=True is given, will block until an answer is received.
+        Otherwise, will wait for SUBP_WAIT_TIMEOUT_S and if no answer is
+        received will raise a TimeoutError. The query will be executed when
+        the subprocess becomes responsive again, but will be discarded.
+        """
+        block = kwargs.pop('block', False)
+        if kwargs:
+            raise TypeError("unexpected keyword args %s"
+                            % ', '.join(kwargs.iteritems()))
+
+        assert not self.is_executing
+        
+        while self._n_unclaimed_results:
+            if not block:
+                returned = self.subp.wait_for_object(SUBP_WAIT_TIMEOUT_S)
+                if returned:
+                    self.subp.recv_object()
+                else:
+                    raise TimeoutError
+            else:
+                self.subp.recv_object()
+            
         self.subp.send_object((funcname, args))
-        return self.subp.recv_object()
+        if not block:
+            returned = self.subp.wait_for_object(SUBP_WAIT_TIMEOUT_S)
+            if returned:
+                return self.subp.recv_object()
+            else:
+                self._n_unclaimed_results += 1
+                raise TimeoutError
+        else:
+            return self.subp.recv_object()
 
     def on_object_recv(self, obj):
+        if self._n_unclaimed_results:
+            self._n_unclaimed_results -= 1
+            return
+        
         assert self.is_executing
 
         is_success, val_no, val_str, exception_string, rem_stdin = obj
@@ -770,7 +843,7 @@ class DreamPie(SimpleGladeApp):
         return True
 
     def on_interrupt(self, _widget):
-        if self.is_executing:
+        if self.subp_can_mask_sigint or self.is_executing:
             self.subp.interrupt()
         else:
             self.status_bar.set_status(
@@ -964,38 +1037,24 @@ class DreamPie(SimpleGladeApp):
         self.autocomplete.show_completions(is_auto=False, complete=False)
 
     def complete_dict_keys(self, expr):
-        if self.is_executing:
-            return None
         return self.call_subp(u'complete_dict_keys', expr)
 
     def complete_attributes(self, expr):
-        if self.is_executing:
-            return None
         return self.call_subp(u'complete_attributes', expr)
 
     def complete_firstlevels(self):
-        if self.is_executing:
-            return None
         return self.call_subp(u'complete_firstlevels')
     
     def get_func_args(self, expr):
-        if self.is_executing:
-            return None
         return self.call_subp(u'get_func_args', expr)
     
     def find_modules(self, expr):
-        if self.is_executing:
-            return None
         return self.call_subp(u'find_modules', expr)
     
     def get_module_members(self, expr):
-        if self.is_executing:
-            return None
         return self.call_subp(u'get_module_members', expr)
     
     def complete_filenames(self, str_prefix, text, str_char, add_quote):
-        if self.is_executing:
-            return None
         return self.call_subp(u'complete_filenames', str_prefix, text, str_char,
                               add_quote)
 
@@ -1003,8 +1062,6 @@ class DreamPie(SimpleGladeApp):
         self.call_tips.show(is_auto=False)
 
     def get_func_doc(self, expr):
-        if self.is_executing:
-            return None
         return self.call_subp(u'get_func_doc', expr)
 
     def configure(self):
@@ -1053,7 +1110,11 @@ class DreamPie(SimpleGladeApp):
         cd.destroy()
 
     def on_clear_reshist(self, _widget):
-        self.call_subp(u'clear_reshist')
+        try:
+            self.call_subp(u'clear_reshist')
+        except TimeoutError:
+            # Will happen anyway when idle job ends
+            pass
         self.status_bar.set_status(_("Result history cleared."))
 
     def on_close(self, _widget, _event):
