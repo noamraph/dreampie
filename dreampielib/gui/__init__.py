@@ -76,6 +76,8 @@ gladefile = path.join(data_dir, 'dreampie', 'dreampie.glade')
 if sys.platform == 'win32':
     from .load_pygtk import load_pygtk
     load_pygtk(data_dir)
+# Ubuntu's overlay scrollbars cause the pane to not show the sourcebuffer
+os.environ['LIBOVERLAY_SCROLLBAR'] = '0'
 
 import pygtk
 pygtk.require('2.0')
