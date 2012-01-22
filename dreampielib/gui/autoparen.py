@@ -22,7 +22,7 @@ from keyword import iskeyword
 import re
 
 from .hyper_parser import HyperParser
-from .common import get_text, TimeoutError
+from .common import get_text
 
 # These are all the chars that may be before the parens
 LAST_CHARS = set(string.ascii_letters + string.digits + "_)]")
@@ -116,10 +116,10 @@ class Autoparen(object):
             # Don't evaluate expressions which may contain a function call.
             return False
         
-        try:
-            is_callable_only, expects_str = self.is_callable_only(expr)
-        except TimeoutError:
+        r = self.is_callable_only(expr)
+        if r is None:
             return False
+        is_callable_only, expects_str = r
         if not is_callable_only:
             return False
         

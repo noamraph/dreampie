@@ -26,15 +26,13 @@ except ImportError:
 
 from .hyper_parser import HyperParser
 from .call_tip_window import CallTipWindow
-from .common import beep, get_text, TimeoutError
+from .common import beep, get_text
 
 class CallTips(object):
-    def __init__(self, sourceview, window_main, get_is_executing, get_func_doc,
-                 INDENT_WIDTH):
+    def __init__(self, sourceview, window_main, get_func_doc, INDENT_WIDTH):
         self.sourceview = sourceview
         self.sourcebuffer = sb = sourceview.get_buffer()
         self.window_main = window_main
-        self.get_is_executing = get_is_executing
         self.get_func_doc = get_func_doc
         self.INDENT_WIDTH = INDENT_WIDTH
 
@@ -80,12 +78,7 @@ class CallTips(object):
         expr = hp.get_expression()
         if not expr or (is_auto and expr.find('(') != -1):
             return and_maybe_beep()
-        if self.get_is_executing():
-            return and_maybe_beep()
-        try:
-            arg_text = self.get_func_doc(expr)
-        except TimeoutError:
-            return and_maybe_beep()
+        arg_text = self.get_func_doc(expr)
 
         if not arg_text:
             return and_maybe_beep()
