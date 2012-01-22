@@ -167,10 +167,10 @@ def mask_sigint():
 @contextmanager
 def unmasked_sigint():
     try:
-        mask_sigint()
+        unmask_sigint()
         yield
     finally:
-        unmask_sigint()
+        mask_sigint()
 
 
 
