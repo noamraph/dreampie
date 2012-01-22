@@ -147,7 +147,7 @@ class Autocomplete(object):
         if is_auto and '(' in comp_what:
             # Don't evaluate expressions which may contain a function call.
             return
-            key_reprs = self.complete_dict_keys(comp_what)
+        key_reprs = self.complete_dict_keys(comp_what)
         if key_reprs is None:
             return
         if text[index:index+1] != ']':
