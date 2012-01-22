@@ -247,8 +247,8 @@ class Autocomplete(object):
             comp_what = u''
         
             modules = self.find_modules(comp_what)
-        if modules is None:
-            return None
+            if modules is None:
+                return None
         
         public = [s for s in modules if s[0] != '_']
         private = [s for s in modules if s[0] == '_']
