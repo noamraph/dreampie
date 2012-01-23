@@ -135,6 +135,8 @@ class AutocompleteWindow(object):
 
         self.connect(sb, 'mark-set', self.on_mark_set)
         self.connect(sb, 'changed', self.on_changed)
+        self.connect(sb, 'insert-text', self.on_insert_text)
+        self.connect(sb, 'delete-range', self.on_delete_range)
 
         self.connect(self.treeview, 'button-press-event',
                      self.on_tv_button_press)
@@ -146,11 +148,10 @@ class AutocompleteWindow(object):
 
         self.window.show_all()
 
-    def update_list(self, return_false=False):
+    def update_list(self):
         # Update the ListStore.
         # Return True if something is shown.
         # Otherwise, calls hide(), and returns False.
-        # if return_false is True, always return False.
         if not self.is_shown:
             # Could be a result of a callback after the list was alrady hidden.
             # See bug #529939.
@@ -159,7 +160,7 @@ class AutocompleteWindow(object):
         prefix = get_text(sb, sb.get_iter_at_mark(self.mark),
                           sb.get_iter_at_mark(sb.get_insert()))
         if prefix == self.cur_prefix:
-            return True and not return_false
+            return True
         self.cur_prefix = prefix
         prefix_key = prefix.lower() if self.is_case_insen else prefix
 
@@ -208,7 +209,7 @@ class AutocompleteWindow(object):
             self.liststore.insert(i, [self.cur_list[start+i]])
         self.treeview.get_selection().select_path(0)
         self.treeview.scroll_to_cell((0,))
-        return True and not return_false
+        return True
 
     def place_window(self):
         sv = self.sourceview
@@ -237,6 +238,14 @@ class AutocompleteWindow(object):
 
     def on_changed(self, _sb):
         self.update_list()
+
+    def on_insert_text(self, sb, it, _text, _length):
+        if it.compare(sb.get_iter_at_mark(self.mark)) < 0:
+            self.hide()
+
+    def on_delete_range(self, sb, start, _end):
+        if start.compare(sb.get_iter_at_mark(self.mark)) < 0:
+            self.hide()
 
     @keyhandler('Escape', 0)
     def on_esc(self):
