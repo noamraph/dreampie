@@ -62,6 +62,7 @@ def find_data_dir():
             join(dirname(sys.argv[0]), 'share'), # py2exe
             join(dirname(sys.argv[0]), pardir, 'share'), # distutils
             '/usr/share', # debian
+            '/usr/local/share/python', # MacOS X (see bug #826481)
             ]
         for dir in alternatives:
             absdir = abspath(dir)
