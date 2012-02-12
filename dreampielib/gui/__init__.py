@@ -114,6 +114,7 @@ from .hist_persist import HistPersist
 from .autocomplete import Autocomplete
 from .call_tips import CallTips
 from .autoparen import Autoparen
+from .crash_workaround import TextViewCrashWorkaround
 from .subprocess_handler import SubprocessHandler, StartError
 from .common import beep, get_text, TimeoutError
 from .file_dialogs import save_dialog
@@ -330,6 +331,8 @@ class DreamPie(SimpleGladeApp):
         tb = self.textbuffer
 
         tv.set_wrap_mode(gtk.WRAP_CHAR)
+
+        self.textview_crash_workaround = TextViewCrashWorkaround(tv)
 
         tags.add_tags(tb)
 
