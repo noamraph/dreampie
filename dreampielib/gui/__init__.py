@@ -722,6 +722,8 @@ class DreamPie(SimpleGladeApp):
         self.output.start_new_section()
         self.configure_subp()
         self.run_init_code()
+        self.vadj_to_bottom.scroll_to_bottom()
+        self.sourceview.grab_focus()
 
     def on_restart_subprocess(self, _widget):
         self.subp.kill()
