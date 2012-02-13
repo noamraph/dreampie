@@ -17,6 +17,7 @@
 
 __all__ = ['TextViewCrashWorkaround']
 
+import sys
 import ctypes as ct
 
 import gtk
@@ -56,11 +57,13 @@ class TextViewCrashWorkaround(object):
     def _on_textview_event(self, textview, _event):
         if self._wrong_offset:
             return
-        first_validate_idle = ct.c_uint.from_address(hash(textview)+192)
+        first_validate_idle = ct.c_uint.from_address(
+            hash(textview)+self.first_validate_idle_offset)
         con = glib.main_context_default()
         while first_validate_idle.value != 0:
             if not con.pending():
                 # No pending callbacks, and still not 0? We have the wrong offset
                 self._wrong_offset = True
+                print >> sys.stderr, 'Warning: wrong first_validate_idle offset'
                 return
             con.iteration()
