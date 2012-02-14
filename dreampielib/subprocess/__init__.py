@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with DreamPie.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import with_statement
 import sys
 py3k = (sys.version_info[0] == 3)
 import os
@@ -42,6 +43,14 @@ try:
     import ast
 except ImportError:
     ast = None
+else:
+    # IronPython 2.7.1 has the ast module, but can't compile from an AST.
+    # If that's the case, the ast module doesn't interest us.
+    try:
+        compile(compile('a', 'fn', 'exec', ast.PyCF_ONLY_AST), 'fn', 'exec')
+    except TypeError:
+        ast = None
+if ast is None:
     from .split_to_singles import split_to_singles
 import __future__
 
