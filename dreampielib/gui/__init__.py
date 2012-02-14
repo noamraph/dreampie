@@ -943,6 +943,7 @@ class DreamPie(SimpleGladeApp):
                     '================= History Discarded =================\n',
                     MESSAGE)
             self.status_bar.set_status(_('History discarded.'))
+            self.histpersist.forget_filename()
 
     # Folding
     
@@ -1134,17 +1135,41 @@ class DreamPie(SimpleGladeApp):
         self.quit()
 
     def quit(self):
+        was_saved = self.histpersist.was_saved()
         if (self.textbuffer.get_modified()
-            and self.config.get_bool('ask-on-quit')):
-            xml = glade.XML(gladefile, 'quit_dialog')
-            d = xml.get_widget('quit_dialog')
-            dontask_check = xml.get_widget('dontask_check')
-            d.set_transient_for(self.window_main)
-            d.set_default_response(1)
-            quit = (d.run() == 1)
-            if quit and dontask_check.props.active:
+            and (was_saved or self.config.get_bool('ask-on-quit'))):
+            d = gtk.MessageDialog(
+                parent=self.window_main,
+                flags=gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                type=gtk.MESSAGE_WARNING,
+                message_format=_('Save history before closing?'))
+            d.props.secondary_text = _("If you don't save, your history will be lost.")
+            CANCEL, DISCARD, SAVE = range(3)
+            discard_btn = d.add_button(_("Close _without saving"), DISCARD)
+            _cancel_btn = d.add_button(_("_Cancel"), CANCEL)
+            save_btn = d.add_button(_("_Save"), SAVE)
+            if not was_saved:
+                dontask_chk = gtk.CheckButton(
+                    _("Don't ask me again when the history was never saved"))
+                dontask_chk.show()
+                d.get_content_area().pack_start(dontask_chk, fill=True, expand=False)
+                d.set_default_response(DISCARD)
+                discard_btn.grab_focus()
+            else:
+                d.set_default_response(SAVE)
+                save_btn.grab_focus()
+
+            r = d.run()
+            if not was_saved and r == DISCARD and dontask_chk.props.active:
                 self.config.set_bool('ask-on-quit', False)
                 self.config.save()
+            if r == SAVE:
+                saved = self.histpersist.save()
+                quit = saved
+            elif r == DISCARD:
+                quit = True
+            else:
+                quit = False
             d.destroy()
         else:
             quit = True

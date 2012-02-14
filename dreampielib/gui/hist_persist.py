@@ -55,12 +55,18 @@ class HistPersist(object):
         self.textbuffer.set_modified(False)
 
     def save(self):
+        """
+        Show the save dialog if there's no filename. Return True if was saved.
+        """
         if self.filename is None:
-            self.save_as()
+            saved = self.save_as()
         else:
             self.save_filename(self.filename)
+            saved = True
+        return saved
     
     def save_as(self):
+        """Show the save dialog. Return True if was saved."""
         if self.filename:
             prev_dir = os.path.dirname(self.filename)
             prev_name = os.path.basename(self.filename)
@@ -68,12 +74,13 @@ class HistPersist(object):
             prev_dir = None
             #prev_name = 'dreampie-history.html'
             prev_name = None
-        save_dialog(self.save_filename,
-                    _('Choose where to save the history'),
-                    self.window_main,
-                    _('HTML Files'),
-                    '*.html', 'html',
-                    prev_dir, prev_name)
+        saved = save_dialog(self.save_filename,
+                            _('Choose where to save the history'),
+                            self.window_main,
+                            _('HTML Files'),
+                            '*.html', 'html',
+                            prev_dir, prev_name)
+        return saved
 
     def load_filename(self, filename):
         s = open(filename, 'rb').read()
@@ -99,15 +106,24 @@ class HistPersist(object):
             'app_exec': 'dreampie'})
     
     def update_title(self):
-        disp_fn = os.path.basename(self.filename)
-        if self.textbuffer.get_modified():
-            disp_fn += '*'
-        self.window_main.set_title("%s - DreamPie" % disp_fn)
-        
+        if self.filename:
+            disp_fn = os.path.basename(self.filename)
+            if self.textbuffer.get_modified():
+                disp_fn += '*'
+            self.window_main.set_title("%s - DreamPie" % disp_fn)
+        else:
+            self.window_main.set_title("DreamPie")
     
     def on_modified_changed(self, _widget):
         if self.filename:
             self.update_title()
+    
+    def was_saved(self):
+        return self.filename is not None
+    
+    def forget_filename(self):
+        self.filename = None
+        self.update_title()
 
 
 def _html_escape(s):

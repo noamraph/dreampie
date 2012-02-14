@@ -77,6 +77,8 @@ def save_dialog(func, title, parent, filter_name, filter_pattern, auto_ext=None,
     filter_pattern - "*.html"
     auto_ext - "html", if not None will be added if no extension given.
     prev_dir, prev_name - will set the default if given.
+    
+    Return True if file was saved.
     """
     d = gtk.FileChooserDialog(
         title, parent,
@@ -91,6 +93,7 @@ def save_dialog(func, title, parent, filter_name, filter_pattern, auto_ext=None,
         d.set_current_folder(prev_dir)
     if prev_name:
         d.set_current_name(prev_name)
+    saved = False
     while True:
         r = d.run()
         if r != gtk.RESPONSE_OK:
@@ -124,5 +127,7 @@ def save_dialog(func, title, parent, filter_name, filter_pattern, auto_ext=None,
             m.run()
             m.destroy()
         else:
+            saved = True
             break
     d.destroy()
+    return saved
