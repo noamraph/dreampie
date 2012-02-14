@@ -91,19 +91,43 @@ class History(object):
         return ''.join(r)
 
     def copy_to_sourceview(self):
-        # Copy the current command to the sourceview
+        # Append the selected command(s) to the sourceview
         tb = self.textbuffer
+        sb = self.sourcebuffer
         command = tb.get_tag_table().lookup(COMMAND)
 
-        it = tb.get_iter_at_mark(tb.get_insert())
-        if not it.has_tag(command) and not it.ends_tag(command):
-            beep()
-            return True
-        s = self.iter_get_command(it).strip()
+        sel = tb.get_selection_bounds()
+        if not sel:
+            it = tb.get_iter_at_mark(tb.get_insert())
+            if not it.has_tag(command) and not it.ends_tag(command):
+                beep()
+                return True
+            s = self.iter_get_command(it).strip()
+        else:
+            # Copy all commands which intersect with the selection
+            it, end_it = sel
+            s = ''
+            if it.has_tag(command) or it.ends_tag(command):
+                s += self.iter_get_command(it).strip() + '\n'
+                if not it.ends_tag(command):
+                    it.forward_to_tag_toggle(command)
+            assert not it.has_tag(command)
+            while True:
+                it.forward_to_tag_toggle(command)
+                if it.compare(end_it) >= 0:
+                    break
+                s += self.iter_get_command(it).strip() + '\n'
+                it.forward_to_tag_toggle(command)
+            s = s.strip()
         if not s:
             beep()
             return True
-        self.sourcebuffer.set_text(s)
+        cur_text = get_text(sb, sb.get_start_iter(), sb.get_end_iter())
+        if cur_text and not cur_text.endswith('\n'):
+            s = '\n' + s
+        sb.place_cursor(sb.get_end_iter())
+        sb.insert_at_cursor(s)
+        self.sourceview.scroll_mark_onscreen(sb.get_insert())
         self.sourceview.grab_focus()
         return True
 
