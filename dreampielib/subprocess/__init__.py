@@ -73,6 +73,9 @@ from logging import debug
 # time interval to process GUI events, in seconds
 GUI_SLEEP = 0.1
 
+# Maximum result string length to transmit
+MAX_RES_STR_LEN = 1000000
+
 rpc_funcs = set()
 # A decorator which adds the function name to rpc_funcs
 def rpc_func(func):
@@ -441,6 +444,10 @@ class Subprocess(object):
                         res_str = self.safe_pformat(self.last_res)
                     else:
                         res_str = unicode(repr(self.last_res))
+                    if len(res_str) > MAX_RES_STR_LEN:
+                        res_str = (res_str[:MAX_RES_STR_LEN]
+                                   +'\n[%d chars truncated]' % (
+                                        len(res_str)-MAX_RES_STR_LEN))
                 else:
                     res_str = None
         except:
