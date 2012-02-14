@@ -534,25 +534,59 @@ class DreamPie(SimpleGladeApp):
     @sourceview_keyhandler('Tab', 0)
     def on_sourceview_tab(self):
         sb = self.sourcebuffer
-        insert = sb.get_iter_at_mark(sb.get_insert())
-        insert_linestart = sb.get_iter_at_line(insert.get_line())
-        line = get_text(sb, insert_linestart, insert)
-
-        if not line.strip():
-            # We are at the beginning of a line, so indent - forward to next
-            # "tab stop"
-            sb.insert_at_cursor(' ' * (INDENT_WIDTH - len(line) % INDENT_WIDTH))
-
+        sel = sb.get_selection_bounds()
+        if not sel:
+            insert = sb.get_iter_at_mark(sb.get_insert())
+            insert_linestart = sb.get_iter_at_line(insert.get_line())
+            line = get_text(sb, insert_linestart, insert)
+    
+            if not line.strip():
+                # We are at the beginning of a line, so indent - forward to next
+                # "tab stop"
+                sb.insert_at_cursor(' '*(INDENT_WIDTH - len(line)%INDENT_WIDTH))
+    
+            else:
+                # Completion should come here
+                self.autocomplete.show_completions(is_auto=False, complete=True)
         else:
-            # Completion should come here
-            self.autocomplete.show_completions(is_auto=False, complete=True)
+            # Indent
+            start, end = sel
+            start = sb.get_iter_at_line(start.get_line())
+            if not end.ends_line():
+                end.forward_to_line_end()
+            text = get_text(sb, start, end)
+            newtext = '\n'.join('    '+line for line in text.split('\n'))
+            start_offset = start.get_offset()
+            sb.delete(start, end)
+            sb.insert(end, newtext)
+            sb.select_range(sb.get_iter_at_offset(start_offset), end)
 
         self.sv_scroll_cursor_onscreen()
         return True
 
     @sourceview_keyhandler('ISO_Left_Tab', 0)
     def on_sourceview_shift_tab(self):
-        self.textview.grab_focus()
+        sb = self.sourcebuffer
+        sel = sb.get_selection_bounds()
+        if sel:
+            # Dedent
+            start, end = sel
+            start = sb.get_iter_at_line(start.get_line())
+            if not end.ends_line():
+                end.forward_to_line_end()
+            text = get_text(sb, start, end)
+            lines = text.split('\n')
+            if not all(line.startswith('    ') for line in lines):
+                beep()
+            else:
+                newlines = [line[4:] for line in lines]
+                newtext = '\n'.join(newlines)
+                start_offset = start.get_offset()
+                sb.delete(start, end)
+                sb.insert(end, newtext)
+                sb.select_range(sb.get_iter_at_offset(start_offset), end)
+        else:
+            self.textview.grab_focus()
         return True
 
     @sourceview_keyhandler('BackSpace', 0)
