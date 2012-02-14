@@ -589,6 +589,18 @@ class DreamPie(SimpleGladeApp):
             self.textview.grab_focus()
         return True
 
+    @sourceview_keyhandler('Home', 0)
+    def on_sourceview_home(self):
+        # If the cursor is already at the beginning of the line, move to the
+        # beginning of the text.
+        sb = self.sourcebuffer
+        insert = sb.get_iter_at_mark(sb.get_insert())
+        if insert.starts_line():
+            while insert.get_char() == ' ':
+                insert.forward_char()
+            sb.place_cursor(insert)
+            return True
+    
     @sourceview_keyhandler('BackSpace', 0)
     def on_sourceview_backspace(self):
         sb = self.sourcebuffer
