@@ -137,13 +137,19 @@ class Autocomplete(object):
         if is_auto and text[index-1] != '[':
             return
         
+        is_in_code = hp.is_in_code()
         opener, _closer = hp.get_surrounding_brackets('[')
-        if not opener:
+        if opener is None:
             return
         hp.set_index(opener)
         comp_what = hp.get_expression()
         if not comp_what:
-            return
+            # It's not an index, but a list - complete as if the '[' wasn't there.
+            hp.set_index(index)
+            if is_in_code:
+                return self._complete_attributes(text, index, hp, is_auto)
+            else:
+                return self._complete_filenames(text, index, hp, is_auto)
         if is_auto and '(' in comp_what:
             # Don't evaluate expressions which may contain a function call.
             return
