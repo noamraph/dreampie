@@ -17,8 +17,18 @@
 
 __all__ = ['History']
 
+from zlib import adler32 as hash_cmd
+
 from .tags import COMMAND, PROMPT
 from .common import beep, get_text
+
+# In order to filter out repeating commands, we store the number of times a
+# command was encountered. To save memory, we only map the hash of a command
+# to a number. The docs say that adler32 is a fast checksum function. I think
+# that 32 bits should be enough (you'll get a collision if you have 2**16
+# commands, and even that will just mean that a command isn't retreived).
+# To ease debugging, uncomment this:
+# hash_cmd = lambda s: s
 
 class History(object):
     """
@@ -35,7 +45,7 @@ class History(object):
         tb = self.textbuffer
 
         self.hist_prefix = None
-        # Map a command to the number of times it has occured in the search.
+        # Map a command hash to the number of times it has occured in the search.
         # This lets us avoid showing the same command twice.
         self.hist_count = {}
         self.sb_changed = True
@@ -52,18 +62,10 @@ class History(object):
         self.changed_handler_id = self.sourcebuffer.connect(
             'changed', self._on_sourcebuffer_changed)
     
-    def _untrack_change(self):
-        if self.changed_handler_id:
-            self.sourcebuffer.disconnect(self.changed_handler_id)
-            self.changed_handler_id = None
-
-    def _reset_state(self):
-        self.sb_changed = True
-        self.hist_count = {}
-        self._untrack_change()
-    
     def _on_sourcebuffer_changed(self, _widget):
-        self._reset_state()
+        self.sb_changed = True
+        self.sourcebuffer.disconnect(self.changed_handler_id)
+        self.changed_handler_id = None
 
     def iter_get_command(self, it, only_first_line=False):
         """Get a textiter placed inside (or at the end of) a COMMAND tag.
@@ -166,6 +168,8 @@ class History(object):
                     return
                 self.hist_prefix = get_text(sb, sb.get_start_iter(),
                                             sb.get_end_iter())
+                self.hist_count = {}
+                self._track_change()
                 tb.move_mark(self.hist_mark, tb.get_end_iter())
             it = tb.get_iter_at_mark(self.hist_mark)
             if it.is_start():
@@ -184,11 +188,11 @@ class History(object):
                     and (len(first_line) > 2 or self.recall_1_char_commands)):
                     
                     cmd = self.iter_get_command(it).strip()
+                    cmd_hash = hash_cmd(cmd)
                     tb.move_mark(self.hist_mark, it)
-                    count = self.hist_count.get(cmd, 0) + 1
-                    self.hist_count[cmd] = count
+                    count = self.hist_count.get(cmd_hash, 0) + 1
+                    self.hist_count[cmd_hash] = count
                     if count == 1:
-                        self._untrack_change()
                         sb.set_text(cmd)
                         self._track_change()
                         sb.place_cursor(sb.get_end_iter())
@@ -226,9 +230,11 @@ class History(object):
                 if not it.begins_tag(command):
                     # Return the source buffer to the prefix and everything
                     # to initial state.
-                    self._reset_state()
                     sb.set_text(self.hist_prefix)
                     sb.place_cursor(sb.get_end_iter())
+                    # Since we change the text and not called _track_change,
+                    # it's like the user did it and hist_prefix is not longer
+                    # meaningful.
                     break
                 first_line = self.iter_get_command(it, only_first_line=True).strip()
                 if (first_line
@@ -236,17 +242,17 @@ class History(object):
                     and (len(first_line) > 2 or self.recall_1_char_commands)):
                     
                     cmd = self.iter_get_command(it).strip()
+                    cmd_hash = hash_cmd(cmd)
                     tb.move_mark(self.hist_mark, it)
-                    if self.hist_count[cmd] == 1:
+                    if self.hist_count[cmd_hash] == 1:
                         if passed_one:
-                            self._untrack_change()
                             sb.set_text(cmd)
                             self._track_change()
                             sb.place_cursor(sb.get_end_iter())
                             break
                         else:
                             passed_one = True
-                    self.hist_count[cmd] -= 1
+                    self.hist_count[cmd_hash] -= 1
 
                 it.forward_to_tag_toggle(command)
                 it.forward_to_tag_toggle(command)
