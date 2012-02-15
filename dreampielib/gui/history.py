@@ -187,7 +187,6 @@ class History(object):
                     tb.move_mark(self.hist_mark, it)
                     count = self.hist_count.get(cmd, 0) + 1
                     self.hist_count[cmd] = count
-                    print self.hist_count
                     if count == 1:
                         self._untrack_change()
                         sb.set_text(cmd)
@@ -224,7 +223,6 @@ class History(object):
             it = tb.get_iter_at_mark(self.hist_mark)
             passed_one = False
             while True:
-                print self.hist_count
                 if not it.begins_tag(command):
                     # Return the source buffer to the prefix and everything
                     # to initial state.
