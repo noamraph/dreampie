@@ -28,8 +28,9 @@ class StatusBar(object):
     """
     Add messages to the status bar which disappear when the contents is changed.
     """
-    def __init__(self, sourcebuffer, statusbar):
+    def __init__(self, sourcebuffer, sv_changed, statusbar):
         self.sourcebuffer = sourcebuffer
+        sv_changed.append(self.on_sv_changed)
         self.statusbar = statusbar
         
         # id of a message displayed in the status bar to be removed when
@@ -39,6 +40,11 @@ class StatusBar(object):
         
         self.timeout_handle = None
 
+    def on_sv_changed(self, new_sv):
+        if self.sourcebuffer_status_id is not None:
+            self.clear_status()
+        self.sourcebuffer = new_sv.get_buffer()
+    
     def set_status(self, message):
         """Set a message in the status bar to be removed when the contents
         of the source buffer is changed"""

@@ -94,6 +94,9 @@ def analyse (exctyp, value, tb):
     return trace.getvalue()
 
 def _info (exctyp, value, tb):
+    # First output the exception to stderr
+    orig_excepthook(exctyp, value, tb)
+    
     try:
         import pdb
     except ImportError:
@@ -185,6 +188,7 @@ def _info (exctyp, value, tb):
 
     dialog.destroy()
 
+orig_excepthook = sys.excepthook
 sys.excepthook = _info
 
 if __name__ == '__main__':

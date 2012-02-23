@@ -35,11 +35,12 @@ class History(object):
     Manage moving between commands on the text view, and recalling commands
     in the source view.
     """
-    def __init__(self, textview, sourceview, config):
+    def __init__(self, textview, sourceview, sv_changed, config):
         self.textview = textview
         self.textbuffer = textview.get_buffer()
         self.sourceview = sourceview
         self.sourcebuffer = sourceview.get_buffer()
+        sv_changed.append(self._on_sv_changed)
         self.recall_1_char_commands = config.get_bool('recall-1-char-commands')
 
         tb = self.textbuffer
@@ -53,6 +54,12 @@ class History(object):
         self.changed_handler_id = None
         self.hist_mark = tb.create_mark('history', tb.get_end_iter(), False)
 
+    def _on_sv_changed(self, new_sv):
+        if self.changed_handler_id:
+            self._on_sourcebuffer_changed(None)
+        self.sourceview = new_sv
+        self.sourcebuffer = new_sv.get_buffer()
+    
     def _track_change(self):
         """Set self.sb_changed to False, and add a handler which will set it
         to True on the next change."""

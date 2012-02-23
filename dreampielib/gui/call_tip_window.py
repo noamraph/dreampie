@@ -48,8 +48,9 @@ class CallTipWindow(object):
     # We implement our own resize grip - for some reason, the resize grip of
     # a status bar doesn't work on popup windows.
     
-    def __init__(self, sourceview):
+    def __init__(self, sourceview, sv_changed):
         self.sourceview = sourceview
+        sv_changed.append(self.on_sv_changed)
         
         # Widgets
         self.textview = tv = gtk.TextView()
@@ -124,6 +125,13 @@ class CallTipWindow(object):
         self.sourceview.handler_block(self.keypress_handler)
         self.keypress_handler_blocked = True
 
+    def on_sv_changed(self, new_sv):
+        self.hide()
+        self.sourceview.disconnect(self.keypress_handler)
+        self.sourceview = new_sv
+        self.keypress_handler = self.sourceview.connect(
+            'key-press-event', self.on_keypress)
+        self.sourceview.handler_block(self.keypress_handler)
 
     @staticmethod
     def get_char_size(textview):

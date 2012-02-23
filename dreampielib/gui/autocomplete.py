@@ -29,13 +29,13 @@ ID_CHARS = string.ascii_letters + string.digits + "_"
 ID_CHARS_DOT = ID_CHARS + '.'
 
 class Autocomplete(object):
-    def __init__(self, sourceview, window_main,
+    def __init__(self, sourceview, sv_changed, window_main,
                  complete_attributes, complete_firstlevels, get_func_args,
                  find_modules, get_module_members, complete_filenames,
                  complete_dict_keys,
                  INDENT_WIDTH):
         self.sourceview = sourceview
-        self.sourcebuffer = sourceview.get_buffer()
+        sv_changed.append(self._on_sv_changed)
         self.complete_attributes = complete_attributes
         self.complete_firstlevels = complete_firstlevels
         self.get_func_args = get_func_args
@@ -45,9 +45,12 @@ class Autocomplete(object):
         self.complete_dict_keys = complete_dict_keys
         self.INDENT_WIDTH = INDENT_WIDTH
 
-        self.window = AutocompleteWindow(sourceview, window_main,
+        self.window = AutocompleteWindow(sourceview, sv_changed, window_main,
                                          self._on_complete)
 
+    def _on_sv_changed(self, new_sv):
+        self.sourceview = new_sv
+    
     def show_completions(self, is_auto, complete):
         """
         If complete is False, just show the completion list.
@@ -56,7 +59,7 @@ class Autocomplete(object):
 
         If is_auto is True, don't beep if can't find completions.
         """
-        sb = self.sourcebuffer
+        sb = self.sourceview.get_buffer()
         text = get_text(sb, sb.get_start_iter(), sb.get_end_iter())
         index = sb.get_iter_at_mark(sb.get_insert()).get_offset()
         hp = HyperParser(text[:index], index, self.INDENT_WIDTH)

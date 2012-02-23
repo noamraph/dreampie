@@ -29,14 +29,16 @@ from .call_tip_window import CallTipWindow
 from .common import beep, get_text
 
 class CallTips(object):
-    def __init__(self, sourceview, window_main, get_func_doc, INDENT_WIDTH):
+    def __init__(self, sourceview, sv_changed, window_main, get_func_doc,
+                 INDENT_WIDTH):
         self.sourceview = sourceview
         self.sourcebuffer = sb = sourceview.get_buffer()
+        sv_changed.append(self.on_sv_changed)
         self.window_main = window_main
         self.get_func_doc = get_func_doc
         self.INDENT_WIDTH = INDENT_WIDTH
 
-        self.ctwindow = CallTipWindow(sourceview)
+        self.ctwindow = CallTipWindow(sourceview, sv_changed)
 
         self.start_mark = sb.create_mark(None, sb.get_start_iter(),
                                          left_gravity=True)
@@ -48,6 +50,19 @@ class CallTips(object):
         # A list with (widget, handler) pairs, to be filled with self.connect()
         self.signals = []
 
+    def on_sv_changed(self, new_sv):
+        sb = self.sourcebuffer
+        self.hide()
+        sb.delete_mark(self.start_mark)
+        sb.delete_mark(self.end_mark)
+        
+        self.sourceview = new_sv
+        self.sourcebuffer = sb = new_sv.get_buffer()
+        self.start_mark = sb.create_mark(None, sb.get_start_iter(),
+                                         left_gravity=True)
+        self.end_mark = sb.create_mark(None, sb.get_start_iter(),
+                                       left_gravity=False)
+        
     def connect(self, widget, *args):
         handler = widget.connect(*args)
         self.signals.append((widget, handler))

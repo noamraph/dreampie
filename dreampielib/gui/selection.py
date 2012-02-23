@@ -29,19 +29,28 @@ class Selection(object):
     selected, "Interrupt" should be enabled.
     Also, "copy only commands" command.
     """
-    def __init__(self, textview, sourceview,
+    def __init__(self, textview, sourceview, sv_changed,
                  on_is_something_selected_changed):
         self.textview = textview
         self.textbuffer = textview.get_buffer()
         self.sourceview = sourceview
         self.sourcebuffer = sourceview.get_buffer()
+        sv_changed.append(self.on_sv_changed)
         self.on_is_something_selected_changed = on_is_something_selected_changed
         
         self.is_something_selected = None
         self.textbuffer.connect('mark-set', self.on_mark_set)
-        self.sourcebuffer.connect('mark-set', self.on_mark_set)
+        self.mark_set_handler = self.sourcebuffer.connect('mark-set',
+                                                          self.on_mark_set)
         self.clipboard = gtk.Clipboard()
 
+    def on_sv_changed(self, new_sv):
+        self.sourcebuffer.disconnect(self.mark_set_handler)
+        self.sourceview = new_sv
+        self.sourcebuffer = new_sv.get_buffer()
+        self.mark_set_handler = self.sourcebuffer.connect('mark-set',
+                                                          self.on_mark_set)
+    
     def on_selection_changed(self, _clipboard, _event):
         is_something_selected = (self.textbuffer.get_has_selection()
                                  or self.sourcebuffer.get_has_selection())

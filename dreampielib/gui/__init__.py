@@ -77,8 +77,6 @@ gladefile = path.join(data_dir, 'dreampie', 'dreampie.glade')
 if sys.platform == 'win32':
     from .load_pygtk import load_pygtk
     load_pygtk(data_dir)
-# Ubuntu's overlay scrollbars cause the pane to not show the sourcebuffer
-os.environ['LIBOVERLAY_SCROLLBAR'] = '0'
 
 import pygtk
 pygtk.require('2.0')
@@ -167,10 +165,19 @@ class DreamPie(SimpleGladeApp):
         self.popup_mark = tb.create_mark('popup-mark', tb.get_start_iter(),
                                          left_gravity=True)
 
-        self.init_sourcebufferview()
+        # Remove the page in the notebook, which was added because empty
+        # notebooks cause warnings
+        self.notebook.remove_page(0)
+        # A list of callbacks to call when changing the sourcebuffer
+        self.sv_changed = []
+        self.sourceview = self.create_sourcebufferview()
+        self.sourcebuffer = self.sourceview.get_buffer()
+        # A tuple (page_num, text) of the recently closed tab
+        self.reopen_tab_data = None
         
-        self.set_initial_hpaned_position()
-        
+        # last (font, vertical_layout) configured. If they are changed,
+        # configure() will resize the window and place the paned.
+        self.last_configured_layout = (None, None)
         self.configure()
 
         self.output = Output(self.textview)
@@ -178,14 +185,17 @@ class DreamPie(SimpleGladeApp):
         self.folding = Folding(self.textbuffer, LINE_LEN)
 
         self.selection = Selection(self.textview, self.sourceview,
+                                   self.sv_changed,
                                    self.on_is_something_selected_changed)
 
-        self.status_bar = StatusBar(self.sourcebuffer, self.statusbar)
+        self.status_bar = StatusBar(self.sourcebuffer, self.sv_changed,
+                                    self.statusbar)
 
         self.vadj_to_bottom = VAdjToBottom(self.scrolledwindow_textview
                                            .get_vadjustment())
 
-        self.history = History(self.textview, self.sourceview, self.config)
+        self.history = History(self.textview, self.sourceview, self.sv_changed,
+                               self.config)
 
         self.recent_manager = gtk.recent_manager_get_default()
         self.menuitem_recent = [self.menuitem_recent0, self.menuitem_recent1,
@@ -198,6 +208,7 @@ class DreamPie(SimpleGladeApp):
         self.update_recent()
         
         self.autocomplete = Autocomplete(self.sourceview,
+                                         self.sv_changed,
                                          self.window_main,
                                          self.complete_attributes,
                                          self.complete_firstlevels,
@@ -210,12 +221,15 @@ class DreamPie(SimpleGladeApp):
         
         # Hack: we connect this signal here, so that it will have lower
         # priority than the key-press event of autocomplete, when active.
-        self.sourceview.connect('key-press-event', self.on_sourceview_keypress)
+        self.sourceview_keypress_handler = self.sourceview.connect(
+            'key-press-event', self.on_sourceview_keypress)
+        self.sv_changed.append(self.on_sv_changed)
         
-        self.call_tips = CallTips(self.sourceview, self.window_main,
-                                  self.get_func_doc, INDENT_WIDTH)
+        self.call_tips = CallTips(self.sourceview, self.sv_changed,
+                                  self.window_main, self.get_func_doc,
+                                  INDENT_WIDTH)
         
-        self.autoparen = Autoparen(self.sourcebuffer,
+        self.autoparen = Autoparen(self.sourcebuffer, self.sv_changed,
                                    self.is_callable_only,
                                    self.get_expects_str,
                                    self.autoparen_show_call_tip,
@@ -257,6 +271,13 @@ class DreamPie(SimpleGladeApp):
             self.config.set_bool('show-getting-started', False)
             self.config.save()
         
+    def on_sv_changed(self, new_sv):
+        self.sourceview.disconnect(self.sourceview_keypress_handler)
+        self.sourceview = new_sv
+        self.sourcebuffer = new_sv.get_buffer()
+        self.sourceview_keypress_handler = self.sourceview.connect(
+            'key-press-event', self.on_sourceview_keypress)
+    
     def load_popup_menus(self):
         # Load popup menus from the glade file. Would not have been needed if
         # popup menus could be children of windows.
@@ -339,41 +360,67 @@ class DreamPie(SimpleGladeApp):
         tv.connect('key-press-event', self.on_textview_keypress)
         tv.connect('focus-in-event', self.on_textview_focus_in)
 
-    def set_window_default_size(self):
+    def get_char_width_height(self):
         tv = self.textview
         context = tv.get_pango_context()
         metrics = context.get_metrics(tv.style.font_desc,
                                       context.get_language())
-        # I don't know why I have to add 2, but it works.
-        width = pango.PIXELS(metrics.get_approximate_digit_width()*(LINE_LEN+2))
-        height = pango.PIXELS(
-            (metrics.get_ascent() + metrics.get_descent())*30)
-        self.window_main.set_default_size(width, height)
+        charwidth = pango.PIXELS(metrics.get_approximate_digit_width())
+        # I don't know why +1
+        charheight = pango.PIXELS(metrics.get_ascent() + metrics.get_descent())+1
+        return charwidth, charheight
+    
+    def set_window_size(self, vertical_layout):
+        charwidth, charheight = self.get_char_width_height()
+        if vertical_layout:
+            # I don't know why I have to add 2, but it works.
+            width = charwidth*(LINE_LEN+2)
+            height = charheight*30
+        else:
+            width = charwidth*((LINE_LEN-10)*2+2)
+            height = charheight*26
+        self.window_main.resize(width, height)
+        
+        # Set the position of the paned. We wait until it is exposed because
+        # then its max_position is meaningful.
+        # In vertical layout we set it to maximum, since the sourceview has
+        # a minimum height.
+        def callback(_widget, _event):
+            if vertical_layout:
+                pane = self.vpaned_main
+                pane.set_position(pane.props.max_position)
+            else:
+                pane = self.hpaned_main
+                pane.set_position(pane.props.max_position // 2)
+            self.sourceview.disconnect(callback_id)
+        callback_id = self.sourceview.connect('expose-event', callback)
 
-    def init_sourcebufferview(self):
-        self.sourcebuffer = sb = gtksourceview2.Buffer()
-        self.sourceview = sv = gtksourceview2.View(self.sourcebuffer)
+    def create_sourcebufferview(self, page_num=None):
+        sb = gtksourceview2.Buffer()
+        sv = gtksourceview2.View(sb)
+        sv.show()
+        sv.connect('focus-in-event', self.on_sourceview_focus_in)
+        _charwidth, charheight = self.get_char_width_height()
+        self.configure_sourceview(sv)
 
         lm = gtksourceview2.LanguageManager()
         lm.set_search_path([path.join(data_dir, 'dreampie', 'language-specs')])
         sb.set_language(lm.get_language('python'))
-        self.scrolledwindow_sourceview.add(self.sourceview)
-        sv.connect('focus-in-event', self.on_sourceview_focus_in)
-        sv.show()
+        scroll = gtk.ScrolledWindow()
+        scroll.show()
+        scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        scroll.add(sv)
+        scroll.set_size_request(-1, charheight * 4)
+        
+        lbl = gtk.Label('      ')
+        if page_num is None:
+            page_num = self.notebook.get_current_page() + 1
+        self.notebook.insert_page(scroll, lbl, page_num)
+        self.notebook.set_current_page(page_num)
         sv.grab_focus()
 
-    def set_initial_hpaned_position(self):
-        # We want the initial position for the horizontal pane to be in the
-        # middle. However, we only know the width when it's displayed (which
-        # may never happen.) So we bind an one-time event handler to the expose
-        # event.
-        callback_id = None
-        def callback(_widget, _event):
-            self.hpaned_main.props.position = \
-                self.hpaned_main.props.max_position//2
-            self.hpaned_main.disconnect(callback_id)
-        callback_id = self.hpaned_main.connect('expose-event', callback)
-        
+        return sv
+
     def sv_scroll_cursor_onscreen(self):
         self.sourceview.scroll_mark_onscreen(self.sourcebuffer.get_insert())
 
@@ -459,6 +506,8 @@ class DreamPie(SimpleGladeApp):
             self.output.start_new_section()
             if not self.config.get_bool('leave-code'):
                 sb.delete(sb.get_start_iter(), sb.get_end_iter())
+                if self.notebook.get_n_pages() > 1:
+                    self.close_current_tab()
             self.vadj_to_bottom.scroll_to_bottom()
             self.set_is_executing(True)
 
@@ -1087,6 +1136,74 @@ class DreamPie(SimpleGladeApp):
     def on_unfold_last(self, _widget):
         self.folding.unfold_last()
 
+    # Notebook tabs
+    
+    def on_notebook_switch_page(self, _widget, _page, page_num):
+        new_sv = self.notebook.get_nth_page(page_num).get_child()
+        for cb in self.sv_changed:
+            cb(new_sv)
+    
+    def new_tab(self, index=None):
+        # The following line should result in on_notebook_switch_page, which
+        # will take care of calling on_sv_change functions.
+        self.create_sourcebufferview(index)
+        self.notebook.props.show_tabs = True
+        self.reopen_tab_data = None
+        self.menuitem_reopen_tab.props.sensitive = False
+    
+    def on_new_tab(self, _widget):
+        self.new_tab()
+    
+    def on_reopen_tab(self, _widget):
+        index, text = self.reopen_tab_data
+        self.new_tab(index)
+        self.sourcebuffer.set_text(text)
+    
+    def on_close_tab(self, _widget):
+        if self.notebook.get_n_pages() == 1:
+            beep()
+            return
+        else:
+            self.close_current_tab()
+    
+    def close_current_tab(self):
+        assert self.notebook.get_n_pages() > 1
+        cur_page = self.notebook.get_current_page()
+        text = get_text(self.sourcebuffer, self.sourcebuffer.get_start_iter(),
+                        self.sourcebuffer.get_end_iter())
+        if text:
+            self.reopen_tab_data = (cur_page, text)
+            self.menuitem_reopen_tab.props.sensitive = True
+        else:
+            self.reopen_tab_data = None
+            self.menuitem_reopen_tab.props.sensitive = False
+
+        scrolledwin = self.notebook.get_nth_page(cur_page)
+        new_page = cur_page-1 if cur_page > 0 else 1
+        # This should result in on_notebook_switch_page which will set
+        # everything to use the new sourcebuffer
+        self.notebook.set_current_page(new_page)
+        assert self.sourceview is not scrolledwin.get_child()
+        self.notebook.remove_page(cur_page)
+        if self.notebook.get_n_pages() == 1:
+            self.notebook.props.show_tabs = False
+        if True:
+            scrolledwin.destroy()
+        else:
+            # Verify that the sourceview and sourcebuffer are indeed destroyed,
+            # and not referenced anywhere
+            import weakref, gc
+            r = weakref.ref(scrolledwin.get_child().get_buffer())
+            scrolledwin.destroy()
+            gc.collect()
+            assert r() is None
+    
+    def on_prev_tab(self, _widget):
+        self.notebook.prev_page()
+    
+    def on_next_tab(self, _widget):
+        self.notebook.next_page()
+    
     # Other events
 
     def on_show_completions(self, _widget):
@@ -1127,36 +1244,56 @@ class DreamPie(SimpleGladeApp):
         """
         config = self.config
         tv = self.textview; tb = self.textbuffer
-        sv = self.sourceview; sb = self.sourcebuffer
+        sourceviews = [self.notebook.get_nth_page(i).get_child()
+                       for i in range(self.notebook.get_n_pages())]
         
         font_name = config.get('font')
         font = pango.FontDescription(font_name)
         tv.modify_font(font)
-        sv.modify_font(font)
+        for sv in sourceviews:
+            sv.modify_font(font)
 
-        cur_theme = self.config.get('current-theme')
-        tags.apply_theme_text(tv, tb, tags.get_theme(self.config, cur_theme))
-        tags.apply_theme_source(sb, tags.get_theme(self.config, cur_theme))
+        theme = tags.get_theme(self.config, self.config.get('current-theme'))
+        tags.apply_theme_text(tv, tb, theme)
+        for sv in sourceviews:
+            tags.apply_theme_source(sv.get_buffer(), theme)
 
         vertical_layout = self.config.get_bool('vertical-layout')
         if vertical_layout:
             pane = self.vpaned_main; other_pane = self.hpaned_main
+            self.notebook.props.tab_pos = gtk.POS_BOTTOM
         else:
             pane = self.hpaned_main; other_pane = self.vpaned_main
+            self.notebook.props.tab_pos = gtk.POS_TOP
         pane.props.visible = True
         other_pane.props.visible = False
         if pane.get_child1() is None:
             child1 = other_pane.get_child1(); other_pane.remove(child1)
             child2 = other_pane.get_child2(); other_pane.remove(child2)
-            pane.pack1(child1, resize=True, shrink=True)
-            pane.pack2(child2, resize=not vertical_layout, shrink=True)
+            pane.pack1(child1, resize=True, shrink=False)
+            pane.pack2(child2, resize=not vertical_layout, shrink=False)
         
         # If the fonts were changed, we might need to enlarge the window
-        self.set_window_default_size()
+        last_font, last_vertical = self.last_configured_layout
+        if last_font != font or last_vertical != vertical_layout:
+            self.set_window_size(vertical_layout)
+            self.last_configured_layout = font, vertical_layout
         
         command_defs = self.textbuffer.get_tag_table().lookup(COMMAND_DEFS)
         command_defs.props.invisible = config.get_bool('hide-defs')
 
+    def configure_sourceview(self, sv):
+        """
+        Apply configuration to a newly created sourceview.
+        This does the same for a single sourceview as configure() does for
+        all of them.
+        """
+        font_name = self.config.get('font')
+        font = pango.FontDescription(font_name)
+        sv.modify_font(font)
+        theme = tags.get_theme(self.config, self.config.get('current-theme'))
+        tags.apply_theme_source(sv.get_buffer(), theme)
+    
     def on_preferences(self, _widget):
         cd = ConfigDialog(self.config, gladefile, self.window_main)
         r = cd.run()

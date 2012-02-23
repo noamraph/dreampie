@@ -46,9 +46,10 @@ class Autoparen(object):
     Add parentheses if a space was pressed after a callable-only object.
     """
 
-    def __init__(self, sourcebuffer, is_callable_only, get_expects_str,
+    def __init__(self, sourcebuffer, sv_changed, is_callable_only, get_expects_str,
                  show_call_tip, INDENT_WIDTH):
         self.sourcebuffer = sb = sourcebuffer
+        sv_changed.append(self.on_sv_changed)
         self.is_callable_only = is_callable_only
         self.get_expects_str = get_expects_str
         self.show_call_tip = show_call_tip
@@ -68,6 +69,13 @@ class Autoparen(object):
         self.insert_handler = None
         self.delete_handler = None
 
+    def on_sv_changed(self, new_sv):
+        self.sourcebuffer.delete_mark(self.mark)
+        if self.insert_handler is not None:
+            self.disconnect()
+        self.sourcebuffer = sb = new_sv.get_buffer()
+        self.mark = sb.create_mark(None, sb.get_start_iter(), left_gravity=True)
+    
     def add_parens(self):
         """
         This is called if the user pressed space on the sourceview, and

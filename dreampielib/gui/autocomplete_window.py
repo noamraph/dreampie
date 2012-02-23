@@ -31,8 +31,9 @@ keyhandlers = {}
 keyhandler = make_keyhandler_decorator(keyhandlers)
 
 class AutocompleteWindow(object):
-    def __init__(self, sourceview, window_main, on_complete):
+    def __init__(self, sourceview, sv_changed, window_main, on_complete):
         self.sourceview = sourceview
+        sv_changed.append(self.on_sv_changed)
         self.sourcebuffer = sb = sourceview.get_buffer()
         self.window_main = window_main
         self.on_complete = on_complete
@@ -92,6 +93,18 @@ class AutocompleteWindow(object):
         # handler id for on_changed_after_hide
         self.changed_after_hide_handler = None
 
+    def on_sv_changed(self, new_sv):
+        if self.is_shown:
+            self.hide()
+        self.sourcebuffer.delete_mark(self.mark)
+        self.sourceview.disconnect(self.keypress_handler)
+        self.sourceview = new_sv
+        self.sourcebuffer = sb = new_sv.get_buffer()
+        self.mark = sb.create_mark(None, sb.get_start_iter(), True)
+        self.keypress_handler = self.sourceview.connect(
+            'key-press-event', self.on_keypress)
+        self.sourceview.handler_block(self.keypress_handler)
+    
     def connect(self, widget, *args):
         handler = widget.connect(*args)
         self.signals.append((widget, handler))
