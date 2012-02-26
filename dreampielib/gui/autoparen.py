@@ -71,8 +71,7 @@ class Autoparen(object):
 
     def on_sv_changed(self, new_sv):
         self.sourcebuffer.delete_mark(self.mark)
-        if self.insert_handler is not None:
-            self.disconnect()
+        self.disconnect()
         self.sourcebuffer = sb = new_sv.get_buffer()
         self.mark = sb.create_mark(None, sb.get_start_iter(), left_gravity=True)
     
@@ -146,6 +145,7 @@ class Autoparen(object):
         
         if not expects_str:
             self.cur_prefix = ''
+            self.disconnect()
             self.insert_handler = sb.connect('insert-text', self.on_insert_text)
             self.delete_handler = sb.connect('delete-range', self.on_delete_range)
 
@@ -154,8 +154,12 @@ class Autoparen(object):
         return True
     
     def disconnect(self):
-        self.sourcebuffer.disconnect(self.insert_handler)
-        self.sourcebuffer.disconnect(self.delete_handler)
+        if self.insert_handler:
+            self.sourcebuffer.disconnect(self.insert_handler)
+            self.insert_handler = None
+        if self.delete_handler:
+            self.sourcebuffer.disconnect(self.delete_handler)
+            self.delete_handler = None
     
     def on_insert_text(self, _textbuffer, iter, text, _length):
         sb = self.sourcebuffer
