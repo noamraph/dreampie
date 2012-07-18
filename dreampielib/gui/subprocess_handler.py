@@ -123,7 +123,7 @@ class SubprocessHandler(object):
         env = os.environ.copy()
         env['PYTHONUNBUFFERED'] = '1'
         env['PYTHONIOENCODING'] = 'UTF-8'
-        script = os.path.join(self._data_dir, 'dreampie', 'subp_main.py')
+        script = os.path.join(self._data_dir, 'subp_main.py')
         # The -S switch causes the subprocess to not automatically import
         # site.py. This is done so that the subprocess will be able to call
         # sys.setdefaultencoding('UTF-8') before importing site, and this is

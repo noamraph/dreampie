@@ -25,6 +25,7 @@ __all__ = ['build', 'dirs', 'files', 'lib_fns', 'lib_vers']
 
 import sys
 import os
+from os.path import join, abspath, dirname
 
 try:
     from lib2to3 import refactor
@@ -73,8 +74,10 @@ class SimpleLogger(object):
         print >> sys.stderr, s
 simple_logger = SimpleLogger()
 
-def build(src_dir, build_dir, log=simple_logger, force=False):
-    join = os.path.join
+def build(log=simple_logger, force=False):
+    dreampielib_dir = dirname(abspath(__file__))
+    src_dir = dirname(dreampielib_dir)
+    build_dir = join(dreampielib_dir, 'data')
     
     if py3_available:
         avail_fixes = refactor.get_fixers_from_package('lib2to3.fixes')

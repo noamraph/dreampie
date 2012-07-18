@@ -255,7 +255,7 @@ class Subprocess(object):
                     send_object(self.sock, None)
             else:
                 # aid in debug
-                print >> sys.stderr, "Unknown command: %s" % funcname
+                sys.stderr.write("Unknown command: %s\n" % funcname)
                 send_object(self.sock, None)
 
     def displayhook(self, res):

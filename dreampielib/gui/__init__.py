@@ -32,47 +32,27 @@ from logging import debug
 
 def find_data_dir():
     """
-    Find the 'share' directory in which to find files.
+    Find the data directory in which to find files.
     If we are inside the source directory, build subp zips.
     """
-    # Scenarios:
-    # * Running from the source directory. 'share' is near 'dreampielib'
-    # * Running from a distutils installed executable. The scheme is:
-    #   prefix/bin/executable
-    #   prefix/share/
-    # * Running from py2exe. 'share' is near the executable.
-    # * Running from /usr/bin/X11/dreampie on Debian. Just check '/usr/share'.
-    #
-    # So, if we find a 'share' near dreampielib, we build zips and return it.
-    # Otherwise, we search for 'share' near the executable. If it doesn't
-    # exist, we search for 'share' one level below the executable.
-    from os.path import join, dirname, isdir, pardir, abspath
+    # The data directory is normally located at dreampielib/data.
+    # When running under py2exe, it is in the same directory as the executable.
+    # Running inside the source directory is detected by the presence of a
+    # file called 'dreampie' in the same directory as 'dreampielib'.
+    from os.path import join, dirname, abspath, isfile
 
-    local_data_dir = join(dirname(__file__), pardir, pardir, 'share')
-    if isdir(join(local_data_dir, 'dreampie')):
+    if hasattr(sys, 'frozen'):
+        return abspath(join(dirname(sys.argv[0], 'data')))
+    dreampielib_dir = dirname(dirname(abspath(__file__)))
+    if isfile(join(dirname(dreampielib_dir), 'dreampie')):
         # We're in the source path. Build zips if needed, and return the right
         # dir.
         from ..subp_lib import build
-        src_dir = join(dirname(__file__), pardir, pardir)
-        build_dir = join(local_data_dir, 'dreampie')
-        build(src_dir, build_dir)
-        return abspath(local_data_dir)
-    else:
-        alternatives = [
-            join(dirname(sys.argv[0]), 'share'), # py2exe
-            join(dirname(sys.argv[0]), pardir, 'share'), # distutils
-            '/usr/share', # debian
-            '/usr/local/share/python', # MacOS X (see bug #826481)
-            ]
-        for dir in alternatives:
-            absdir = abspath(dir)
-            if isdir(join(absdir, 'dreampie')):
-                return absdir
-        else:
-            raise OSError("Could not find the 'share' directory")
+        build()
+    return join(dreampielib_dir, 'data')
 
 data_dir = find_data_dir()
-gladefile = path.join(data_dir, 'dreampie', 'dreampie.glade')
+gladefile = path.join(data_dir, 'dreampie.glade')
 
 if sys.platform == 'win32':
     from .load_pygtk import load_pygtk
@@ -157,7 +137,7 @@ class DreamPie(SimpleGladeApp):
         self.config = Config()
 
         self.window_main.set_icon_from_file(
-            path.join(data_dir, 'pixmaps', 'dreampie.png'))
+            path.join(data_dir, 'dreampie.png'))
 
         self.textbuffer = tb = self.textview.get_buffer()
         self.init_textbufferview()
@@ -404,7 +384,7 @@ class DreamPie(SimpleGladeApp):
         self.configure_sourceview(sv)
 
         lm = gtksourceview2.LanguageManager()
-        lm.set_search_path([path.join(data_dir, 'dreampie', 'language-specs')])
+        lm.set_search_path([path.join(data_dir, 'language-specs')])
         sb.set_language(lm.get_language('python'))
         scroll = gtk.ScrolledWindow()
         scroll.show()
@@ -1367,7 +1347,7 @@ class DreamPie(SimpleGladeApp):
         d.set_transient_for(self.window_main)
         d.set_version(__version__)
         d.set_logo(gdk.pixbuf_new_from_file(
-            path.join(data_dir, 'pixmaps', 'dreampie.png')))
+            path.join(data_dir, 'dreampie.png')))
         d.run()
         d.destroy()
     

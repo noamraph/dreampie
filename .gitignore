@@ -13,6 +13,6 @@ pygtk-2.5
 pygtk-2.6
 dreampie-*-setup.exe.asc
 .settings
-share/dreampie/subp-py2
-share/dreampie/subp-py3
+dreampielib/data/subp-py2
+dreampielib/data/subp-py3
 windist
