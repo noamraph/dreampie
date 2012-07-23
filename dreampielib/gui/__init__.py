@@ -617,7 +617,8 @@ class DreamPie(SimpleGladeApp):
                 end.forward_to_line_end()
             text = get_text(sb, start, end)
             lines = text.split('\n')
-            if not all(line.startswith('    ') for line in lines):
+            if not all(line.startswith('    ')
+                       for line in lines if line.strip() != ''):
                 beep()
             else:
                 newlines = [line[4:] for line in lines]
