@@ -176,16 +176,6 @@ def mask_sigint():
     else:
         pass
 
-@contextmanager
-def unmasked_sigint():
-    try:
-        unmask_sigint()
-        yield
-    finally:
-        mask_sigint()
-
-
-
 class Subprocess(object):
     def __init__(self, port):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -429,7 +419,8 @@ class Subprocess(object):
             
         self.last_res = None
         try:
-            with unmasked_sigint():
+            unmask_sigint()
+            try:
                 # Execute
                 for codeob in codeobs:
                     exec codeob in self.locs
@@ -450,6 +441,8 @@ class Subprocess(object):
                                         len(res_str)-MAX_RES_STR_LEN))
                 else:
                     res_str = None
+            finally:
+                mask_sigint()
         except:
             sys.stdout.flush()
             excinfo = sys.exc_info()
