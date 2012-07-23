@@ -53,8 +53,16 @@ class OPENFILENAME(ctypes.Structure):
                 ("dwReserved", c_int),
                 ("flagsEx", c_int))
 
+MB_YESNO = 0x4
+
+MB_ICONQUESTION = 0x20
 MB_ICONWARNING = 0x30
 MB_ICONINFORMATION = 0x40
+
+MB_DEFBUTTON2 = 0x100
+
+IDYES = 6
+IDNO = 7
 
 from comtypes.client import CreateObject
 ws = CreateObject("WScript.Shell")
@@ -97,26 +105,30 @@ def find_python_installations():
 
     For each version, return a tuple with these elements:
 
-    0   A string with major and minor version number e.g '2.4'.
-    1   A string of the absolute path to the installation directory.
+    0   A string with the interpreter name ('Python 2.7').
+    1   A string of the absolute path to the interpreter executable.
     """
-    python_path = r'software\python\pythoncore'
+    python_paths = [('Python', r'software\python\pythoncore', 'python.exe'),
+                    ('IronPython', r'software\IronPython', 'ipy.exe')]
     L = []
     for reg_hive in (_winreg.HKEY_LOCAL_MACHINE,
                      _winreg.HKEY_CURRENT_USER):
-        try:
-            python_key = _winreg.OpenKey(reg_hive, python_path)
-        except EnvironmentError:
-            continue
-        for version_name in get_subkey_names(python_key):
+        for name, path, exec_base in python_paths:
             try:
-                key = _winreg.OpenKey(python_key, version_name)
-                install_path = _winreg.QueryValue(key, 'installpath')
-                L.append((version_name, install_path))
-            except WindowsError:
-                # Probably a remain of a previous installation, and a key
-                # wasn't found.
-                pass
+                python_key = _winreg.OpenKey(reg_hive, path)
+            except EnvironmentError:
+                continue
+            for version_name in get_subkey_names(python_key):
+                try:
+                    key = _winreg.OpenKey(python_key, version_name)
+                    install_path = _winreg.QueryValue(key, 'installpath')
+                    pyexec = join(install_path, exec_base)
+                    if os.path.exists(pyexec):
+                        L.append(('%s %s' % (name, version_name), pyexec))
+                except WindowsError:
+                    # Probably a remain of a previous installation, and a key
+                    # wasn't found.
+                    pass
     return L
 
 def create_shortcut(dp_folder, ver_name, pyexec):
@@ -129,21 +141,41 @@ def create_shortcut(dp_folder, ver_name, pyexec):
     shortcut_name = "DreamPie (%s).lnk" % ver_name
     shortcut_fn = join(dp_folder, shortcut_name)
     shortcut = ws.CreateShortcut(shortcut_fn).QueryInterface(IWshRuntimeLibrary.IWshShortcut)
-    shortcut.TargetPath = abspath(join(dirname(sys.executable), "dreampie.exe"))
+    args = []
+    if hasattr(sys, 'frozen'):
+        shortcut.TargetPath = join(dirname(abspath(sys.executable)), "dreampie.exe")
+    else:
+        shortcut.TargetPath = sys.executable
+        args.append('"%s"' % join(dirname(abspath(sys.argv[0])), "dreampie.py"))
+    args.extend(['--hide-console-window', '"%s"' % pyexec])
     shortcut.WorkingDirectory = dirname(pyexec)
-    shortcut.Arguments = ' '.join(['--hide-console-window', '"%s"' % pyexec])
+    shortcut.Arguments = ' '.join(args)
+    shortcut.Save()
+
+def create_self_shortcut(dp_folder):
+    """
+    Create a shortcut for creating shortcuts...
+    """
+    shortcut_name = "Add Interpreter.lnk"
+    shortcut_fn = join(dp_folder, shortcut_name)
+    shortcut = ws.CreateShortcut(shortcut_fn).QueryInterface(IWshRuntimeLibrary.IWshShortcut)
+    args = []
+    if hasattr(sys, 'frozen'):
+        shortcut.TargetPath = abspath(sys.executable)
+    else:
+        shortcut.TargetPath = abspath(sys.executable)
+        args.append('"%s"' % abspath(sys.argv[0]))
+    args.append('"%s"' % dp_folder)
+    shortcut.Arguments = ' '.join(args)
     shortcut.Save()
 
 def create_shortcuts_auto(dp_folder):
     if not exists(dp_folder):
         os.mkdir(dp_folder)
-    py_installs = [(ver_name, path)
-                   for ver_name, path in find_python_installations()
-                   if ver_name >= '2.5'
-                      and exists(join(path, 'python.exe'))]
-    for version_name, install_path in py_installs:
-        pyexec = join(install_path, "python.exe")
-        create_shortcut(dp_folder, 'Python %s' % version_name, pyexec)
+    py_installs = find_python_installations()
+    for version_name, pyexec in py_installs:
+        create_shortcut(dp_folder, version_name, pyexec)
+    return py_installs
 
 def create_shortcut_ask(dp_folder):
     pyexec = select_file_dialog()
@@ -167,21 +199,41 @@ def create_shortcut_ask(dp_folder):
 
 
 def main():
-    usage = "%prog [--auto] shortcut-dir"
+    usage = "%prog [--auto] [shortcut-dir]"
     description = "Create shortcuts for DreamPie"
     parser = OptionParser(usage=usage, description=description)
     parser.add_option("--auto", action="store_true", dest="auto",
-                      help="Automatically create shortcuts for Python "
-                      "installations found in registry")
+                      help="Don't ask the user, just automatically create "
+                      "shortcuts for Python installations found in registry")
 
     opts, args = parser.parse_args()
-    if len(args) != 1:
-        parser.error("Must get exactly one argument")
-    dp_folder, = args
-    if opts.auto:
-        create_shortcuts_auto(dp_folder)
+    if len(args) == 0:
+        # Run by user - create a user Programs folder, and add a self-shortcut
+        # to it.
+        dp_folder = join(ws.SpecialFolders('Programs'), 'DreamPie')
+        create_self_shortcut(dp_folder)
+    elif len(args) == 1:
+        dp_folder, = args
     else:
-        create_shortcut_ask(dp_folder)
+        parser.error("Must get at most one argument")
+
+    py_installs = create_shortcuts_auto(dp_folder)
+    if not opts.auto:
+        if len(py_installs) == 0:
+            msg_start = u'No Python interpreters found in registry. '
+        else:
+            msg_start = (u'I found %d Python interpreter(s) in registry (%s), '
+                         'and updated their shortcuts. ' % (
+                len(py_installs),
+                ', '.join(ver_name for ver_name, _path in py_installs)))
+        msg = (msg_start + u'Do you want to manually specify another Python '
+               'interpreter?')
+        
+        answer = ctypes.windll.user32.MessageBoxW(
+            None, msg, u"DreamPie Installation", MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2)
+        
+        if answer == IDYES:
+            create_shortcut_ask(dp_folder)
 
 if __name__ == '__main__':
     main()

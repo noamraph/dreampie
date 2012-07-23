@@ -8,9 +8,7 @@ debian/*
 dist
 MANIFEST
 dreampie-*-setup.exe
-gtk-runtime
-pygtk-2.5
-pygtk-2.6
+gtk-2.0
 dreampie-*-setup.exe.asc
 .settings
 dreampielib/data/subp-py2

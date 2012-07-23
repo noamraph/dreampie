@@ -68,8 +68,7 @@ Section -Main SEC0000
     SetOutPath $INSTDIR
     SetOverwrite on
     File /r windist\*
-    File /r gtk-runtime
-    File /r pygtk-2.6
+    File /r gtk-2.0
     # Create shortcuts
     ExecWait '"$INSTDIR\create-shortcuts.exe" "--auto" "$SMPROGRAMS\$StartMenuGroup"'
     SetOutPath $SMPROGRAMS\$StartMenuGroup

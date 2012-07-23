@@ -76,10 +76,10 @@ if py2exe is not None:
         options={'py2exe':
                  {'ignores':['_scproxy', 'glib', 'gobject', 'gtk',
                              'gtk.gdk', 'gtk.glade', 'gtksourceview2',
-                             'pango', 'pygtk'],
+                             'pango', 'pygtk', 'runtime', 'comtypes.gen'],
                   'excludes':['_ssl', 'doctest', 'pdb', 'unittest', 'difflib',
                               'unicodedata', 'bz2', 'zipfile', 'lib2to3'],
-                  'includes':['fnmatch', 'glob'],
+                  'includes':['fnmatch', 'glob', 'ctypes.util'],
                  }},
     ))
 

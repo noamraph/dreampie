@@ -42,7 +42,7 @@ def find_data_dir():
     from os.path import join, dirname, abspath, isfile
 
     if hasattr(sys, 'frozen'):
-        return abspath(join(dirname(sys.argv[0], 'data')))
+        return abspath(join(dirname(sys.executable), 'data'))
     dreampielib_dir = dirname(dirname(abspath(__file__)))
     if isfile(join(dirname(dreampielib_dir), 'dreampie')):
         # We're in the source path. Build zips if needed, and return the right
@@ -54,9 +54,21 @@ def find_data_dir():
 data_dir = find_data_dir()
 gladefile = path.join(data_dir, 'dreampie.glade')
 
+def load_pygtk():
+    """On win32, load PyGTK from subdirectory, if available."""
+    from os.path import join, dirname, abspath
+    
+    if hasattr(sys, 'frozen'):
+        pygtk_dir = join(dirname(abspath(sys.executable)), 'gtk-2.0')
+    else:
+        pygtk_dir = join(dirname(dirname(dirname(abspath(__file__)))), 'gtk-2.0')
+    
+    if os.path.isdir(pygtk_dir):
+        sys.path.insert(0, pygtk_dir)
+        import runtime
+
 if sys.platform == 'win32':
-    from .load_pygtk import load_pygtk
-    load_pygtk(data_dir)
+    load_pygtk()
 
 import pygtk
 pygtk.require('2.0')
