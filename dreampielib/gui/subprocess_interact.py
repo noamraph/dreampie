@@ -11,9 +11,9 @@ import sys
 PIPE = subprocess.PIPE
 
 if subprocess.mswindows:
-    from msvcrt import get_osfhandle
+    from msvcrt import get_osfhandle #@UnresolvedImport
     from ctypes import byref, c_ulong, windll
-    PeekNamedPipe = windll.kernel32.PeekNamedPipe
+    PeekNamedPipe = windll.kernel32.PeekNamedPipe #@UndefinedVariable
 else:
     import select
     import fcntl

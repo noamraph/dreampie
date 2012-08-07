@@ -65,7 +65,7 @@ def load_pygtk():
     
     if os.path.isdir(pygtk_dir):
         sys.path.insert(0, pygtk_dir)
-        import runtime
+        import runtime #@UnresolvedImport
 
 if sys.platform == 'win32':
     load_pygtk()

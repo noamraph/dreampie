@@ -55,9 +55,9 @@ if ast is None:
 import __future__
 
 if sys.platform == 'win32':
-    from msvcrt import get_osfhandle
+    from msvcrt import get_osfhandle #@UnresolvedImport
     from ctypes import byref, c_ulong, windll
-    PeekNamedPipe = windll.kernel32.PeekNamedPipe
+    PeekNamedPipe = windll.kernel32.PeekNamedPipe #@UndefinedVariable
 
 from .trunc_traceback import trunc_traceback
 from .find_modules import find_modules
@@ -164,7 +164,7 @@ def unmask_sigint():
     if sys.platform == 'linux2':
         signal.signal(signal.SIGINT, signal.default_int_handler)
     elif sys.platform == 'win32':
-        windll.kernel32.SetConsoleCtrlHandler(None, False)
+        windll.kernel32.SetConsoleCtrlHandler(None, False) #@UndefinedVariable
     else:
         pass
 
@@ -172,7 +172,7 @@ def mask_sigint():
     if sys.platform == 'linux2':
         signal.signal(signal.SIGINT, signal.SIG_IGN)
     elif sys.platform == 'win32':
-        windll.kernel32.SetConsoleCtrlHandler(None, True)
+        windll.kernel32.SetConsoleCtrlHandler(None, True) #@UndefinedVariable
     else:
         pass
 
@@ -624,7 +624,7 @@ class Subprocess(object):
             if not py3k:
                 args = inspect.getargspec(obj)[0]
             else:
-                args = inspect.getfullargspec(obj).args
+                args = inspect.getfullargspec(obj).args #@UndefinedVariable
         except TypeError:
             return None
         # There may be nested args, so we filter them

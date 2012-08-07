@@ -19,9 +19,9 @@ __all__ = ['beep', 'get_text']
 
 import sys
 if sys.platform == 'win32':
-    from winsound import MessageBeep as beep
+    from winsound import MessageBeep as beep #@UnresolvedImport @UnusedImport
 else:
-    from gtk.gdk import beep
+    from gtk.gdk import beep #@UnusedImport @Reimport
 
 def get_text(textbuffer, *args):
     # Unfortunately, PyGTK returns utf-8 encoded byte strings instead of unicode

@@ -28,8 +28,8 @@
 # doing anything else.
 import sys
 if sys.version_info[0] < 3:
-    sys.setdefaultencoding('utf-8')
-import site
+    sys.setdefaultencoding('utf-8') #@UndefinedVariable
+import site #@UnusedImport
 
 from os.path import abspath, join, dirname
 

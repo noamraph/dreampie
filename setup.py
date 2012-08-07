@@ -18,7 +18,7 @@ from dreampielib import __version__, subp_lib
 subp_lib.build()
 
 if 'py2exe' in sys.argv:
-    import py2exe
+    import py2exe #@UnresolvedImport
 else:
     py2exe = None
 
