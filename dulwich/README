@@ -1,0 +1,23 @@
+This is a part of Dulwich. Dulwich is a pure-Python implementation of
+the Git file formats and protocols.
+It is used to test inside Dreampie whether a "git pull" will bring
+something new. This is only done when running from the git repository.
+
+This directory was created by:
+cd /tmp
+wget http://www.samba.org/~jelmer/dulwich/dulwich-0.8.5.tar.gz
+tar xvzf dulwich-0.8.5.tar.gz
+cd dulwich-0.8.5
+cp -p COPYING AUTHORS ~/dreampie/dulwich/
+cd dulwich
+cp -p __init__.py _compat.py client.py diff_tree.py errors.py file.py log_utils.py lru_cache.py object_store.py objects.py pack.py protocol.py repo.py server.py ~/dreampie/dulwich/
+
+Add "#@PydevCodeAnalysisIgnore" to the top of those files.
+
+The list of files was determined by running:
+cd /tmp/dulwich-0.8.5
+rm dulwich/*.pyc
+python
+import dulwich.repo
+import os
+print ' '.join([x[:-1] for x in sorted(os.listdir('dulwich')) if x.endswith('.pyc')])
