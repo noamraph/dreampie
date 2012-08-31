@@ -1,7 +1,6 @@
 *.pyc
 *.class
 build
-misc/*
 debian/*
 .project
 .pydevproject

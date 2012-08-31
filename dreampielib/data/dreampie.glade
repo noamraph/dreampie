@@ -7,7 +7,7 @@
     <property name="border_width">5</property>
     <property name="type_hint">normal</property>
     <property name="program_name">DreamPie</property>
-    <property name="copyright" translatable="yes">Copyright © 2010 Noam Yorav-Raphael</property>
+    <property name="copyright" translatable="yes">Copyright © 2012 Noam Yorav-Raphael</property>
     <property name="comments" translatable="yes">The Python shell you've always dreamed about!</property>
     <property name="license" translatable="yes">DreamPie is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
 
@@ -80,7 +80,7 @@ You should have received a copy of the GNU General Public License along with Dre
                 <property name="receives_default">True</property>
                 <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
-                <signal name="clicked" handler="on_ok_btn_clicked" />
+                <signal name="clicked" handler="on_ok_btn_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
@@ -100,7 +100,7 @@ You should have received a copy of the GNU General Public License along with Dre
           <widget class="GtkNotebook" id="notebook">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <signal name="switch_page" handler="on_notebook_switch_page" />
+            <signal name="switch_page" handler="on_notebook_switch_page"/>
             <child>
               <widget class="GtkAlignment" id="alignment1">
                 <property name="visible">True</property>
@@ -175,8 +175,8 @@ You should have received a copy of the GNU General Public License along with Dre
                                 <property name="can_focus">True</property>
                                 <property name="headers_visible">False</property>
                                 <property name="fixed_height_mode">True</property>
-                                <signal name="cursor_changed" handler="on_themes_trv_cursor_changed" />
-                                <signal name="key_press_event" handler="on_themes_trv_key_press_event" />
+                                <signal name="cursor_changed" handler="on_themes_trv_cursor_changed"/>
+                                <signal name="key_press_event" handler="on_themes_trv_key_press_event"/>
                               </widget>
                             </child>
                           </widget>
@@ -198,7 +198,7 @@ You should have received a copy of the GNU General Public License along with Dre
                                 <property name="receives_default">True</property>
                                 <property name="tooltip" translatable="yes">Copy Theme</property>
                                 <property name="use_action_appearance">False</property>
-                                <signal name="clicked" handler="on_copy_theme_btn_clicked" />
+                                <signal name="clicked" handler="on_copy_theme_btn_clicked"/>
                                 <child>
                                   <widget class="GtkImage" id="image1">
                                     <property name="visible">True</property>
@@ -220,7 +220,7 @@ You should have received a copy of the GNU General Public License along with Dre
                                 <property name="receives_default">True</property>
                                 <property name="tooltip" translatable="yes">Delete Theme</property>
                                 <property name="use_action_appearance">False</property>
-                                <signal name="clicked" handler="on_del_theme_btn_clicked" />
+                                <signal name="clicked" handler="on_del_theme_btn_clicked"/>
                                 <child>
                                   <widget class="GtkImage" id="image2">
                                     <property name="visible">True</property>
@@ -293,7 +293,7 @@ You should have received a copy of the GNU General Public License along with Dre
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="headers_visible">False</property>
-                                    <signal name="cursor_changed" handler="on_elements_trv_cursor_changed" />
+                                    <signal name="cursor_changed" handler="on_elements_trv_cursor_changed"/>
                                   </widget>
                                 </child>
                               </widget>
@@ -315,8 +315,8 @@ You should have received a copy of the GNU General Public License along with Dre
                                     <property name="can_focus">True</property>
                                     <property name="editable">False</property>
                                     <property name="cursor_visible">False</property>
-                                    <signal name="button_press_event" handler="on_textview_button_press_event" />
-                                    <signal name="realize" handler="on_textview_realize" />
+                                    <signal name="button_press_event" handler="on_textview_button_press_event"/>
+                                    <signal name="realize" handler="on_textview_realize"/>
                                   </widget>
                                 </child>
                               </widget>
@@ -396,7 +396,7 @@ You should have received a copy of the GNU General Public License along with Dre
                                         <property name="use_action_appearance">False</property>
                                         <property name="active">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_fg_special_rad_toggled" />
+                                        <signal name="toggled" handler="on_fg_special_rad_toggled"/>
                                       </widget>
                                       <packing>
                                         <property name="expand">True</property>
@@ -416,7 +416,7 @@ You should have received a copy of the GNU General Public License along with Dre
                                             <property name="receives_default">True</property>
                                             <property name="use_action_appearance">False</property>
                                             <property name="color">#000000000000</property>
-                                            <signal name="color_set" handler="on_fg_cbut_color_set" />
+                                            <signal name="color_set" handler="on_fg_cbut_color_set"/>
                                           </widget>
                                         </child>
                                       </widget>
@@ -488,7 +488,7 @@ You should have received a copy of the GNU General Public License along with Dre
                                         <property name="use_action_appearance">False</property>
                                         <property name="active">True</property>
                                         <property name="draw_indicator">True</property>
-                                        <signal name="toggled" handler="on_bg_special_rad_toggled" />
+                                        <signal name="toggled" handler="on_bg_special_rad_toggled"/>
                                       </widget>
                                       <packing>
                                         <property name="expand">True</property>
@@ -508,7 +508,7 @@ You should have received a copy of the GNU General Public License along with Dre
                                             <property name="receives_default">True</property>
                                             <property name="use_action_appearance">False</property>
                                             <property name="color">#000000000000</property>
-                                            <signal name="color_set" handler="on_bg_cbut_color_set" />
+                                            <signal name="color_set" handler="on_bg_cbut_color_set"/>
                                           </widget>
                                         </child>
                                       </widget>
@@ -602,7 +602,7 @@ You should have received a copy of the GNU General Public License along with Dre
                         <property name="receives_default">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="toggled" handler="on_reshist_chk_toggled" />
+                        <signal name="toggled" handler="on_reshist_chk_toggled"/>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
@@ -823,7 +823,7 @@ You should have received a copy of the GNU General Public License along with Dre
                         <property name="receives_default">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="toggled" handler="on_autofold_chk_toggled" />
+                        <signal name="toggled" handler="on_autofold_chk_toggled"/>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
@@ -934,7 +934,7 @@ Tip: If you want a non-gui viewer, use something like "xterm -e less"</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="use_action_appearance">False</property>
-                            <signal name="clicked" handler="on_viewer_button_clicked" />
+                            <signal name="clicked" handler="on_viewer_button_clicked"/>
                           </widget>
                           <packing>
                             <property name="expand">False</property>
@@ -957,7 +957,7 @@ Tip: If you want a non-gui viewer, use something like "xterm -e less"</property>
                         <property name="receives_default">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="draw_indicator">True</property>
-                        <signal name="toggled" handler="on_autoparen_chk_toggled" />
+                        <signal name="toggled" handler="on_autoparen_chk_toggled"/>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
@@ -1341,7 +1341,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
         <property name="use_action_appearance">False</property>
         <property name="label" translatable="yes">Fold/Unfold Output/Code Section</property>
         <property name="use_underline">True</property>
-        <signal name="activate" handler="on_section_menu_activate" />
+        <signal name="activate" handler="on_section_menu_activate"/>
       </widget>
     </child>
     <child>
@@ -1351,7 +1351,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
         <property name="use_action_appearance">False</property>
         <property name="label" translatable="yes">Copy Output/Code Section</property>
         <property name="use_underline">True</property>
-        <signal name="activate" handler="on_section_menu_activate" />
+        <signal name="activate" handler="on_section_menu_activate"/>
       </widget>
     </child>
     <child>
@@ -1361,7 +1361,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
         <property name="use_action_appearance">False</property>
         <property name="label" translatable="yes">View Output/Code Section</property>
         <property name="use_underline">True</property>
-        <signal name="activate" handler="on_section_menu_activate" />
+        <signal name="activate" handler="on_section_menu_activate"/>
       </widget>
     </child>
     <child>
@@ -1371,7 +1371,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
         <property name="use_action_appearance">False</property>
         <property name="label" translatable="yes">Save Output/Code Section</property>
         <property name="use_underline">True</property>
-        <signal name="activate" handler="on_section_menu_activate" />
+        <signal name="activate" handler="on_section_menu_activate"/>
       </widget>
     </child>
   </widget>
@@ -1385,7 +1385,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
         <property name="can_focus">False</property>
         <property name="use_action_appearance">False</property>
         <property name="use_stock">False</property>
-        <signal name="activate" handler="on_copy" />
+        <signal name="activate" handler="on_copy"/>
         <child internal-child="image">
           <widget class="GtkImage" id="image1">
             <property name="visible">True</property>
@@ -1402,14 +1402,14 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
         <property name="use_action_appearance">False</property>
         <property name="label" translatable="yes">Copy Code Only</property>
         <property name="use_underline">True</property>
-        <signal name="activate" handler="on_copy_commands_only" />
+        <signal name="activate" handler="on_copy_commands_only"/>
       </widget>
     </child>
   </widget>
   <widget class="GtkWindow" id="window_main">
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">DreamPie</property>
-    <signal name="delete_event" handler="on_close" />
+    <signal name="delete_event" handler="on_close"/>
     <child>
       <widget class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
@@ -1438,7 +1438,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">False</property>
-                        <signal name="activate" handler="on_load_history" />
+                        <signal name="activate" handler="on_load_history"/>
                         <accelerator key="o" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image3">
@@ -1458,7 +1458,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">False</property>
-                        <signal name="activate" handler="on_save_history" />
+                        <signal name="activate" handler="on_save_history"/>
                         <accelerator key="s" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image1">
@@ -1478,7 +1478,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">False</property>
-                        <signal name="activate" handler="on_save_history_as" />
+                        <signal name="activate" handler="on_save_history_as"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image2">
                             <property name="visible">True</property>
@@ -1497,7 +1497,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">False</property>
-                        <signal name="activate" handler="on_discard_history" />
+                        <signal name="activate" handler="on_discard_history"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image4">
                             <property name="visible">True</property>
@@ -1521,7 +1521,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">History Up</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_history_up" />
+                        <signal name="activate" handler="on_history_up"/>
                         <accelerator key="Up" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -1533,7 +1533,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">History Down</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_history_down" />
+                        <signal name="activate" handler="on_history_down"/>
                         <accelerator key="Down" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -1550,7 +1550,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Fold Last Unfolded Output</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_fold_last" />
+                        <signal name="activate" handler="on_fold_last"/>
                         <accelerator key="minus" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -1561,9 +1561,9 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Unfold Last Folded Output</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_unfold_last" />
-                        <accelerator key="plus" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <signal name="activate" handler="on_unfold_last"/>
                         <accelerator key="equal" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <accelerator key="plus" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -1578,7 +1578,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_0 recent0</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_menuitem_recent" />
+                        <signal name="activate" handler="on_menuitem_recent"/>
                       </widget>
                     </child>
                     <child>
@@ -1587,7 +1587,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_1 recent1</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_menuitem_recent" />
+                        <signal name="activate" handler="on_menuitem_recent"/>
                       </widget>
                     </child>
                     <child>
@@ -1596,7 +1596,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_2 recent2</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_menuitem_recent" />
+                        <signal name="activate" handler="on_menuitem_recent"/>
                       </widget>
                     </child>
                     <child>
@@ -1605,7 +1605,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_3 recent3</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_menuitem_recent" />
+                        <signal name="activate" handler="on_menuitem_recent"/>
                       </widget>
                     </child>
                     <child>
@@ -1621,7 +1621,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_quit" />
+                        <signal name="activate" handler="on_quit"/>
                       </widget>
                     </child>
                   </widget>
@@ -1648,7 +1648,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_cut" />
+                        <signal name="activate" handler="on_cut"/>
                       </widget>
                     </child>
                     <child>
@@ -1660,7 +1660,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_copy" />
+                        <signal name="activate" handler="on_copy"/>
                       </widget>
                     </child>
                     <child>
@@ -1672,7 +1672,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Copy Code Only</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_copy_commands_only" />
+                        <signal name="activate" handler="on_copy_commands_only"/>
                         <accelerator key="c" signal="activate" modifiers="GDK_SHIFT_MASK | GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -1684,7 +1684,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_paste" />
+                        <signal name="activate" handler="on_paste"/>
                       </widget>
                     </child>
                     <child>
@@ -1700,7 +1700,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">New Tab</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_new_tab" />
+                        <signal name="activate" handler="on_new_tab"/>
                         <accelerator key="t" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -1711,7 +1711,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Close Tab</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_close_tab" />
+                        <signal name="activate" handler="on_close_tab"/>
                         <accelerator key="w" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -1723,7 +1723,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Reopen Closed Tab</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_reopen_tab" />
+                        <signal name="activate" handler="on_reopen_tab"/>
                         <accelerator key="t" signal="activate" modifiers="GDK_SHIFT_MASK | GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -1734,7 +1734,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Previous Tab</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_prev_tab" />
+                        <signal name="activate" handler="on_prev_tab"/>
                         <accelerator key="Page_Up" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -1745,7 +1745,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Next Tab</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_next_tab" />
+                        <signal name="activate" handler="on_next_tab"/>
                         <accelerator key="Page_Down" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -1763,7 +1763,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Show Completions</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_show_completions" />
+                        <signal name="activate" handler="on_show_completions"/>
                         <accelerator key="space" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -1774,7 +1774,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Show Call Tip</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_show_calltip" />
+                        <signal name="activate" handler="on_show_calltip"/>
                         <accelerator key="backslash" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -1792,7 +1792,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_preferences" />
+                        <signal name="activate" handler="on_preferences"/>
                       </widget>
                     </child>
                   </widget>
@@ -1818,7 +1818,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Execute Code</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_execute_command" />
+                        <signal name="activate" handler="on_execute_command"/>
                         <accelerator key="Return" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -1829,7 +1829,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Interrupt Subprocess</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_interrupt" />
+                        <signal name="activate" handler="on_interrupt"/>
                         <accelerator key="C" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -1841,7 +1841,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Restart Subprocess</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_restart_subprocess" />
+                        <signal name="activate" handler="on_restart_subprocess"/>
                         <accelerator key="F6" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -1853,7 +1853,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Clear Result History</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_clear_reshist" />
+                        <signal name="activate" handler="on_clear_reshist"/>
                       </widget>
                     </child>
                   </widget>
@@ -1878,7 +1878,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Getting Started...</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_getting_started" />
+                        <signal name="activate" handler="on_getting_started"/>
                       </widget>
                     </child>
                     <child>
@@ -1888,7 +1888,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Report a Problem...</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_report_bug" />
+                        <signal name="activate" handler="on_report_bug"/>
                       </widget>
                     </child>
                     <child>
@@ -1898,7 +1898,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">DreamPie Homepage...</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_homepage" />
+                        <signal name="activate" handler="on_homepage"/>
                       </widget>
                     </child>
                     <child>
@@ -1907,7 +1907,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Get New Version</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_get_update_menu_activate" />
+                        <signal name="activate" handler="on_get_update_menu_activate"/>
                       </widget>
                     </child>
                     <child>
@@ -1918,7 +1918,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_action_appearance">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_about" />
+                        <signal name="activate" handler="on_about"/>
                       </widget>
                     </child>
                   </widget>
@@ -1948,7 +1948,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                     <property name="can_focus">True</property>
                     <property name="editable">False</property>
                     <property name="wrap_mode">char</property>
-                    <signal name="button_press_event" handler="on_textview_button_press_event" />
+                    <signal name="button_press_event" handler="on_textview_button_press_event"/>
                   </widget>
                 </child>
               </widget>
@@ -1965,7 +1965,7 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                 <property name="show_tabs">False</property>
                 <property name="show_border">False</property>
                 <property name="scrollable">True</property>
-                <signal name="switch_page" handler="on_notebook_switch_page" />
+                <signal name="switch_page" handler="on_notebook_switch_page"/>
                 <child>
                   <widget class="GtkLabel" id="label4">
                     <property name="visible">True</property>
