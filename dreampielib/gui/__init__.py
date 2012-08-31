@@ -73,6 +73,7 @@ if sys.platform == 'win32':
 import pygtk
 pygtk.require('2.0')
 import gobject
+gobject.threads_init() #@UndefinedVariable
 import gtk
 from gtk import gdk, glade
 import pango
@@ -111,6 +112,7 @@ from .file_dialogs import save_dialog
 from .tags import (OUTPUT, STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND,
                    COMMAND_DEFS, COMMAND_SEP, MESSAGE, RESULT_IND, RESULT)
 from . import tags
+from .update_check import update_check
 
 INDENT_WIDTH = 4
 
@@ -262,6 +264,8 @@ class DreamPie(SimpleGladeApp):
             self.show_getting_started_dialog()
             self.config.set_bool('show-getting-started', False)
             self.config.save()
+        
+        update_check(self.on_update_available)
         
     def on_sv_changed(self, new_sv):
         self.sourceview.disconnect(self.sourceview_keypress_handler)
@@ -1363,6 +1367,20 @@ class DreamPie(SimpleGladeApp):
             path.join(data_dir, 'dreampie.png')))
         d.run()
         d.destroy()
+    
+    def on_update_available(self, is_git, latest_name, latest_time):
+        date = time.strftime('%Y/%m/%d', time.localtime(latest_time))
+        if is_git:
+            msg = _("A new git commit is available, from %s. "
+                    "Run 'git pull' to update." % date)
+        else:
+            self.get_update_menu.show()
+            msg = _("A new DreamPie version, %s, is available. "
+                    "Click Help->Get New Version to update." % latest_name)
+        self.status_bar.set_status(msg)
+    
+    def on_get_update_menu_activate(self, _widget):
+        webbrowser.open('http://www.dreampie.org/download.html')
     
     def on_report_bug(self, _widget):
         webbrowser.open('https://bugs.launchpad.net/dreampie/+filebug')
