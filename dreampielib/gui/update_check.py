@@ -28,6 +28,7 @@ except ImportError:
 
 from .. import release_timestamp
 from .git import get_commit_details
+from . import bug_report
 
 def log(s):
     pass
@@ -58,6 +59,7 @@ def update_check_in_thread(is_git, cur_time, on_update_available):
         latest_name = d['latest_release_name']
         latest_time = d['latest_release_timestamp']
     
+    bug_report.set_update_info(is_git, latest_name, latest_time, cur_time)
     if latest_time > cur_time:
         # Call in main thread
         idle_add(on_update_available, is_git, latest_name, latest_time)

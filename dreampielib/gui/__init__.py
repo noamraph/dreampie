@@ -79,6 +79,7 @@ from gtk import gdk, glade
 import pango
 import gtksourceview2
 from . import gtkexcepthook
+gtkexcepthook.install(gladefile)
 
 try:
     from glib import timeout_add, idle_add
@@ -113,6 +114,7 @@ from .tags import (OUTPUT, STDIN, STDOUT, STDERR, EXCEPTION, PROMPT, COMMAND,
                    COMMAND_DEFS, COMMAND_SEP, MESSAGE, RESULT_IND, RESULT)
 from . import tags
 from .update_check import update_check
+from . import bug_report
 
 INDENT_WIDTH = 4
 
@@ -259,6 +261,7 @@ class DreamPie(SimpleGladeApp):
         self.show_welcome()
         self.configure_subp()
         self.run_init_code(runfile)
+        bug_report.set_subp_info(pyexec, self.subp_welcome)
 
         if self.config.get_bool('show-getting-started'):
             self.show_getting_started_dialog()
@@ -1383,7 +1386,7 @@ class DreamPie(SimpleGladeApp):
         webbrowser.open('http://www.dreampie.org/download.html')
     
     def on_report_bug(self, _widget):
-        webbrowser.open('https://bugs.launchpad.net/dreampie/+filebug')
+        bug_report.bug_report(self.window_main, gladefile, None)
     
     def on_homepage(self, _widget):
         webbrowser.open('http://dreampie.sourceforge.net/')

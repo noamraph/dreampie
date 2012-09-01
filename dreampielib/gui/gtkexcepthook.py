@@ -13,11 +13,10 @@ from cStringIO import StringIO
 from gettext import gettext as _
 #from smtplib import SMTP
 
-import pygtk
-pygtk.require ('2.0')
-import gtk, pango
+import gtk
+import pango
 
-feedback = None
+from .bug_report import bug_report
 
 #def analyse (exctyp, value, tb):
 #    trace = StringIO()
@@ -112,21 +111,17 @@ def _info (exctyp, value, tb):
         dialog.set_has_separator (False)
 
     primary = _("<big><b>A programming error has been detected.</b></big>")
-    secondary = _("Please report it by copying the information that appears "
-                  "when you click the \"Details\" button and submitting a bug "
-                  "report by choosing Help->Report a Problem. Thanks!")
+    secondary = _("Please report it by clicking the 'Report' button. Thanks!")
 
     dialog.set_markup (primary)
     dialog.format_secondary_text (secondary)
 
-    if feedback is not None:
-        dialog.add_button (_("Report..."), 3)
+    dialog.add_button (_("Report..."), 3)
         
     dialog.add_button (_("Details..."), 2)
     if pdb:
         dialog.add_button (_("Debug..."), 4)
     dialog.add_button (gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE)
-    dialog.add_button (gtk.STOCK_QUIT, 1)
 
     while True:
         resp = dialog.run()
@@ -134,22 +129,10 @@ def _info (exctyp, value, tb):
             pdb.post_mortem(tb)
             
         if resp == 3:
-#            if trace == None:
-#                trace = analyse (exctyp, value, tb)
-#
-#            # TODO: prettyprint, deal with problems in sending feedback, &tc
-#            try:
-#                server = smtphost
-#            except NameError:
-#                server = 'localhost'
-#
-#            message = 'From: buggy_application"\nTo: bad_programmer\nSubject: Exception feedback\n\n%s' % trace.getvalue()
-#
-#            s = SMTP()
-#            s.connect (server)
-#            s.sendmail (feedback, (feedback,), message)
-#            s.quit()
-            break
+            if trace == None:
+                trace = analyse (exctyp, value, tb)
+            
+            bug_report(dialog, _gladefile, trace)
 
         elif resp == 2:
             if trace == None:
@@ -181,15 +164,16 @@ def _info (exctyp, value, tb):
             details.run()
             details.destroy()
 
-        elif resp == 1 and gtk.main_level() > 0:
-            sys.exit(1)
         else:
             break
 
     dialog.destroy()
 
-orig_excepthook = sys.excepthook
-sys.excepthook = _info
+def install(gladefile):
+    global orig_excepthook, _gladefile
+    _gladefile = gladefile
+    orig_excepthook = sys.excepthook
+    sys.excepthook = _info
 
 if __name__ == '__main__':
     class X (object):
@@ -198,8 +182,6 @@ if __name__ == '__main__':
     x.y = 'Test'
     x.z = x
     w = ' e'
-    #feedback = 'developer@bigcorp.comp'
-    #smtphost = 'mx.bigcorp.comp'
     1, x.z.y, w
     raise Exception (x.z.y + w)
 

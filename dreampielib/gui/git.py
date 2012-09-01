@@ -33,7 +33,7 @@ def get_commit_details():
     except ImportError:
         return None, None
     
-    repo = Repo('/home/noam/sand/gdreampie/.git')
+    repo = Repo(git_dir)
     commit_id = repo.refs['HEAD']
     commit = repo.commit(commit_id)
     return commit_id, commit.commit_time
