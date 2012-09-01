@@ -165,13 +165,12 @@ def create_self_shortcut(dp_folder):
     else:
         shortcut.TargetPath = abspath(sys.executable)
         args.append('"%s"' % abspath(sys.argv[0]))
+    args.append('--no-self-shortcut')
     args.append('"%s"' % dp_folder)
     shortcut.Arguments = ' '.join(args)
     shortcut.Save()
 
 def create_shortcuts_auto(dp_folder):
-    if not exists(dp_folder):
-        os.mkdir(dp_folder)
     py_installs = find_python_installations()
     for version_name, pyexec in py_installs:
         create_shortcut(dp_folder, version_name, pyexec)
@@ -202,20 +201,24 @@ def main():
     usage = "%prog [--auto] [shortcut-dir]"
     description = "Create shortcuts for DreamPie"
     parser = OptionParser(usage=usage, description=description)
+    parser.add_option("--no-self-shortcut", action="store_true",
+                      dest="no_self_shortcut",
+                      help="Don't create a shortcut to this script.")
     parser.add_option("--auto", action="store_true", dest="auto",
                       help="Don't ask the user, just automatically create "
                       "shortcuts for Python installations found in registry")
 
     opts, args = parser.parse_args()
     if len(args) == 0:
-        # Run by user - create a user Programs folder, and add a self-shortcut
-        # to it.
         dp_folder = join(ws.SpecialFolders('Programs'), 'DreamPie')
-        create_self_shortcut(dp_folder)
     elif len(args) == 1:
         dp_folder, = args
     else:
         parser.error("Must get at most one argument")
+    if not exists(dp_folder):
+        os.mkdir(dp_folder)
+    if not opts.no_self_shortcut:
+        create_self_shortcut(dp_folder)
 
     py_installs = create_shortcuts_auto(dp_folder)
     if not opts.auto:

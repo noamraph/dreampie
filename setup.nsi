@@ -70,10 +70,10 @@ Section -Main SEC0000
     File /r windist\*
     File /r gtk-2.0
     # Create shortcuts
-    ExecWait '"$INSTDIR\create-shortcuts.exe" "--auto" "$SMPROGRAMS\$StartMenuGroup"'
+    ExecWait '"$INSTDIR\create-shortcuts.exe" "--auto" "--no-self-shortcut" "$SMPROGRAMS\$StartMenuGroup"'
     SetOutPath $SMPROGRAMS\$StartMenuGroup
     CreateShortcut "$SMPROGRAMS\$StartMenuGroup\Add Interpreter.lnk" "$INSTDIR\create-shortcuts.exe" \
-      '"$SMPROGRAMS\$StartMenuGroup"' "" "" "" "" \ 
+      '--no-self-shortcut "$SMPROGRAMS\$StartMenuGroup"' "" "" "" "" \ 
       "Add a shortcut for using a Python interpreter with DreamPie" 
     ${If} $MultiUser.InstallMode == "AllUsers"
         ShellLink::SetRunAsAdministrator "$SMPROGRAMS\$StartMenuGroup\Add Interpreter.lnk"
