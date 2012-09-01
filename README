@@ -20,8 +20,7 @@ To build the windows installer:
 You will need Python 2.6, as pygtk for 2.7 isn't available yet.
 Make sure you have comtypes, for create-shortcuts.
 Get it from http://sourceforge.net/projects/comtypes/files/
-* Make sure setup.nsi has the correct version number
-* \python26\python.exe setup.py py2exe -d windist
+* \python27\python.exe setup.py py2exe -d windist
 * Copy the gtk-2.0 directory from a previous installation into
   the main directory (near setup.nsi).
 * Compile setup.nsi

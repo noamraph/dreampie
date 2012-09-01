@@ -14,6 +14,7 @@ from dreampielib import __version__, subp_lib
 #   distutils point of view these files are regular package data files.
 # * py2exe doesn't support package data, so "regular" data_files are used,
 #   and the 'data' directory ends up near the executable.
+# * when py2exe is used, the version is automatically set in setup.nsi.
 
 subp_lib.build()
 
@@ -21,12 +22,6 @@ if 'py2exe' in sys.argv:
     import py2exe #@UnresolvedImport
 else:
     py2exe = None
-
-# TODO: What's this?
-#if py2exe is not None:
-#    # Generate needed wrappers
-#    from comtypes.client import CreateObject
-#    ws = CreateObject("WScript.Shell")
 
 package_data_files = (['data/dreampie.glade',
                        'data/dreampie.png',
@@ -41,6 +36,21 @@ if py2exe is not None:
     for fn in package_data_files:
         d.setdefault(os.path.dirname(fn), []).append(join('dreampielib', fn))
     additional_py2exe_data_files = d.items()
+    
+    # Update setup.nsi
+    mydir = os.path.dirname(os.path.abspath(__file__))
+    template = open(join(mydir, 'setup.nsi.in')).read()
+    prod_ver_num_short = map(int, __version__.split('.'))
+    prod_ver_num = prod_ver_num_short + [0] * (4-len(prod_ver_num_short))
+    prod_ver = '.'.join(map(str, prod_ver_num))
+    setup_nsi = ('# Generate from setup.nsi.in. DO NOT EDIT.\n'
+                 + template.replace('{AUTO_VERSION}', __version__)
+                           .replace('{AUTO_PRODUCT_VERSION}', prod_ver))
+    f = open(join(mydir, 'setup.nsi'), 'w')
+    f.write(setup_nsi)
+    f.close()
+    
+    
 else:
     additional_py2exe_data_files = []
 
@@ -74,12 +84,15 @@ if py2exe is not None:
         windows=[{'script': 'create-shortcuts.py',
                   'icon_resources': [(1, 'blank.ico')]}],
         options={'py2exe':
-                 {'ignores':['_scproxy', 'glib', 'gobject', 'gtk',
+                 {'excludes':['_scproxy', 'glib', 'gobject', 'gtk',
                              'gtk.gdk', 'gtk.glade', 'gtksourceview2',
-                             'pango', 'pygtk', 'runtime', 'comtypes.gen'],
-                  'excludes':['_ssl', 'doctest', 'pdb', 'unittest', 'difflib',
-                              'unicodedata', 'bz2', 'zipfile', 'lib2to3'],
+                             'pango', 'pygtk', 'runtime', 'comtypes.gen',
+                             '_ssl', 'doctest', 'pdb', 'unittest', 'difflib',
+                             'unicodedata', 'bz2', 'zipfile', 'lib2to3',
+                             'dulwich', 'dulwich.repo', 'win32api', 'win32con',
+                             'win32pipe', 'Carbon', 'Carbon.Files', 'decimal'],
                   'includes':['fnmatch', 'glob', 'ctypes.util'],
+                  
                  }},
     ))
 

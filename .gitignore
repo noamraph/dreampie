@@ -6,6 +6,7 @@ debian/*
 .pydevproject
 dist
 MANIFEST
+setup.nsi
 dreampie-*-setup.exe
 gtk-2.0
 dreampie-*-setup.exe.asc
