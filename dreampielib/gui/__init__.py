@@ -1389,7 +1389,7 @@ class DreamPie(SimpleGladeApp):
         bug_report.bug_report(self.window_main, gladefile, None)
     
     def on_homepage(self, _widget):
-        webbrowser.open('http://dreampie.sourceforge.net/')
+        webbrowser.open('http://www.dreampie.org/')
     
     def on_getting_started(self, _widget):
         self.show_getting_started_dialog()

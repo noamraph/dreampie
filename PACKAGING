@@ -1,18 +1,3 @@
-This is DreamPie - The Python shell you've always dreamed about!
-
-Homepage: http://dreampie.sourceforge.net/
-
-Requirements: Python 2.5+, PyGTK, pygtksourceview
-
-DreamPie can also use Python 3.1+ and Jython 1.5 as interpreters, but it requires
-CPython 2.5+ in order to run the main process (There's no PyGTK on those
-interpreters.) To run Python 3.1 you'll need Python 2.6, since lib2to3
-(available only in 2.6) is needed.
-
-If you have those, you simply run ./dreampie or ./dreampie.py from the source
-directory.
-To use another interpreter, run something like ./dreampie jython
-
 A general-purpose python install:
 * python setup.py install
 

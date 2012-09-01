@@ -5,7 +5,7 @@ Name DreamPie
 !define VERSION {AUTO_VERSION}
 VIProductVersion {AUTO_PRODUCT_VERSION}
 !define COMPANY DreamPie
-!define URL http://dreampie.sourceforge.net/
+!define URL http://www.dreampie.org/
 
 SetCompressor /FINAL /SOLID lzma
 SetCompressorDictSize 64
