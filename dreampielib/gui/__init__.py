@@ -617,25 +617,24 @@ class DreamPie(SimpleGladeApp):
         sb = self.sourcebuffer
         sel = sb.get_selection_bounds()
         if sel:
-            # Dedent
             start, end = sel
-            start = sb.get_iter_at_line(start.get_line())
-            if not end.ends_line():
-                end.forward_to_line_end()
-            text = get_text(sb, start, end)
-            lines = text.split('\n')
-            if not all(line.startswith('    ')
-                       for line in lines if line.strip() != ''):
-                beep()
-            else:
-                newlines = [line[4:] for line in lines]
-                newtext = '\n'.join(newlines)
-                start_offset = start.get_offset()
-                sb.delete(start, end)
-                sb.insert(end, newtext)
-                sb.select_range(sb.get_iter_at_offset(start_offset), end)
         else:
-            self.textview.grab_focus()
+            start = end = sb.get_iter_at_mark(sb.get_insert())
+        start = sb.get_iter_at_line(start.get_line())
+        if not end.ends_line():
+            end.forward_to_line_end()
+        text = get_text(sb, start, end)
+        lines = text.split('\n')
+        if not all(line.startswith('    ')
+                   for line in lines if line.strip() != ''):
+            beep()
+        else:
+            newlines = [line[4:] for line in lines]
+            newtext = '\n'.join(newlines)
+            start_offset = start.get_offset()
+            sb.delete(start, end)
+            sb.insert(end, newtext)
+            sb.select_range(sb.get_iter_at_offset(start_offset), end)
         return True
 
     @sourceview_keyhandler('Home', 0)
