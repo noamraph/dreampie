@@ -23,6 +23,7 @@ SetCompressorDictSize 64
 # MUI Symbol Definitions
 !define MUI_ICON dreampie.ico
 !define MUI_FINISHPAGE_NOAUTOCLOSE
+!define MUI_FINISHPAGE_TEXT "DreamPie has been installed on your computer. You can run it from the 'DreamPie' group in the start menu.$\r$\n$\r$\n$\r$\nClick Finish to close this wizard."
 !define MUI_UNICON dreampie.ico
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 
