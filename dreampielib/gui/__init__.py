@@ -505,8 +505,6 @@ class DreamPie(SimpleGladeApp):
             self.output.start_new_section()
             if not self.config.get_bool('leave-code'):
                 sb.delete(sb.get_start_iter(), sb.get_end_iter())
-                if self.notebook.get_n_pages() > 1:
-                    self.close_current_tab()
             self.vadj_to_bottom.scroll_to_bottom()
             self.set_is_executing(True)
 
