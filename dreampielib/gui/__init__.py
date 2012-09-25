@@ -70,8 +70,6 @@ def load_pygtk():
 if sys.platform == 'win32':
     load_pygtk()
 
-import pygtk
-pygtk.require('2.0')
 import gobject
 gobject.threads_init() #@UndefinedVariable
 import gtk
