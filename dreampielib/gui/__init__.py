@@ -499,12 +499,12 @@ class DreamPie(SimpleGladeApp):
             self.status_bar.set_status(status_msg)
             beep()
         else:
+            self.set_is_executing(True)
             write_command(self.write, source.strip())
             self.output.start_new_section()
             if not self.config.get_bool('leave-code'):
                 sb.delete(sb.get_start_iter(), sb.get_end_iter())
             self.vadj_to_bottom.scroll_to_bottom()
-            self.set_is_executing(True)
 
     def send_stdin(self):
         """Send the contents of the sourcebuffer as stdin."""
