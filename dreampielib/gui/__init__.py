@@ -575,6 +575,11 @@ class DreamPie(SimpleGladeApp):
                 "Tip: To execute your code, use Ctrl+Enter."))
         return r
 
+    @sourceview_keyhandler('KP_Enter', 0)
+    def on_sourceview_kp_enter(self):
+        self.on_execute_command(None)
+        return True
+        
     @sourceview_keyhandler('Tab', 0)
     def on_sourceview_tab(self):
         sb = self.sourcebuffer
@@ -733,7 +738,7 @@ class DreamPie(SimpleGladeApp):
 
     def on_textview_keypress(self, _widget, event):
         keyval_name, state = parse_keypress_event(event)
-        if (keyval_name, state) == ('Return', 0):
+        if (keyval_name, state) in (('Return', 0), ('KP_Enter', 0)):
             return self.history.copy_to_sourceview()
 
     def on_history_up(self, _widget):

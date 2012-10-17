@@ -25,6 +25,7 @@ keyhandlers = {}
 keyhandler = make_keyhandler_decorator(keyhandlers)
 class Whatever:
     @keyhandler('Return', 0)
+    @keyhandler('KP_Enter', 0)
     def on_return(self):
         # Do something
     def on_keypress(self, widget, event):
@@ -58,8 +59,6 @@ def parse_keypress_event(event):
     keyval, _group, _level, consumed_mods = r
     state = event.state & ~consumed_mods & handled_mods
     keyval_name = gdk.keyval_name(keyval)
-    if keyval_name == 'KP_Enter':
-        keyval_name = 'Return'
     return keyval_name, state
 
 def handle_keypress(self, event, keyhandlers_dict):

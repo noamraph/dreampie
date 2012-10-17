@@ -353,6 +353,7 @@ class AutocompleteWindow(object):
         return True
     
     @keyhandler('Return', 0)
+    @keyhandler('KP_Enter', 0)
     def complete(self):
         sel_row = self.treeview.get_selection().get_selected_rows()[1][0][0]
         text = self.liststore[sel_row][0].decode('utf8')
