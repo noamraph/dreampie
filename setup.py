@@ -25,7 +25,11 @@ else:
 
 package_data_files = (['data/dreampie.glade',
                        'data/dreampie.png',
-                       'data/subp_main.py'] + 
+                       'data/subp_main.py',
+                       'data/language-specs/def.lang',
+                       'data/language-specs/language2.rng',
+                       'data/language-specs/python.lang',
+                       ] + 
                       [join('data', libfn, fn)
                        for libfn in subp_lib.lib_fns.values()
                        for fn in subp_lib.files])

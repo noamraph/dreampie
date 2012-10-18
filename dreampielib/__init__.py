@@ -1,2 +1,2 @@
-__version__ = "1.2"
-release_timestamp = 1348531200 # calendar.timegm((2012, 9, 25, 0, 0, 0))
+__version__ = "1.2.1"
+release_timestamp = 1350550458 # calendar.timegm((2012, 10, 18, 8, 54, 18))
