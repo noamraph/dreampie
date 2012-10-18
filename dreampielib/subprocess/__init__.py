@@ -426,8 +426,10 @@ class Subprocess(object):
                     exec codeob in self.locs
                 # Work around http://bugs.python.org/issue8213 - stdout buffered
                 # in Python 3.
-                sys.stdout.flush()
-                sys.stderr.flush()
+                if not sys.stdout.closed:
+                    sys.stdout.flush()
+                if not sys.stderr.closed:
+                    sys.stderr.flush()
                 # Convert the result to a string. This is here because exceptions
                 # may be raised here.
                 if self.last_res is not None:
@@ -444,7 +446,8 @@ class Subprocess(object):
             finally:
                 mask_sigint()
         except:
-            sys.stdout.flush()
+            if not sys.stdout.closed:
+                sys.stdout.flush()
             excinfo = sys.exc_info()
             sys.last_type, sys.last_value, sys.last_traceback = excinfo
             exception_string = trunc_traceback(excinfo, __file__)
