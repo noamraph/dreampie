@@ -29,7 +29,8 @@
 import sys
 if sys.version_info[0] < 3:
     sys.setdefaultencoding('utf-8') #@UndefinedVariable
-import site #@UnusedImport
+import site
+site.main()
 
 from os.path import abspath, join, dirname
 
