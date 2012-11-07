@@ -204,7 +204,7 @@ class Subprocess(object):
         # Adjust exit and quit objects
         __builtin__.exit = __builtin__.quit = Quit()
         
-        self.gui_handlers = [GtkHandler(), Qt4Handler(), TkHandler()]
+        self.gui_handlers = [GtkHandler(), GIHandler(), Qt4Handler(), TkHandler()]
         self.idle_paused = False
 
         self.gid = 0
@@ -917,6 +917,31 @@ class GtkHandler(GuiHandler):
         self.timeout_add(int(delay * 1000), self.gtk_main_quit)
         with user_code():
             self.gtk.main()
+            
+        return True
+
+    def gtk_main_quit(self):
+        self.gtk.main_quit()
+        # Don't call me again
+        return False
+
+class GIHandler(GuiHandler):
+    def __init__(self):
+        self.gobject = None
+        self.timeout_add = None
+
+    def handle_events(self, delay):
+        if self.gobject is None:
+            if  'gi.repository.GObject' in sys.modules:
+                self.gobject = sys.modules[ 'gi.repository.GObject']
+                from gi.repository.GLib import timeout_add
+                self.timeout_add = timeout_add
+            else:
+                return False
+        mainloop = self.gobject.MainLoop()
+        self.timeout_add(int(delay * 1000), mainloop.quit)
+        with user_code():
+            mainloop.run()
             
         return True
 
