@@ -70,6 +70,17 @@ import logging
 from logging import debug
 #logging.basicConfig(filename='/tmp/dreampie_subp_log', level=logging.DEBUG)
 
+def excepthook_nop(*args):
+    """
+    Replace python excepthook with this to avoid double traceback
+    printing. This way other modules which replace excepthook but still
+    call it will work correctly.
+    """
+    pass
+# Note that sys.excepthook might not be sys.__excepthook__ as e.g. on ubuntu
+# it's apport_excepthook we're replacing.
+sys.excepthook = excepthook_nop
+
 # time interval to process GUI events, in seconds
 GUI_SLEEP = 0.1
 
@@ -454,6 +465,10 @@ class Subprocess(object):
             is_success = False
             res_no = None
             res_str = None
+            try:
+                sys.excepthook(*excinfo)
+            except:
+                exception_string += 'Failed sys.excepthook: ' + trunc_traceback(sys.exc_info(), __file__)
         else:
             is_success = True
             exception_string = None
