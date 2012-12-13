@@ -454,6 +454,10 @@ class Subprocess(object):
             is_success = False
             res_no = None
             res_str = None
+            try:
+                sys.excepthook(*excinfo)
+            except:
+                exception_string += 'Failed sys.excepthook: ' + trunc_traceback(sys.exc_info(), __file__)
         else:
             is_success = True
             exception_string = None
