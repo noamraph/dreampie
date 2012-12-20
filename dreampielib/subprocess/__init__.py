@@ -603,7 +603,8 @@ class Subprocess(object):
             ids = dir(entity)
             ids = map(unicodify, ids)
             ids.sort()
-            if hasattr(entity, '__all__'):
+            if (isinstance(entity, types.ModuleType)
+                and hasattr(entity, '__all__')):
                 all_set = set(entity.__all__)
             else:
                 all_set = None
