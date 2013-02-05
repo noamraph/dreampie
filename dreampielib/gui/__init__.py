@@ -333,6 +333,16 @@ class DreamPie(SimpleGladeApp):
     def on_copy_commands_only(self, _widget):
         return self.selection.copy_commands_only()
 
+    def on_save_commands_only(self, _widget):
+        """Prompts for a filename and saves only the selected commands
+        to the file"""
+        
+        def save_code(filename):
+            self.selection.save_commands_only(filename)
+
+        save_dialog(save_code, _("Choose where to save the code"),
+                    self.main_widget, _("Python Files"), "*.py", None)
+
     def on_paste(self, _widget):
         return self.selection.paste()
 
@@ -340,6 +350,7 @@ class DreamPie(SimpleGladeApp):
         self.menuitem_cut.props.sensitive = is_something_selected
         self.menuitem_copy.props.sensitive = is_something_selected
         self.menuitem_copy_commands_only.props.sensitive = is_something_selected
+        self.menuitem_save_commands_only.props.sensitive = is_something_selected
         self.menuitem_interrupt.props.sensitive = not is_something_selected
 
     # Source buffer, Text buffer

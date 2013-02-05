@@ -84,7 +84,7 @@ class Selection(object):
         else:
             beep()
 
-    def copy_commands_only(self):
+    def commands_only(self):
         if self.sourcebuffer.get_has_selection():
             self.sourcebuffer.copy_clipboard(self.clipboard)
             return
@@ -109,10 +109,25 @@ class Selection(object):
                 r.append(get_text(tb, it, it2))
             it = it2
         r = ''.join(r)
+        return r
+    def copy_commands_only(self):
+        r = self.commands_only()
         if not r:
             beep()
         else:
             self.clipboard.set_text(r)
+
+    def save_commands_only(self, filename):
+        """Save only the selected commands to the specified filename;
+        if no commands are selected, beep and forget it"""
+
+        r = self.commands_only()
+        
+        if not r:
+            beep()
+        else:
+            with open(filename, "w") as f:
+                f.write(r)
 
     def paste(self):
         if self.sourceview.is_focus():
