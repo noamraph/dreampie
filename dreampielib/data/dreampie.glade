@@ -1527,6 +1527,16 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
         <signal name="activate" handler="on_copy_commands_only"/>
       </widget>
     </child>
+    <child>
+      <widget class="GtkMenuItem" id="save_commands_only_popmenu">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="use_action_appearance">False</property>
+        <property name="label" translatable="yes">Save Code Only</property>
+        <property name="use_underline">True</property>
+        <signal name="activate" handler="on_save_commands_only"/>
+      </widget>
+    </child>
   </widget>
   <widget class="GtkWindow" id="window_main">
     <property name="can_focus">False</property>
@@ -1795,6 +1805,19 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="label" translatable="yes">Copy Code Only</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_copy_commands_only"/>
+                        <accelerator key="c" signal="activate" modifiers="GDK_SHIFT_MASK | GDK_CONTROL_MASK"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem_save_commands_only">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can_focus">False</property>
+                        <property name="tooltip" translatable="yes">Save only the code, without output or leading dots.</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="label" translatable="yes">Save Code Only</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_save_commands_only"/>
                         <accelerator key="c" signal="activate" modifiers="GDK_SHIFT_MASK | GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
