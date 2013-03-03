@@ -84,13 +84,7 @@ class Selection(object):
         else:
             beep()
 
-    def copy_commands_only(self):
-        if self.sourcebuffer.get_has_selection():
-            self.sourcebuffer.copy_clipboard(self.clipboard)
-            return
-        if not self.textbuffer.get_has_selection():
-            beep()
-            return
+    def get_commands_only(self):
         # We need to copy the text which has the COMMAND tag, doesn't have
         # the PROMPT tag, and is selected.
         tb = self.textbuffer
@@ -109,6 +103,16 @@ class Selection(object):
                 r.append(get_text(tb, it, it2))
             it = it2
         r = ''.join(r)
+        return r
+    
+    def copy_commands_only(self):
+        if self.sourcebuffer.get_has_selection():
+            self.sourcebuffer.copy_clipboard(self.clipboard)
+            return
+        if not self.textbuffer.get_has_selection():
+            beep()
+            return
+        r = self.get_commands_only()
         if not r:
             beep()
         else:

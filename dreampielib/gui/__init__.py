@@ -397,6 +397,7 @@ class DreamPie(SimpleGladeApp):
         sv = gtksourceview2.View(sb)
         sv.show()
         sv.connect('focus-in-event', self.on_sourceview_focus_in)
+        sv.connect('button-press-event', self.on_sourceview_button_press_event)
         _charwidth, charheight = self.get_char_width_height()
         self.configure_sourceview(sv)
 
@@ -433,6 +434,12 @@ class DreamPie(SimpleGladeApp):
                                   self.textbuffer.get_iter_at_mark(
                                         self.textbuffer.get_insert()))
 
+    def on_sourceview_button_press_event(self, _widget, event):
+        if event.button == 2 and self.textbuffer.get_has_selection():
+            commands = self.selection.get_commands_only()
+            self.sourcebuffer.insert_interactive_at_cursor(commands, True)
+            return True
+    
     def write(self, data, *tag_names):
         self.textbuffer.insert_with_tags_by_name(
             self.textbuffer.get_end_iter(), data, *tag_names)
@@ -1405,7 +1412,10 @@ class DreamPie(SimpleGladeApp):
             self.show_popup_menu(event)
             return True
         
-        if event.type == gdk._2BUTTON_PRESS:
+        elif event.button == 2:
+            return self.on_sourceview_button_press_event(_widget, event)
+        
+        elif event.type == gdk._2BUTTON_PRESS:
             return self.on_double_click(event)
     
     def show_popup_menu(self, event):
