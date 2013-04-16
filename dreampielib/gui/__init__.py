@@ -1266,9 +1266,13 @@ class DreamPie(SimpleGladeApp):
             tags.apply_theme_source(sv.get_buffer(), theme)
 
         vertical_layout = self.config.get_bool('vertical-layout')
+        swap_panes = self.config.get_bool('swap-panes')
         if vertical_layout:
             pane = self.vpaned_main; other_pane = self.hpaned_main
-            self.notebook.props.tab_pos = gtk.POS_BOTTOM
+            if swap_panes:
+                self.notebook.props.tab_pos = gtk.POS_TOP
+            else:
+                self.notebook.props.tab_pos = gtk.POS_BOTTOM
         else:
             pane = self.hpaned_main; other_pane = self.vpaned_main
             self.notebook.props.tab_pos = gtk.POS_TOP
@@ -1277,9 +1281,22 @@ class DreamPie(SimpleGladeApp):
         if pane.get_child1() is None:
             child1 = other_pane.get_child1(); other_pane.remove(child1)
             child2 = other_pane.get_child2(); other_pane.remove(child2)
-            pane.pack1(child1, resize=True, shrink=False)
-            pane.pack2(child2, resize=not vertical_layout, shrink=False)
+        else:
+            child1 = pane.get_child1(); pane.remove(child1)
+            child2 = pane.get_child2(); pane.remove(child2)
         
+        if child1.get_name() == 'scrolledwindow_textview':
+            editPane, outputPane = child1, child2
+        else:
+            editPane, outputPane = child2, child1
+        
+        if swap_panes:
+            pane.pack1(outputPane, resize=not vertical_layout, shrink=False)
+            pane.pack2(editPane, resize=True, shrink=False)
+        else:
+            pane.pack1(editPane, resize=True, shrink=False)
+            pane.pack2(outputPane, resize=not vertical_layout, shrink=False)
+
         # If the fonts were changed, we might need to enlarge the window
         last_font, last_vertical = self.last_configured_layout
         if last_font != font or last_vertical != vertical_layout:
