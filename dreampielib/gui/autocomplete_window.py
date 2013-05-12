@@ -240,7 +240,11 @@ class AutocompleteWindow(object):
             self.window.show_all()
             self.window_height = self.window.get_size()[1]
             self.window.hide()
-        self.window.move(x, y-self.window_height)
+        #self.window.move(x, y-self.window_height)
+        # If panes are swapped, the TOP of the autocomplete will align with cursor; if not, the BOTTOM will align
+        # This prevents the window from extending off the screen. 
+        offset = self.window_height if self.align == "bottom" else 0
+        self.window.move(x, y-offset)
 
     def on_mark_set(self, sb, it, mark):
         if mark is sb.get_insert():

@@ -169,11 +169,6 @@ class DreamPie(SimpleGladeApp):
         # A tuple (page_num, text) of the recently closed tab
         self.reopen_tab_data = None
         
-        # last (font, vertical_layout) configured. If they are changed,
-        # configure() will resize the window and place the paned.
-        self.last_configured_layout = (None, None)
-        self.configure()
-
         self.output = Output(self.textview)
         
         self.folding = Folding(self.textbuffer, LINE_LEN)
@@ -212,6 +207,14 @@ class DreamPie(SimpleGladeApp):
                                          self.complete_filenames,
                                          self.complete_dict_keys,
                                          INDENT_WIDTH)
+        
+        # had to move this down below autocomplete in order to allow configuration of autocomplete popup direction
+ 
+        # last (font, vertical_layout) configured. If they are changed,
+        # configure() will resize the window and place the paned.
+        self.last_configured_layout = (None, None)
+        self.configure()
+
         
         # Hack: we connect this signal here, so that it will have lower
         # priority than the key-press event of autocomplete, when active.
@@ -1296,6 +1299,10 @@ class DreamPie(SimpleGladeApp):
         else:
             pane.pack1(editPane, resize=True, shrink=False)
             pane.pack2(outputPane, resize=not vertical_layout, shrink=False)
+        
+        # if panes are swapped, the autocomplete window should pop up BELOW cursor
+        # (otherwise it will extend up off the screen)
+        self.autocomplete.window.align = "top" if swap_panes else "bottom"
 
         # If the fonts were changed, we might need to enlarge the window
         last_font, last_vertical = self.last_configured_layout
