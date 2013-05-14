@@ -54,6 +54,7 @@ class CallTipWindow(object):
         
         # Widgets
         self.textview = tv = gtk.TextView()
+        tv.set_wrap_mode(gtk.WRAP_WORD)
         self.hscrollbar = hs = gtk.HScrollbar()
         self.vscrollbar = vs = gtk.VScrollbar()
         self.resizegrip = rg = gtk.EventBox()
