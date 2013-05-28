@@ -899,7 +899,8 @@ class DreamPie(SimpleGladeApp):
         else:
             if val_str is not None:
                 if val_no is not None:
-                    self.write_output('%d: ' % val_no, RESULT_IND,
+                    sep = ' ' if '\n' not in val_str else '\n'
+                    self.write_output('%d:%s' % (val_no, sep), RESULT_IND,
                                       onnewline=True)
                 self.write_output(val_str+'\n', RESULT)
         self.write('>>> ', COMMAND, PROMPT)
