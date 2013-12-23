@@ -650,6 +650,22 @@ class Subprocess(object):
         return [unicodify(s) for s in args
                 if isinstance(s, basestring)]
 
+    @staticmethod
+    def dict_key_repr(x):
+        """
+        repr() used for dict keys.
+        Replaced unicode strings like u'hello' with regular strings, if possible.
+        """
+        if py3k or type(x) != unicode:
+            return repr(x)
+        else:
+            try:
+                x.decode('ascii')
+            except UnicodeDecodeError:
+                return repr(x)
+            else:
+                return repr(str(x))
+    
     @rpc_func
     def complete_dict_keys(self, expr):
         """
@@ -662,7 +678,7 @@ class Subprocess(object):
             return None
         if not isinstance(obj, dict) or len(obj) > 1000:
             return None
-        return sorted(unicodify(repr(x)) for x in obj if is_key_reprable(x))
+        return sorted(unicodify(self.dict_key_repr(x)) for x in obj if is_key_reprable(x))
         
 
     @rpc_func
