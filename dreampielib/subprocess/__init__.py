@@ -806,6 +806,18 @@ class Subprocess(object):
                 return None
             return unicodify(doc)
         
+        # for decorated functions: try to get the original function from
+        # func.__module__ and func.__name__
+        try:
+            mod = sys.modules[obj.__module__]
+        except KeyError:
+            pass
+        else:
+            try:
+                obj = getattr(mod, obj.__name__)
+            except AttributeError:
+                pass
+        
         # Check if obj.__doc__ is not in the code (was added after definition).
         # If so, return pydoc's documentation.
         # This test is CPython-specific. Another approach would be to look for
