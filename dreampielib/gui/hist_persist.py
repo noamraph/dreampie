@@ -21,8 +21,8 @@ import os
 from HTMLParser import HTMLParser
 from htmlentitydefs import name2codepoint
 
-from file_dialogs import open_dialog, save_dialog
-from common import get_text
+from .file_dialogs import open_dialog, save_dialog
+from .common import get_text
 
 _ = lambda s: s
 
