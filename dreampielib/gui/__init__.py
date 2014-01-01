@@ -149,6 +149,12 @@ class DreamPie(SimpleGladeApp):
         self.set_mac_accelerators()
         
         self.config = Config()
+        
+        if self.config.get_bool('start-rpdb2-embedded'):
+            print 'Starting rpdb2 embedded debugger...',
+            sys.stdout.flush()
+            import rpdb2; rpdb2.start_embedded_debugger('1234', timeout=0.1)
+            print 'Done.'
 
         self.window_main.set_icon_from_file(
             path.join(data_dir, 'dreampie.png'))

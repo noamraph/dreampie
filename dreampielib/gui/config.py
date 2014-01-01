@@ -50,6 +50,8 @@ recall-1-char-commands = False
 hide-defs = False
 leave-code = False
 
+start-rpdb2-embedded = False
+
 [Dark theme]
 is-active = True
 
