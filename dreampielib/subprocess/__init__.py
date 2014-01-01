@@ -825,14 +825,19 @@ class Subprocess(object):
         # for decorated functions: try to get the original function from
         # func.__module__ and func.__name__
         try:
-            mod = sys.modules[obj.__module__]
-        except KeyError:
+            modname = obj.__module__
+        except AttributeError:
             pass
         else:
             try:
-                obj = getattr(mod, obj.__name__)
-            except AttributeError:
+                mod = sys.modules[modname]
+            except KeyError:
                 pass
+            else:
+                try:
+                    obj = getattr(mod, obj.__name__)
+                except AttributeError:
+                    pass
         
         # Check if obj.__doc__ is not in the code (was added after definition).
         # If so, return pydoc's documentation.
