@@ -1008,6 +1008,8 @@ class Qt4Handler(GuiHandler):
         if self.QtCore is None:
             if 'PyQt4' in sys.modules:
                 self.QtCore = sys.modules['PyQt4'].QtCore
+            elif 'PySide' in sys.modules:
+                self.QtCore = sys.modules['PySide'].QtCore
             else:
                 return False
         QtCore = self.QtCore
