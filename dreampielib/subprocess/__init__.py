@@ -987,7 +987,6 @@ class GIHandler(GuiHandler):
 class Qt4Handler(GuiHandler):
     def __init__(self):
         self.QtCore = None
-        self.app = None
 
     def handle_events(self, delay):
         if self.QtCore is None:
@@ -999,29 +998,21 @@ class Qt4Handler(GuiHandler):
                 return False
         QtCore = self.QtCore
 
-        if self.app is None:
-            app = QtCore.QCoreApplication.instance()
-            if app:
-                self.app = app
-            else:
-                return False
+        app = QtCore.QCoreApplication.instance()
+        if app is None:
+            return False
 
+        # We create a new QCoreApplication to avoid quitting if modal dialogs
+        # are active. This approach was taken from IPython. See:
+        # https://github.com/ipython/ipython/blob/master/IPython/lib/inputhookqt4.py
+        app.processEvents(QtCore.QEventLoop.AllEvents, delay*1000)
         timer = QtCore.QTimer()
-        QtCore.QObject.connect(timer, QtCore.SIGNAL('timeout()'),
-                               self.qt4_quit_if_no_modal)
+        event_loop = QtCore.QEventLoop()
+        timer.timeout.connect(event_loop.quit)
         timer.start(delay*1000)
-        with user_code():
-            self.app.exec_()
-        timer.stop()
-        QtCore.QObject.disconnect(timer, QtCore.SIGNAL('timeout()'),
-                                  self.qt4_quit_if_no_modal)
+        event_loop.exec_()
+        timer.stop()        
         return True
-
-    def qt4_quit_if_no_modal(self):
-        app = self.app
-        if app.__class__.__name__ != 'QApplication' or \
-           app.activeModalWidget() is None:
-            app.quit()
 
 class TkHandler(GuiHandler):
     def __init__(self):
