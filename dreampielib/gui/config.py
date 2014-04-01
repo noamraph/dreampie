@@ -1,17 +1,17 @@
 # Copyright 2009 Noam Yorav-Raphael
 #
 # This file is part of DreamPie.
-# 
+#
 # DreamPie is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # DreamPie is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with DreamPie.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -228,7 +228,98 @@ bracket-3-bg-set = False
 error-fg-set = False
 error-bg-set = True
 
+
+[Solarized theme]
+is-active = True
+
+default-fg = #838394949696
+default-bg = #00002b2b3636
+
+keyword-fg = #858599990000
+keyword-bg = white
+builtin-fg = #b5b589890000
+builtin-bg = white
+string-fg = #2a2aa1a19898
+string-bg = white
+number-fg = #c8cb1b4aabca
+number-bg = white
+comment-fg = #58586e6e7575
+comment-bg = white
+
+bracket-match-fg = black
+bracket-match-bg = #07073b3b4848
+bracket-1-fg = #005400
+bracket-1-bg = white
+bracket-2-fg = #9400f0
+bracket-2-bg = white
+bracket-3-fg = brown
+bracket-3-bg = #a50000
+error-fg = black
+error-bg = #dcdc32322f2f
+
+stdin-fg = #770000
+stdin-bg = white
+stdout-fg = blue
+stdout-bg = white
+stderr-fg = #dcdc32322f2f
+stderr-bg = white
+result-fg = #26268b8bd2d2
+result-bg = white
+result-ind-fg = #200e744baf84
+result-ind-bg = white
+exception-fg = #dcdc32322f2f
+exception-bg = white
+prompt-fg = #7c7c00000000
+prompt-bg = white
+message-fg = #008000
+message-bg = white
+fold-message-fg = #b684bdd3c97a
+fold-message-bg = #07073b3b4848
+
+keyword-fg-set = True
+keyword-bg-set = False
+builtin-fg-set = True
+builtin-bg-set = False
+string-fg-set = True
+string-bg-set = False
+number-fg-set = True
+number-bg-set = False
+comment-fg-set = True
+comment-bg-set = False
+
+bracket-match-fg-set = False
+bracket-match-bg-set = True
+bracket-1-fg-set = False
+bracket-1-bg-set = False
+bracket-2-fg-set = False
+bracket-2-bg-set = False
+bracket-3-fg-set = False
+bracket-3-bg-set = False
+
+error-fg-set = False
+error-bg-set = True
+stdin-fg-set = False
+stdin-bg-set = False
+stdout-fg-set = False
+stdout-bg-set = False
+stderr-fg-set = True
+stderr-bg-set = False
+
+result-fg-set = True
+result-bg-set = False
+result-ind-fg-set = True
+result-ind-bg-set = False
+exception-fg-set = True
+exception-bg-set = False
+prompt-fg-set = False
+prompt-bg-set = False
+message-fg-set = False
+message-bg-set = False
+fold-message-fg-set = False
+fold-message-bg-set = True
+
 """
+
 
 def get_config_fn():
     if sys.platform != 'win32':
@@ -238,18 +329,21 @@ def get_config_fn():
         # chars.
         import ctypes
         MAX_PATH = 255
-        nFolder = 26 # CSIDL_APPDATA
+        nFolder = 26  # CSIDL_APPDATA
         flags = 0
         buf = ctypes.create_unicode_buffer(MAX_PATH)
         ctypes.windll.shell32.SHGetFolderPathW(None, nFolder, None, flags, buf)
         return os.path.join(buf.value, 'DreamPie')
 
+
 class Config(object):
+
     """
     Manage configuration - a simple wrapper around RawConfigParser.
     Upon initialization, the loaded file is updated with the default values.
     config.save() will save the current state.
     """
+
     def __init__(self):
         self.filename = get_config_fn()
         try:
@@ -299,4 +393,3 @@ class Config(object):
         f = open(self.filename, 'w')
         self.parser.write(f)
         f.close()
-
