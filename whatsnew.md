@@ -6,6 +6,7 @@ title: What's new in DreamPie
 What's new in the Git Repo
 -----------------------
 
+* Added an alternative icon by Rafael Bachmann to the misc/ directory. Thanks!
 * Fix bug reported by Bo Bayles: In Python 3.3 the site-packages directory
   wasn't added to sys.path.
 
