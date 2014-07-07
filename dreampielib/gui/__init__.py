@@ -1479,8 +1479,9 @@ def main():
     else:
         pyexec = sys.executable
     
-    if os.path.exists(opts.start_in_dir):
-        os.chdir( opts.start_in_dir )
+    if opts.start_in_dir:
+        if os.path.exists(opts.start_in_dir):
+            os.chdir( opts.start_in_dir )
     
     if sys.platform == 'win32' and opts.hide_console:
         from .hide_console_window import hide_console_window
