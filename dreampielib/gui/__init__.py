@@ -133,6 +133,18 @@ _ = lambda s: s
 sourceview_keyhandlers = {}
 sourceview_keyhandler = make_keyhandler_decorator(sourceview_keyhandlers)
 
+
+def got_data_cb(wid, context, x, y, data, info, time, sv):
+    buf = data.get_uris()[0]
+    sv.set_text("r'"+buf+"'",0)
+    context.finish(True, False, time)
+
+def drop_cb(wid, context, x, y, time):
+    wid.drag_get_data(context, context.targets[-1], time)
+    return True
+
+
+
 def get_widget(name):
     """Create a widget from the glade file."""
     xml = glade.XML(gladefile, name)
@@ -224,6 +236,10 @@ class DreamPie(SimpleGladeApp):
         self.sourceview_keypress_handler = self.sourceview.connect(
             'key-press-event', self.on_sourceview_keypress)
         self.sv_changed.append(self.on_sv_changed)
+        
+        self.sourceview.drag_dest_set(0, [], 0)
+        self.sourceview.connect('drag_drop', drop_cb)
+        self.sourceview.connect('drag_data_received', got_data_cb, self.sourcebuffer)
         
         self.call_tips = CallTips(self.sourceview, self.sv_changed,
                                   self.window_main, self.get_func_doc,
@@ -1461,6 +1477,7 @@ class DreamPie(SimpleGladeApp):
                                             event.get_time())
             else:
                 beep()
+
 
 def main():
     usage = "%prog [options] [python-executable]"
