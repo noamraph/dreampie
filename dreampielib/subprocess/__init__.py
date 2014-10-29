@@ -828,7 +828,8 @@ class Subprocess(object):
         # If so, return pydoc's documentation.
         # This test is CPython-specific. Another approach would be to look for
         # the string in the source code.
-        co_consts = getattr(getattr(obj, 'func_code', None), 'co_consts', None)
+        func_code = getattr(obj, '__code__', getattr(obj, 'func_code', None))
+        co_consts = getattr(func_code, 'co_consts', None)
         __doc__ = getattr(obj, '__doc__', None)
         if co_consts is not None and __doc__ is not None:
             if __doc__ not in co_consts:
