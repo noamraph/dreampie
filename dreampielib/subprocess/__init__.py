@@ -628,7 +628,8 @@ class Subprocess(object):
             if not py3k:
                 args = inspect.getargspec(obj)[0]
             else:
-                args = inspect.getfullargspec(obj).args #@UndefinedVariable
+                argspec = inspect.getfullargspec(obj)
+                args = argspec.args + argspec.kwonlyargs #@UndefinedVariable
         except TypeError:
             return None
         # There may be nested args, so we filter them
