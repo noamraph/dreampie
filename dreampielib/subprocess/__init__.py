@@ -480,7 +480,7 @@ class Subprocess(object):
             PeekNamedPipe(handle, None, 0, None, byref(avail), None)
             nAvail = avail.value
             if nAvail > 0:
-                rem_stdin.append(os.read(fd, nAvail))
+                rem_stdin.append(unicodify(os.read(fd, nAvail)))
         else:
             # I don't know how to do this in Jython.
             pass
