@@ -964,6 +964,16 @@ class DreamPie(SimpleGladeApp):
                 _("A command isn't being executed currently"))
             beep()
 
+    def on_unclog_subprocess(self, _widget):
+        # It seems that sometimes DreamPie thinks there is an unclaimed
+        # result when there really isn't.  Here we try to clear the clog by
+        # decrementing the unclaimed result counter.  This could blow up
+        # badly if used at the wrong time, so should only be used when it
+        # really seems like DreamPie thinks the subprocess is busy but it
+        # really isn't.
+        self._n_unclaimed_results -= 1
+        
+        
     # History persistence
     
     def on_save_history(self, _widget):

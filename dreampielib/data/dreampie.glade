@@ -1983,6 +1983,17 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                       </widget>
                     </child>
                     <child>
+                      <widget class="GtkMenuItem" id="menuitem_unclog">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="tooltip" translatable="yes">Try to unclog a stuck subprocess.  Use with care!</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="label" translatable="yes">Unclog subprocess</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_unclog_subprocess"/>
+                      </widget>
+                    </child>
+                    <child>
                       <widget class="GtkMenuItem" id="menuitem_clear_reshist">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
