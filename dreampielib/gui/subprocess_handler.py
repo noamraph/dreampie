@@ -260,7 +260,14 @@ class SubprocessHandler(object):
         if self._popen is None:
             raise ValueError("Subprocess not living")
         if sys.platform != 'win32':
-            os.kill(self._popen.pid, signal.SIGINT)
+            pid = self._popen.pid
+            if os.getpgid(pid) == pid:
+                # If the subprocess managed to become a process group leader,
+                # send the signal to the entire group (this is what happens
+                # in terminals)
+                os.killpg(pid, signal.SIGINT)
+            else:
+                os.kill(pid, signal.SIGINT)
         else:
             kernel32 = ctypes.windll.kernel32
             CTRL_C_EVENT = 0

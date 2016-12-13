@@ -184,6 +184,10 @@ class Subprocess(object):
         # Mask SIGINT/Ctrl-C
         mask_sigint()
         
+        # Become a process group leader
+        if sys.platform != 'win32':
+            os.setpgrp()
+        
         # Make sys.displayhook change self.last_res
         self.last_res = None
         sys.displayhook = self.displayhook
