@@ -1816,6 +1816,35 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                       </widget>
                     </child>
                     <child>
+                      <widget class="GtkMenuItem" id="menuitem_upward_find">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="tooltip" translatable="yes">Find the content of the code box in the history box. Tip: Use Ctrl-T to open a new tab!</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="label" translatable="yes">Find Upward</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_upward_find"/>
+                        <accelerator key="f" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem_downward_find">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="label" translatable="yes">Find Downward</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_downward_find"/>
+                        <accelerator key="g" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkSeparatorMenuItem" id="menuitem9">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                      </widget>
+                    </child>
+                    <child>
                       <widget class="GtkMenuItem" id="menuitem_new_tab">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>

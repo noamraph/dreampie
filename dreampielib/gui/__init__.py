@@ -342,6 +342,49 @@ class DreamPie(SimpleGladeApp):
     def on_paste(self, _widget):
         return self.selection.paste()
 
+    def on_upward_find(self, _widget):
+        self.find(is_upward=True)
+
+    def on_downward_find(self, _widget):
+        self.find(is_upward=False)
+
+    def find(self, is_upward):
+        tb = self.textbuffer
+        sb = self.sourcebuffer
+        
+        search_str = get_text(sb, sb.get_start_iter(), sb.get_end_iter())
+        if not search_str:
+            self.status_bar.set_status(_(
+                "Type the text you want to search for in the code box, and "
+                "press Ctrl-F"))
+            beep()
+            return
+        
+        if tb.get_has_selection():
+            sel_start, sel_end = tb.get_selection_bounds()
+            it = sel_start if is_upward else sel_end
+        elif self.textview.has_focus():
+            it = tb.get_iter_at_mark(tb.get_insert())
+        else:
+            it = tb.get_end_iter()
+        
+        flags = gtk.TEXT_SEARCH_VISIBLE_ONLY
+        if is_upward:
+            match = it.backward_search(search_str, flags)
+            if match is None:
+                match = tb.get_end_iter().backward_search(search_str, flags)
+        else:
+            match = it.forward_search(search_str, flags)
+            if match is None:
+                match = tb.get_start_iter().forward_search(search_str, flags)
+        
+        if match is None:
+            beep()
+        else:
+            start, end = match
+            tb.select_range(start, end)
+            self.textview.scroll_to_iter(start, 0)
+
     def on_is_something_selected_changed(self, is_something_selected):
         self.menuitem_cut.props.sensitive = is_something_selected
         self.menuitem_copy.props.sensitive = is_something_selected
