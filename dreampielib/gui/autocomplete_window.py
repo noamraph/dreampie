@@ -348,8 +348,8 @@ class AutocompleteWindow(object):
             i += 1
         if i > len(self.cur_prefix):
             toadd = first[len(self.cur_prefix):i]
+            # This updates self.cur_prefix
             self.sourcebuffer.insert_at_cursor(toadd)
-            self.cur_prefix += toadd
         return True
     
     @keyhandler('Return', 0)
