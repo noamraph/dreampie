@@ -6,9 +6,25 @@ title: What's new in DreamPie
 What's new in the Git Repo
 -----------------------
 
+What's new in DreamPie 1.3
+--------------------------
+
 * Added an alternative icon by Rafael Bachmann to the misc/ directory. Thanks!
 * Fix bug reported by Bo Bayles: In Python 3.3 the site-packages directory
   wasn't added to sys.path.
+* Support new event loops: gobject-introspection, PySide, PyQt5, New Tkinter.
+* Support sys.excepthook.
+* Fix mongo completion bug (used `__all__` for objects)
+* Middle click will now paste the selected text (code only).
+* Add a newline after the result number for results which include a newline,
+so that the first line won't have a different indentation from the others.
+* If a function was decorated, show the original function, not the decorated function.
+* In python 2, complete dict keys which are ascii unicode as regular strings, to avoid the extra 'u'.
+* Don't make sys.excepthook into NOOP, and don't call sys.excepthook on exceptions. That way GUI exceptions will still be reported.
+* Make Qt4 event loop integration successfully handle modal dialogs.
+* Interrupt now sends the signal to a process group, like a shell does.
+* Fix completion error - tab caused future completions to type partial completions, because it didn't update self.cur_prefix correctly.
+* Add find function! Ctrl-F searches for the content of the code box downward, Ctrl-F searches upward.
 
 What's new in DreamPie 1.2.1
 -------------------------
