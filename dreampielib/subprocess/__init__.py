@@ -1030,6 +1030,8 @@ class TkHandler(GuiHandler):
         if self.Tkinter is None:
             if 'Tkinter' in sys.modules:
                 self.Tkinter = sys.modules['Tkinter']
+            if 'tkinter' in sys.modules:
+                self.Tkinter = sys.modules['tkinter']
             else:
                 return False
         Tkinter = self.Tkinter
@@ -1042,8 +1044,12 @@ class TkHandler(GuiHandler):
         if Tkinter._default_root:
             _tkinter = Tkinter._tkinter
             with user_code():
-                while _tkinter.dooneevent(_tkinter.DONT_WAIT):
-                    pass
+                if hasattr(_tkinter, 'dooneevent'):
+                    while _tkinter.dooneevent(_tkinter.DONT_WAIT):
+                        pass
+                else:
+                    while Tkinter._default_root.tk.dooneevent(_tkinter.DONT_WAIT):
+                        pass
         time.sleep(delay)
         return True
 
