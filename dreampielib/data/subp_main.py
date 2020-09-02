@@ -20,17 +20,7 @@
 # It creates a package called dreampielib from subp-py2.zip or subp-py3.zip
 # (which are expected to be in the directory of __file__),
 # and runs dreampielib.subprocess.main(port).
-
-# This is a hack to solve bug #527630. Python2.5 ignores the PYTHONIOENCODING
-# environment variable, but we want to set the output encoding to utf-8 so that
-# unicode chars will be printed. So we disable automatic loading of site.py with
-# the -S flag, and call sys.setdefaultencoding before site.py has a chance of
-# doing anything else.
 import sys
-if sys.version_info[0] < 3:
-    sys.setdefaultencoding('utf-8') #@UndefinedVariable
-import site
-site.main()
 
 from os.path import abspath, join, dirname
 

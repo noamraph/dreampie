@@ -124,12 +124,7 @@ class SubprocessHandler(object):
         env['PYTHONUNBUFFERED'] = '1'
         env['PYTHONIOENCODING'] = 'UTF-8'
         script = os.path.join(self._data_dir, 'subp_main.py')
-        # The -S switch causes the subprocess to not automatically import
-        # site.py. This is done so that the subprocess will be able to call
-        # sys.setdefaultencoding('UTF-8') before importing site, and this is
-        # needed because Python 2.5 ignores the PYTHONIOENCODING variable.
-        # Hopefully it won't cause problems.
-        popen = Popen([self._pyexec, '-S', script, str(port)],
+        popen = Popen([self._pyexec, script, str(port)],
                        stdin=PIPE, stdout=PIPE, stderr=PIPE,
                        env=env)
         #debug("Waiting for the subprocess to connect")
