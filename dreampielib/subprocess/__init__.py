@@ -1011,7 +1011,7 @@ class Qt4Handler(GuiHandler):
         # We create a new QCoreApplication to avoid quitting if modal dialogs
         # are active. This approach was taken from IPython. See:
         # https://github.com/ipython/ipython/blob/master/IPython/lib/inputhookqt4.py
-        app.processEvents(QtCore.QEventLoop.AllEvents, delay*1000)
+        app.processEvents(QtCore.QEventLoop.AllEvents, int(delay*1000))
         timer = QtCore.QTimer()
         event_loop = QtCore.QEventLoop()
         timer.timeout.connect(event_loop.quit)
