@@ -1015,7 +1015,7 @@ class Qt4Handler(GuiHandler):
         timer = QtCore.QTimer()
         event_loop = QtCore.QEventLoop()
         timer.timeout.connect(event_loop.quit)
-        timer.start(delay*1000)
+        timer.start(int(delay*1000))
         event_loop.exec_()
         timer.stop()        
         return True
