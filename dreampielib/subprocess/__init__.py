@@ -680,16 +680,20 @@ class Subprocess(object):
     
     @rpc_func
     def get_module_members(self, mod_name):
-        try:
-            mod = sys.modules[mod_name]
-        except KeyError:
-            return None
+        mod = sys.modules.get(mod_name)
+        subs = self.find_modules(mod_name)
+        
+        if mod is None:
+            return subs, []
+        
         if hasattr(mod, '__all__'):
             all_set = set(mod.__all__)
         else:
             all_set = None
         ids = [unicodify(x) for x in mod.__dict__.iterkeys()]
-        return self.split_list(ids, all_set)
+        ids.extend([x for x in submods if x not in ids])
+        
+        return self.split_list(sorted(ids), all_set)
     
     @rpc_func
     def complete_filenames(self, str_prefix, text, str_char, add_quote):
