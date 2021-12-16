@@ -117,7 +117,7 @@ def find_modules(package):
     for name in sys.modules:
         if name.startswith(prefix):
             mod = name[len(prefix):]
-            if '.' not in mod:
+            if '.' not in mod and sys.modules[prefix+mod] is not None:
                 r.add(mod)
     r.discard('__init__')
     return sorted(r)
