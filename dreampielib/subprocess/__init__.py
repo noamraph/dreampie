@@ -60,7 +60,7 @@ if sys.platform == 'win32':
     PeekNamedPipe = windll.kernel32.PeekNamedPipe #@UndefinedVariable
 
 from .trunc_traceback import trunc_traceback
-from .find_modules import find_modules
+from .find_modules import find_modules, simple_parse_source
 # We don't use relative import because of a Jython 2.5.1 bug.
 from dreampielib.common.objectstream import send_object, recv_object
 
@@ -677,22 +677,29 @@ class Subprocess(object):
         else:
             package = []
         return [unicodify(s) for s in find_modules(package)]
-    
+
+    def simple_parse_source(self, mod_name):
+        return [unicodify(x) for x in simple_parse_source(mod_name)]
+
     @rpc_func
     def get_module_members(self, mod_name):
         mod = sys.modules.get(mod_name)
-        subs = self.find_modules(mod_name)
-        
-        if mod is None:
-            return subs, []
-        
+        subs = self.find_modules(mod_name)  # submodules
+
+        if mod is None:  # hasn't previously been imported
+            if len(subs) != 0:  # isn't a file
+                init_contents = self.simple_parse_source(mod_name + '.__init__')
+                return sorted(subs + [x for x in init_contents if x not in subs]), []
+            ids = self.simple_parse_source(mod_name)  # is a file
+        else:
+            ids = [unicodify(x) for x in mod.__dict__.iterkeys()]
+            ids.extend([x for x in subs if x not in ids])
+
         if hasattr(mod, '__all__'):
             all_set = set(mod.__all__)
         else:
             all_set = None
-        ids = [unicodify(x) for x in mod.__dict__.iterkeys()]
-        ids.extend([x for x in submods if x not in ids])
-        
+
         return self.split_list(sorted(ids), all_set)
     
     @rpc_func
