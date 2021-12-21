@@ -17,7 +17,7 @@
 
 import sys
 import os
-from os.path import join, isdir, exists
+from os.path import join, isdir, isfile, exists
 import stat
 import imp
 import re
@@ -91,7 +91,7 @@ def find_package_path(package):
         name = package[j]
         for dir in path:
             newdir = join(dir, name)
-            if isdir(newdir):
+            if isdir(newdir) or isfile(newdir):
                 path = [newdir]
                 break
         else:
@@ -121,3 +121,35 @@ def find_modules(package):
                 r.add(mod)
     r.discard('__init__')
     return sorted(r)
+
+def simple_parse_source(mod_name):
+    # TODO: add parsing of importable constants?
+    package = mod_name.split('.')
+    package[-1] += '.py'
+    path = find_package_path(package)
+
+    importable = []
+    if path:
+        for filename in path:
+            with open(filename) as fl:
+                in_import_block = False
+                continued_next_line = False
+                for line in fl.readlines():
+                    pattern = '^(.*)$' if continued_next_line else '^(?:class|def|from .*? import|import) ([^(]*).*?$'
+                    mat = re.match(pattern, line)
+
+                    if line.startswith(('from', 'import')):
+                        in_import_block = True
+                    if mat is None:
+                        in_import_block = continued_next_line = False
+                    else:
+                        continued_next_line = in_import_block and line.strip().endswith((',', '\\'))
+                        if not continued_next_line:
+                            in_import_block = False
+
+                        _imps = mat.groups()[0].strip().strip(' ,\\').split(',')
+                        for _imp in _imps:
+                            if ' as ' in _imp:
+                                _imp = _imp.split(' as ')[-1]
+                            importable.append(_imp.strip())
+    return sorted(importable)
