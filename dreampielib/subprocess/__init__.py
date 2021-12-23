@@ -219,6 +219,7 @@ class Subprocess(object):
         self.is_matplotlib_ia_switch = False
         self.is_matplotlib_ia_warn = False
         self.reshist_size = 0
+        self.parse_files_to_autocomplete = False
         
         # Did we already handle matplotlib in non-interactive mode?
         self.matplotlib_ia_handled = False
@@ -679,7 +680,10 @@ class Subprocess(object):
         return [unicodify(s) for s in find_modules(package)]
 
     def simple_parse_source(self, mod_name):
-        return [unicodify(x) for x in simple_parse_source(mod_name)]
+        if self.parse_files_to_autocomplete:
+            return [unicodify(x) for x in simple_parse_source(mod_name)]
+        else:
+            return []
 
     @rpc_func
     def get_module_members(self, mod_name):
