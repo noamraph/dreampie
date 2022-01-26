@@ -189,8 +189,9 @@ body {
     
     f.write("""\
 </style>
+%s
 </head>
-<body>""")
+<body>""" % hide_prompt())
     
     cur_tags = []
     it = tb.get_start_iter()
@@ -230,6 +231,54 @@ body {
 </html>
 """)
 
+def hide_prompt(switched_on = 1):
+    """
+    Add to the history.html file checkbox that switch the prompt off.
+    """
+    if not switched_on:
+        return ''
+    return \
+        '''<style>
+span.hidden {
+  visibility: hidden;
+}
+label.ctrl {
+  position: fixed;
+  top: 1em;
+  right: 1em;
+  background-color: inherit;
+}
+</style>
+<script type="text/javascript">
+  
+  window.addEventListener("DOMContentLoaded", function() {
+      document.body.innerHTML += 
+        '<label class="ctrl"><INPUT TYPE="checkbox" id="HideShowPrompt" onChange="showHidePrompt(this)">Hide Prompt</label>'
+    }, false);
+
+  function getElementByClass (className, parent) {
+    parent || (parent = document);
+    var descendants= parent.getElementsByTagName('*'), i=-1, e, result=[];
+    while (e=descendants[++i]) {
+      ((' '+(e['class']||e.className)+' ').indexOf(' '+className+' ') > -1) && result.push(e);
+    }
+    return result;
+  }
+  
+  function showHidePrompt(sh) {
+    var elements = getElementByClass("prompt", "");
+    for (var i in elements){
+      if (sh.checked) {
+        (elements[i].innerHTML != "&gt;&gt;&gt; " ) &&
+        (elements[i].className = 'prompt hidden');
+      } else {
+        (elements[i].innerHTML != "&gt;&gt;&gt; ")  &&
+        (elements[i].className = 'prompt');
+      }
+    }
+  }
+  showHidePrompt(true);
+</script>'''
 class LoadError(Exception):
     pass
 
