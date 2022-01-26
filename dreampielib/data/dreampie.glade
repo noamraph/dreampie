@@ -1196,6 +1196,21 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                       </packing>
                     </child>
                     <child>
+                      <widget class="GtkCheckButton" id="swap_panes_chk">
+                        <property name="label" translatable="yes">Swap panes</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">False</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="draw_indicator">True</property>
+                      </widget>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">5.5</property>
+                      </packing>
+                    </child>
+                    <child>
                       <widget class="GtkCheckButton" id="leave_code_chk">
                         <property name="label" translatable="yes">Leave code in the code box after execution</property>
                         <property name="visible">True</property>
@@ -1994,6 +2009,17 @@ You can also set the __expects_str__ attribute of a function to True to achieve 
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_restart_subprocess"/>
                         <accelerator key="F6" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="menuitem_unclog">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="tooltip" translatable="yes">Try to unclog a stuck subprocess.  Use with care!</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="label" translatable="yes">Unclog subprocess</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_unclog_subprocess"/>
                       </widget>
                     </child>
                     <child>

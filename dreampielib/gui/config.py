@@ -49,6 +49,7 @@ matplotlib-ia-warn = True
 recall-1-char-commands = False
 hide-defs = False
 leave-code = False
+swap-panes = False
 
 start-rpdb2-embedded = False
 

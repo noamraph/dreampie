@@ -65,6 +65,8 @@ class ConfigDialog(SimpleGladeApp):
         self.horizontal_layout_rad.props.active = not config.get_bool('vertical-layout')
         
         self.leave_code_chk.props.active = config.get_bool('leave-code')
+
+        self.swap_panes_chk.props.active = config.get_bool('swap-panes')
         
         self.hide_defs_chk.props.active = config.get_bool('hide-defs')
         
@@ -155,6 +157,8 @@ class ConfigDialog(SimpleGladeApp):
         config.set_bool('vertical-layout', self.vertical_layout_rad.props.active)
         
         config.set_bool('leave-code', self.leave_code_chk.props.active)
+        
+        config.set_bool('swap-panes', self.swap_panes_chk.props.active)
         
         config.set_bool('hide-defs', self.hide_defs_chk.props.active)
         
