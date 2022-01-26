@@ -485,7 +485,7 @@ class Subprocess(object):
             PeekNamedPipe(handle, None, 0, None, byref(avail), None)
             nAvail = avail.value
             if nAvail > 0:
-                rem_stdin.append(os.read(fd, nAvail))
+                rem_stdin.append(unicodify(os.read(fd, nAvail)))
         else:
             # I don't know how to do this in Jython.
             pass
@@ -633,7 +633,8 @@ class Subprocess(object):
             if not py3k:
                 args = inspect.getargspec(obj)[0]
             else:
-                args = inspect.getfullargspec(obj).args #@UndefinedVariable
+                argspec = inspect.getfullargspec(obj)
+                args = argspec.args + argspec.kwonlyargs #@UndefinedVariable
         except TypeError:
             return None
         # There may be nested args, so we filter them
@@ -847,7 +848,8 @@ class Subprocess(object):
         # If so, return pydoc's documentation.
         # This test is CPython-specific. Another approach would be to look for
         # the string in the source code.
-        co_consts = getattr(getattr(obj, 'func_code', None), 'co_consts', None)
+        func_code = getattr(obj, '__code__', getattr(obj, 'func_code', None))
+        co_consts = getattr(func_code, 'co_consts', None)
         __doc__ = getattr(obj, '__doc__', None)
         if co_consts is not None and __doc__ is not None:
             if __doc__ not in co_consts:
