@@ -1512,6 +1512,8 @@ def main():
     parser.add_option("--run", dest="runfile",
                       help="A file to run upon initialization. It will be "
                       "run only once.")
+    parser.add_option("--dir", dest="start_in_dir",
+                      help="Specify the start-in directory")
     if sys.platform == 'win32':
         parser.add_option("--hide-console-window", action="store_true",
                           dest="hide_console",
@@ -1536,7 +1538,10 @@ def main():
         sys.exit(1)
     else:
         pyexec = sys.executable
-        
+    
+    if opts.start_in_dir:
+        if os.path.exists(opts.start_in_dir):
+            os.chdir( opts.start_in_dir )
     
     if sys.platform == 'win32' and opts.hide_console:
         from .hide_console_window import hide_console_window
