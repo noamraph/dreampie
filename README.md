@@ -5,7 +5,7 @@ DreamPie is a Python shell which is designed to be reliable and fun. It is licen
 
 For more information, take a look at http://www.dreampie.org/
 
-To run, you will need Python 2.6 or 2.7, and PyGTK with pygtksourceview.
+To run, you will need Python 2.6, 2.7 or 3.x, and PyGTK with pygtksourceview.
 
 * On Windows, get the PyGTK all-in-one installer from
   http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.24/ and be sure to
