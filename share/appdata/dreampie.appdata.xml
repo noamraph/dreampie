@@ -1,0 +1,44 @@
+<component type="desktop">
+  <id>dreampie.desktop</id>
+  <name>DreamPie</name>
+  <summary>Interactive Python console</summary>
+  <description>
+    <p>dreampie is a graphical alternative for the Python interactive console. It provides a number of additional features that are not possible with the regular (terminal based) Python console, including: syntax highlighting, parameter lists for built in Python functions, and the ability to save code to a file.</p>
+  </description>
+  <project_license>GPL-3.0+ and LGPL-2.1+ and BSD-3-Clause and Python-2.0 and LicenseRef-public-domain</project_license>
+  <url type="homepage">http://www.dreampie.org/</url>
+  <screenshots>
+    <screenshot>
+      <image>http://www.dreampie.org/screenshot1.png</image>
+      <caption>The DreamPie window</caption>
+    </screenshot>
+    <screenshot>
+      <image>http://www.dreampie.org/screenshot2.png</image>
+      <caption>Function documentation and filename completion. There's attribute completion too, of course!</caption>
+    </screenshot>
+    <screenshot>
+      <image>http://www.dreampie.org/screenshot3.png</image>
+      <caption>DreamPie with matplotlib</caption>
+    </screenshot>
+    <screenshot>
+      <image>http://www.dreampie.org/screenshot4.png</image>
+      <caption>Interrupt the process or kill it - the history is preserved!</caption>
+    </screenshot>
+    <screenshot>
+      <image>http://www.dreampie.org/screenshot5.png</image>
+      <caption>Results are automatically saved in the result history.</caption>
+    </screenshot>
+    <screenshot>
+      <image>http://www.dreampie.org/screenshot6.png</image>
+      <caption>Long output sections are automatically folded.</caption>
+    </screenshot>
+    <screenshot>
+      <image>http://www.dreampie.org/screenshot7.png</image>
+      <caption>Jython support makes DreamPie an excellent tool for exploring Java classes...</caption>
+    </screenshot>
+    <screenshot>
+      <image>http://www.dreampie.org/screenshot9.png</image>
+      <caption>You can keep your session history as an HTML file, and load it back into DreamPie.</caption>
+    </screenshot>
+  </screenshots>
+</component>

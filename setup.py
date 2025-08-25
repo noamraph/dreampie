@@ -74,6 +74,7 @@ setup_args = dict(
     package_data={'dreampielib': package_data_files},
     data_files=[
                 ('share/applications', ['share/applications/dreampie.desktop']),
+                ('share/appdata', ['share/appdata/dreampie.appdata.xml']),
                 ('share/man/man1', ['share/man/man1/dreampie.1']),
                 ('share/pixmaps', ['share/pixmaps/dreampie.svg',
                                    'share/pixmaps/dreampie.png']),
